@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Plus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PROJECT_STATUS_ORDER } from '../lib/format'
 import KanbanBoard from '../components/projects/kanban/KanbanBoard'
+import ProjectFormModal from '../components/projects/ProjectFormModal'
 import { PROJECTS_QUERY_KEY } from '../components/projects/kanban/types'
 import type { ProjectWithClient } from '../components/projects/kanban/types'
 
@@ -10,6 +13,7 @@ const BOARD_HEIGHT_CLASS = 'h-[calc(100vh-15rem)] min-h-[440px]'
 const SKELETON_CARDS_PER_COLUMN = 2
 
 export default function Projetos() {
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const { data: projects, isLoading, isError } = useQuery({
     queryKey: PROJECTS_QUERY_KEY,
     queryFn: async (): Promise<ProjectWithClient[]> => {
@@ -25,15 +29,27 @@ export default function Projetos() {
   return (
     <div>
       {/* Header da página */}
-      <div>
-        <h1 className="hero-heading font-kanit text-4xl font-bold leading-tight sm:text-5xl">
-          Projetos
-        </h1>
-        <p className="mt-2 text-sm font-light text-muted">
-          Pipeline de entregas por etapa — arraste os cards para atualizar o
-          status.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="hero-heading font-kanit text-4xl font-bold leading-tight sm:text-5xl">
+            Projetos
+          </h1>
+          <p className="mt-2 text-sm font-light text-muted">
+            Pipeline de entregas por etapa — arraste os cards para atualizar o
+            status.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsFormOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-kanit text-sm font-semibold text-ink shadow-lg shadow-accent/25 transition-colors duration-200 hover:bg-accent-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          Novo projeto
+        </button>
       </div>
+
+      <ProjectFormModal open={isFormOpen} onClose={() => setIsFormOpen(false)} />
 
       {/* Board */}
       <div className={`mt-8 ${BOARD_HEIGHT_CLASS}`}>

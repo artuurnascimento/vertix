@@ -34,3 +34,18 @@ export function clientFormToPayload(values: ClientFormValues) {
     origem: values.origem === '' ? null : values.origem,
   }
 }
+
+/** Tipos de serviço aceitos em projects.tipo_servico (check constraint). */
+export const PROJECT_TIPOS = ['ecommerce', 'sistema', 'site'] as const
+
+export type ProjectTipo = (typeof PROJECT_TIPOS)[number]
+
+export const projectSchema = z.object({
+  nome: z.string().trim().min(1, 'Informe o nome do projeto.'),
+  tipo_servico: z.enum(PROJECT_TIPOS, {
+    error: 'Selecione o tipo de serviço.',
+  }),
+  client_id: z.uuid('Selecione o cliente.'),
+})
+
+export type ProjectFormValues = z.infer<typeof projectSchema>

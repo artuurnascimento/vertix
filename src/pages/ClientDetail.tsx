@@ -7,6 +7,7 @@ import {
   Mail,
   Pencil,
   Phone,
+  Plus,
   SearchX,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -19,6 +20,7 @@ import {
   getTipoServicoMeta,
 } from '../lib/format'
 import ClientFormModal from '../components/clients/ClientFormModal'
+import ProjectFormModal from '../components/projects/ProjectFormModal'
 
 type ClientWithProjects = Tables<'clients'> & {
   projects: Tables<'projects'>[]
@@ -53,6 +55,7 @@ function NotFound() {
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>()
   const [editOpen, setEditOpen] = useState(false)
+  const [projectFormOpen, setProjectFormOpen] = useState(false)
 
   const { data: client, isLoading, isError } = useQuery({
     queryKey: ['client', id],
@@ -167,20 +170,38 @@ export default function ClientDetail() {
 
       {/* Projetos */}
       <section aria-labelledby="projetos-heading" className="mt-10">
-        <h2
-          id="projetos-heading"
-          className="text-xs font-medium uppercase tracking-widest text-muted"
-        >
-          Projetos
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2
+            id="projetos-heading"
+            className="text-xs font-medium uppercase tracking-widest text-muted"
+          >
+            Projetos
+          </h2>
+          <button
+            type="button"
+            onClick={() => setProjectFormOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Novo projeto
+          </button>
+        </div>
 
         {sortedProjects.length === 0 ? (
           <div className="mt-4 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-12 text-center">
             <FolderKanban className="h-6 w-6 text-muted/50" />
             <p className="mt-3 max-w-xs text-sm font-light leading-relaxed text-muted">
-              Nenhum projeto para este cliente ainda. Os projetos criados no
-              pipeline aparecem aqui.
+              Nenhum projeto para este cliente ainda. Crie o primeiro para
+              iniciar o pipeline.
             </p>
+            <button
+              type="button"
+              onClick={() => setProjectFormOpen(true)}
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-2"
+            >
+              <Plus className="h-4 w-4" />
+              Criar primeiro projeto
+            </button>
           </div>
         ) : (
           <ul className="mt-4 divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/5 bg-surface-1">
@@ -193,28 +214,32 @@ export default function ClientDetail() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, delay: index * 0.05 }}
-                  className="flex flex-wrap items-center gap-3 px-6 py-4"
                 >
-                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
-                    {project.nome}
-                  </p>
-                  <span
-                    className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tipoMeta.badgeClass}`}
+                  <Link
+                    to={`/admin/projetos/${project.id}`}
+                    className="flex flex-wrap items-center gap-3 px-6 py-4 transition-colors duration-150 hover:bg-white/[0.03] focus-visible:bg-white/[0.03] focus-visible:outline-none"
                   >
-                    {tipoMeta.label}
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusMeta.badgeClass}`}
-                  >
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                      {project.nome}
+                    </p>
                     <span
-                      aria-hidden
-                      className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
-                    />
-                    {statusMeta.label}
-                  </span>
-                  <span className="w-24 text-right text-xs font-light text-muted">
-                    {formatRelativeTime(project.updated_at)}
-                  </span>
+                      className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tipoMeta.badgeClass}`}
+                    >
+                      {tipoMeta.label}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusMeta.badgeClass}`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
+                      />
+                      {statusMeta.label}
+                    </span>
+                    <span className="w-24 text-right text-xs font-light text-muted">
+                      {formatRelativeTime(project.updated_at)}
+                    </span>
+                  </Link>
                 </motion.li>
               )
             })}
@@ -226,6 +251,12 @@ export default function ClientDetail() {
         open={editOpen}
         client={client}
         onClose={() => setEditOpen(false)}
+      />
+
+      <ProjectFormModal
+        open={projectFormOpen}
+        onClose={() => setProjectFormOpen(false)}
+        lockedClient={{ id: client.id, nome: client.nome }}
       />
     </div>
   )

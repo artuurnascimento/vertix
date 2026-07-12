@@ -5,11 +5,16 @@ import Login from './pages/Login'
 import Clientes from './pages/Clientes'
 import ClientDetail from './pages/ClientDetail'
 import Projetos from './pages/Projetos'
+import ProjectDetail from './pages/ProjectDetail'
+import BriefingForm from './pages/public/BriefingForm'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* Página pública de briefing — sem autenticação. */}
+      <Route path="/briefing/:token" element={<BriefingForm />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
@@ -17,6 +22,7 @@ export default function App() {
           <Route path="clientes" element={<Clientes />} />
           <Route path="clientes/:id" element={<ClientDetail />} />
           <Route path="projetos" element={<Projetos />} />
+          <Route path="projetos/:id" element={<ProjectDetail />} />
         </Route>
       </Route>
 
