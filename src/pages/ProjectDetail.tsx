@@ -21,6 +21,8 @@ import {
   getTipoServicoMeta,
 } from '../lib/format'
 import { formatResposta, parsePerguntas } from '../lib/briefing'
+import ActivityTimeline from '../components/projects/ActivityTimeline'
+import NoteComposer from '../components/projects/NoteComposer'
 
 type ProjectWithClient = Tables<'projects'> & {
   clients: Pick<Tables<'clients'>, 'id' | 'nome' | 'empresa'> | null
@@ -384,6 +386,22 @@ export default function ProjectDetail() {
             </dl>
           </div>
         )}
+      </section>
+
+      {/* Atividade */}
+      <section aria-labelledby="activity-heading" className="mt-10">
+        <h2
+          id="activity-heading"
+          className="text-xs font-medium uppercase tracking-widest text-muted"
+        >
+          Atividade
+        </h2>
+        <div className="mt-4 rounded-2xl border border-white/5 bg-surface-1 px-6 py-6 sm:px-8 sm:py-8">
+          <NoteComposer projectId={project.id} />
+          <div className="mt-6 border-t border-white/5 pt-6">
+            <ActivityTimeline projectId={project.id} />
+          </div>
+        </div>
       </section>
     </div>
   )
