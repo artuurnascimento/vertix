@@ -196,6 +196,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          portal_token: string
           status: string
           tipo_servico: string
           updated_at: string
@@ -205,6 +206,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          portal_token?: string
           status?: string
           tipo_servico: string
           updated_at?: string
@@ -214,6 +216,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          portal_token?: string
           status?: string
           tipo_servico?: string
           updated_at?: string
@@ -228,14 +231,149 @@ export type Database = {
           },
         ]
       }
+      proposals: {
+        Row: {
+          accepted_at: string | null
+          aceite_nome: string | null
+          condicoes: string | null
+          created_at: string
+          desconto: number
+          id: string
+          itens: Json
+          parcelas: Json | null
+          project_id: string
+          sent_at: string | null
+          status: string
+          titulo: string
+          token: string
+          updated_at: string
+          validade: string | null
+          valor_total: number
+        }
+        Insert: {
+          accepted_at?: string | null
+          aceite_nome?: string | null
+          condicoes?: string | null
+          created_at?: string
+          desconto?: number
+          id?: string
+          itens?: Json
+          parcelas?: Json | null
+          project_id: string
+          sent_at?: string | null
+          status?: string
+          titulo: string
+          token?: string
+          updated_at?: string
+          validade?: string | null
+          valor_total?: number
+        }
+        Update: {
+          accepted_at?: string | null
+          aceite_nome?: string | null
+          condicoes?: string | null
+          created_at?: string
+          desconto?: number
+          id?: string
+          itens?: Json
+          parcelas?: Json | null
+          project_id?: string
+          sent_at?: string | null
+          status?: string
+          titulo?: string
+          token?: string
+          updated_at?: string
+          validade?: string | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables: {
+        Row: {
+          client_id: string
+          created_at: string
+          descricao: string
+          forma_pagamento: string | null
+          id: string
+          pago_em: string | null
+          project_id: string
+          proposal_id: string | null
+          status: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          descricao: string
+          forma_pagamento?: string | null
+          id?: string
+          pago_em?: string | null
+          project_id: string
+          proposal_id?: string | null
+          status?: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          descricao?: string
+          forma_pagamento?: string | null
+          id?: string
+          pago_em?: string | null
+          project_id?: string
+          proposal_id?: string | null
+          status?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
+      get_portal_by_token: { Args: { t: string }; Returns: Json }
+      get_proposal_by_token: { Args: { t: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       is_team_member: { Args: never; Returns: boolean }
+      respond_proposal: {
+        Args: { p_aceite: boolean; p_nome: string; t: string }
+        Returns: Json
+      }
       submit_briefing: { Args: { p_respostas: Json; t: string }; Returns: Json }
     }
     Enums: {
