@@ -23,6 +23,8 @@ import {
 import { formatResposta, parsePerguntas } from '../lib/briefing'
 import ActivityTimeline from '../components/projects/ActivityTimeline'
 import NoteComposer from '../components/projects/NoteComposer'
+import ProposalsSection from '../components/proposals/ProposalsSection'
+import PortalLinkButton from '../components/portal/PortalLinkButton'
 
 type ProjectWithClient = Tables<'projects'> & {
   clients: Pick<Tables<'clients'>, 'id' | 'nome' | 'empresa'> | null
@@ -264,6 +266,7 @@ export default function ProjectDetail() {
             {formatRelativeTime(project.updated_at)}
           </p>
         </div>
+        <PortalLinkButton portalToken={project.portal_token} />
       </div>
 
       {/* Briefing */}
@@ -387,6 +390,9 @@ export default function ProjectDetail() {
           </div>
         )}
       </section>
+
+      {/* Propostas */}
+      <ProposalsSection projectId={project.id} />
 
       {/* Atividade */}
       <section aria-labelledby="activity-heading" className="mt-10">

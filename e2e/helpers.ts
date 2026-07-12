@@ -4,14 +4,14 @@ export const ADMIN_EMAIL = 'admin@vertix.local'
 export const ADMIN_PASSWORD = 'vertix123!'
 export const ADMIN_STATE_PATH = 'e2e/.auth/admin.json'
 
-/** Faz login pela UI e espera aterrissar na lista de clientes. */
+/** Faz login pela UI e espera aterrissar no dashboard (home do admin). */
 export async function loginAsAdmin(page: Page): Promise<void> {
   await page.goto('/login')
   await page.getByLabel('Email').fill(ADMIN_EMAIL)
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD)
   await page.getByRole('button', { name: 'Entrar' }).click()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Clientes' })
+    page.getByRole('heading', { level: 1, name: 'Visão geral' })
   ).toBeVisible()
 }
 

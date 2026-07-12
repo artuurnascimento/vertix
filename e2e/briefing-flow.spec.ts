@@ -150,7 +150,7 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
       page.getByRole('heading', { name: 'Aguardando resposta do cliente' })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Copiar link' })
+      page.getByRole('button', { name: 'Copiar link', exact: true })
     ).toBeVisible()
     // Badge de status no header do projeto.
     await expect(

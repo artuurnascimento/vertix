@@ -25,11 +25,11 @@ test.describe('Autenticação', () => {
     await expect(page).toHaveURL(/\/login$/)
   })
 
-  test('login admin válido chega em /admin/clientes', async ({ page }) => {
+  test('login admin válido chega no dashboard', async ({ page }) => {
     await loginAsAdmin(page)
-    await expect(page).toHaveURL(/\/admin\/clientes$/)
+    await expect(page).toHaveURL(/\/admin$/)
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Clientes' })
+      page.getByRole('heading', { level: 1, name: 'Visão geral' })
     ).toBeVisible()
   })
 

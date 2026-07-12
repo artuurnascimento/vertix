@@ -1,17 +1,29 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { KanbanSquare, LogOut, Users } from 'lucide-react'
+import {
+  FileText,
+  KanbanSquare,
+  LayoutDashboard,
+  LogOut,
+  Users,
+  Wallet,
+} from 'lucide-react'
 import { motion } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import { useAuth } from '../../lib/auth'
 
 const NAV_ITEMS = [
-  { to: '/admin/clientes', label: 'Clientes', icon: Users },
-  { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare },
+  { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true },
+  { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
+  { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
+  { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
+  { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
 ] as const
 
 const SECTION_TITLES: Record<string, string> = {
   '/admin/clientes': 'Clientes',
   '/admin/projetos': 'Projetos',
+  '/admin/propostas': 'Propostas',
+  '/admin/financeiro': 'Financeiro',
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -27,7 +39,7 @@ export default function AdminLayout() {
   const sectionTitle =
     Object.entries(SECTION_TITLES).find(([path]) =>
       location.pathname.startsWith(path)
-    )?.[1] ?? 'Painel'
+    )?.[1] ?? 'Visão geral'
   const isAdmin = profile?.role === 'admin'
 
   const handleSignOut = async () => {
@@ -50,10 +62,11 @@ export default function AdminLayout() {
           aria-label="Navegação principal"
           className="mt-4 flex flex-1 flex-col gap-1 px-2 md:px-3"
         >
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
+              end={end}
               title={label}
               className={({ isActive }) =>
                 [
