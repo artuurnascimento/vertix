@@ -3,6 +3,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import AdminLayout from './components/layout/AdminLayout'
 import Login from './pages/Login'
 import Clientes from './pages/Clientes'
+import ClientDetail from './pages/ClientDetail'
 import Projetos from './pages/Projetos'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/clientes" replace />} />
           <Route path="clientes" element={<Clientes />} />
+          <Route path="clientes/:id" element={<ClientDetail />} />
           <Route path="projetos" element={<Projetos />} />
         </Route>
       </Route>

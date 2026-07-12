@@ -24,7 +24,10 @@ export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const sectionTitle = SECTION_TITLES[location.pathname] ?? 'Painel'
+  const sectionTitle =
+    Object.entries(SECTION_TITLES).find(([path]) =>
+      location.pathname.startsWith(path)
+    )?.[1] ?? 'Painel'
   const isAdmin = profile?.role === 'admin'
 
   const handleSignOut = async () => {
