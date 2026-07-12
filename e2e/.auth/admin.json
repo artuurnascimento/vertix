@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5175",
+      "localStorage": [
+        {
+          "name": "sb-127-auth-token",
+          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6ImI4MTI2OWYxLTIxZDgtNGYyZS1iNzE5LWMyMjQwYTg0MGQ5MCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiJlMDk2OGVjNC01MzViLTQ1NmItODc5Ni1hM2MzNjRmOWFmNjciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgzODg4Mzk1LCJpYXQiOjE3ODM4ODQ3OTUsImVtYWlsIjoiYWRtaW5AdmVydGl4LmxvY2FsIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3ODM4ODQ3OTV9XSwic2Vzc2lvbl9pZCI6ImUwNWI4NDNiLTc2ZjUtNDVmOC04NGFmLTIxZWVkN2FjMjRhZCIsImlzX2Fub255bW91cyI6ZmFsc2V9.4cKp5aAkoijjEipg4f9Ut-ykzwAHwnZFBH39oOaqEkdEYcTfxrZwe34x4dhMn0kLjAVosfrUXf55nEYU-ko-gg\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1783888395,\"refresh_token\":\"yrtq4uttqig6\",\"user\":{\"id\":\"e0968ec4-535b-456b-8796-a3c364f9af67\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"admin@vertix.local\",\"email_confirmed_at\":\"2026-07-12T19:01:22.950695Z\",\"phone\":\"\",\"confirmed_at\":\"2026-07-12T19:01:22.950695Z\",\"last_sign_in_at\":\"2026-07-12T19:33:15.133024088Z\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"email_verified\":true},\"identities\":[{\"identity_id\":\"4ff5c01f-0728-4926-8706-74da2c64e546\",\"id\":\"e0968ec4-535b-456b-8796-a3c364f9af67\",\"user_id\":\"e0968ec4-535b-456b-8796-a3c364f9af67\",\"identity_data\":{\"email\":\"admin@vertix.local\",\"email_verified\":false,\"phone_verified\":false,\"sub\":\"e0968ec4-535b-456b-8796-a3c364f9af67\"},\"provider\":\"email\",\"last_sign_in_at\":\"2026-07-12T19:01:16.603354Z\",\"created_at\":\"2026-07-12T19:01:16.603393Z\",\"updated_at\":\"2026-07-12T19:01:16.603393Z\",\"email\":\"admin@vertix.local\"}],\"created_at\":\"2026-07-12T19:01:16.600918Z\",\"updated_at\":\"2026-07-12T19:33:15.138291Z\",\"is_anonymous\":false},\"weak_password\":null}"
+        }
+      ]
+    }
+  ]
+}
