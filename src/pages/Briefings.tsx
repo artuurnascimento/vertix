@@ -6,10 +6,19 @@ import { getTipoServicoMeta } from '../lib/format'
 import { parsePerguntas } from '../lib/briefing'
 import type { BriefingPergunta } from '../lib/briefing'
 import TemplateEditor from '../components/briefings/TemplateEditor'
+import BriefingsList from '../components/briefings/BriefingsList'
 
 const TIPO_ORDER = ['ecommerce', 'sistema', 'site'] as const
 
+type BriefingsView = 'respostas' | 'modelos'
+
+const VIEWS: { valor: BriefingsView; label: string }[] = [
+  { valor: 'respostas', label: 'Respostas' },
+  { valor: 'modelos', label: 'Modelos' },
+]
+
 export default function Briefings() {
+  const [view, setView] = useState<BriefingsView>('respostas')
   const [activeTipo, setActiveTipo] = useState<string>('ecommerce')
   // Rascunhos por template — trocar de aba preserva edições não salvas.
   const [drafts, setDrafts] = useState<Record<string, BriefingPergunta[] | null>>({})
@@ -38,11 +47,38 @@ export default function Briefings() {
           Briefings
         </h1>
         <p className="mt-2 text-sm font-light text-muted">
-          Modelos de perguntas enviados aos clientes por tipo de serviço.
+          Respostas dos clientes e modelos de perguntas por tipo de serviço.
         </p>
       </div>
 
-      {isLoading && (
+      {/* Alternador Respostas | Modelos */}
+      <div
+        role="tablist"
+        aria-label="Visão de briefings"
+        className="mt-6 inline-flex gap-1 rounded-xl border border-white/5 bg-surface-1 p-1"
+      >
+        {VIEWS.map(({ valor, label }) => (
+          <button
+            key={valor}
+            type="button"
+            role="tab"
+            aria-selected={view === valor}
+            onClick={() => setView(valor)}
+            className={[
+              'rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent',
+              view === valor
+                ? 'bg-accent/15 text-ink'
+                : 'text-muted hover:bg-white/5 hover:text-ink',
+            ].join(' ')}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'respostas' && <BriefingsList />}
+
+      {view === 'modelos' && isLoading && (
         <div className="mt-8 space-y-3">
           <div className="h-9 w-72 animate-pulse rounded-lg bg-surface-2" />
           {Array.from({ length: 3 }, (_, i) => (
@@ -55,13 +91,13 @@ export default function Briefings() {
         </div>
       )}
 
-      {isError && (
+      {view === 'modelos' && isError && (
         <p className="mt-8 rounded-xl border border-white/5 bg-surface-1 px-6 py-8 text-center text-sm text-red-400">
           Não foi possível carregar os templates. Recarregue a página.
         </p>
       )}
 
-      {!isLoading && !isError && (
+      {view === 'modelos' && !isLoading && !isError && (
         <>
           {/* Abas por tipo de serviço */}
           <div
