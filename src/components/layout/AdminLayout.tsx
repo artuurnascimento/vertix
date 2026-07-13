@@ -1,10 +1,11 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   ClipboardList,
   FileText,
   KanbanSquare,
   LayoutDashboard,
   LogOut,
+  Plus,
   Users,
   Wallet,
 } from 'lucide-react'
@@ -33,6 +34,13 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
   colaborador: 'Colaborador',
 }
+
+const ATALHOS = [
+  { to: '/admin/clientes', label: 'Novo cliente' },
+  { to: '/admin/projetos', label: 'Novo projeto' },
+  { to: '/admin/briefings', label: 'Novo briefing' },
+  { to: '/admin/propostas', label: 'Nova proposta' },
+] as const
 
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
@@ -101,10 +109,40 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        <div className="hidden px-6 pb-6 md:block">
-          <p className="text-[10px] uppercase tracking-widest text-muted/60">
-            Núcleo operacional
-          </p>
+        {/* Atalhos rápidos */}
+        <div className="hidden px-3 pb-4 md:block">
+          <div className="rounded-xl border border-white/5 bg-surface-2/60 p-3">
+            <p className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted/70">
+              Atalhos rápidos
+            </p>
+            <div className="flex flex-col gap-0.5">
+              {ATALHOS.map(({ to, label }) => (
+                <Link
+                  key={label}
+                  to={to}
+                  className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-muted transition-colors duration-200 hover:bg-accent/10 hover:text-ink"
+                >
+                  <Plus className="h-3.5 w-3.5 text-accent/70 transition-transform duration-200 group-hover:scale-110" />
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Usuário */}
+        <div className="hidden border-t border-white/5 px-4 py-4 md:flex md:items-center md:gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-accent">
+            {(profile?.nome ?? '?').charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium leading-tight text-ink">
+              {profile?.nome}
+            </p>
+            <p className="text-[11px] font-light text-muted">
+              {ROLE_LABELS[profile?.role ?? ''] ?? profile?.role}
+            </p>
+          </div>
         </div>
       </aside>
 

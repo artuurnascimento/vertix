@@ -1,159 +1,127 @@
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
-import {
-  FileText,
-  FolderKanban,
-  Target,
-  TrendingUp,
-  Wallet,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { formatBRL, isOverdue } from '../../lib/commercial'
+import { ClipboardList, FileText, FolderKanban, Wallet } from 'lucide-react'
+import { formatBRL } from '../../lib/commercial'
 import { isActiveStatus } from '../../lib/format'
+import KpiCard from './KpiCard'
 import {
+  useDashboardBriefings,
   useDashboardProjects,
   useDashboardProposals,
   useDashboardReceivables,
 } from './useDashboardData'
+import type {
+  DashboardProject,
+  DashboardReceivable,
+} from './useDashboardData'
 
-interface KpiCard {
-  key: string
-  label: string
-  value: string
-  valueClass: string
-  context: ReactNode
-  icon: LucideIcon
+const SKELETON_CARDS = 4
+const MONTHS_FOR_SPARKLINE = 6
+
+function monthKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${date.getFullYear()}-${month}`
 }
 
-const SKELETON_CARDS = 5
-const CARD_STAGGER_S = 0.06
+function monthsAgoKey(now: Date, monthsAgo: number): string {
+  return monthKey(new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1))
+}
 
-const monthNameFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long' })
+/** Soma de recebíveis pagos com vencimento no mês informado (chave 'YYYY-MM'). */
+function revenueForMonth(
+  receivables: readonly DashboardReceivable[],
+  key: string
+): number {
+  return receivables
+    .filter((r) => r.status === 'pago' && r.vencimento.slice(0, 7) === key)
+    .reduce((sum, r) => sum + r.valor, 0)
+}
 
-function currentMonthKey(now: Date): string {
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  return `${now.getFullYear()}-${month}`
+/** % de variação entre dois valores — null quando o anterior é 0 (sem base de comparação). */
+function percentDelta(current: number, previous: number): number | null {
+  if (previous === 0) return null
+  return ((current - previous) / previous) * 100
+}
+
+/** Série de contagem de projetos criados por mês (últimos N meses). */
+function countSparkline(
+  rows: readonly DashboardProject[],
+  now: Date,
+  predicate: (row: DashboardProject) => boolean
+): { key: string; value: number }[] {
+  return Array.from({ length: MONTHS_FOR_SPARKLINE }, (_, i) => {
+    const key = monthsAgoKey(now, MONTHS_FOR_SPARKLINE - 1 - i)
+    const value = rows.filter(
+      (row) => predicate(row) && row.created_at.slice(0, 7) === key
+    ).length
+    return { key, value }
+  })
 }
 
 export default function KpiRow() {
   const projects = useDashboardProjects()
   const proposals = useDashboardProposals()
   const receivables = useDashboardReceivables()
+  const briefings = useDashboardBriefings()
 
   const isLoading =
-    projects.isLoading || proposals.isLoading || receivables.isLoading
-  const isError = projects.isError || proposals.isError || receivables.isError
+    projects.isLoading ||
+    proposals.isLoading ||
+    receivables.isLoading ||
+    briefings.isLoading
+  const isError =
+    projects.isError || proposals.isError || receivables.isError || briefings.isError
 
-  const cards = useMemo<KpiCard[]>(() => {
+  const metrics = useMemo(() => {
     const projectRows = projects.data ?? []
     const proposalRows = proposals.data ?? []
     const receivableRows = receivables.data ?? []
+    const briefingRows = briefings.data ?? []
     const now = new Date()
-    const monthKey = currentMonthKey(now)
-    const monthName = monthNameFormatter.format(now)
+    const currentKey = monthKey(now)
+    const previousKey = monthsAgoKey(now, 1)
 
-    // Projetos ativos = tudo que ainda não foi entregue.
-    const activeCount = projectRows.filter((p) =>
-      isActiveStatus(p.status)
-    ).length
-    const inDevCount = projectRows.filter(
-      (p) => p.status === 'em_desenvolvimento'
-    ).length
-
-    // Leads = projetos parados na etapa inicial do funil.
-    const leadCount = projectRows.filter((p) => p.status === 'lead').length
-
-    // Propostas aguardando resposta do cliente.
-    const sentProposals = proposalRows.filter((p) => p.status === 'enviada')
-    const sentSum = sentProposals.reduce((sum, p) => sum + p.valor_total, 0)
-
-    // A receber = recebíveis pendentes; atrasado é derivado por vencimento.
-    const pending = receivableRows.filter((r) => r.status === 'pendente')
-    const pendingSum = pending.reduce((sum, r) => sum + r.valor, 0)
-    const overdueSum = pending
-      .filter((r) => isOverdue(r.status, r.vencimento, now))
-      .reduce((sum, r) => sum + r.valor, 0)
-
-    // Recebido no mês corrente (pago_em dentro do mês).
-    const paidThisMonth = receivableRows.filter(
-      (r) =>
-        r.status === 'pago' &&
-        r.pago_em !== null &&
-        r.pago_em.slice(0, 7) === monthKey
+    // Receita do mês: recebíveis pagas com vencimento no mês corrente.
+    const revenueThisMonth = revenueForMonth(receivableRows, currentKey)
+    const revenueLastMonth = revenueForMonth(receivableRows, previousKey)
+    const revenueDelta = percentDelta(revenueThisMonth, revenueLastMonth)
+    const revenueSparkline = Array.from(
+      { length: MONTHS_FOR_SPARKLINE },
+      (_, i) => {
+        const key = monthsAgoKey(now, MONTHS_FOR_SPARKLINE - 1 - i)
+        return { key, value: revenueForMonth(receivableRows, key) }
+      }
     )
-    const paidSum = paidThisMonth.reduce((sum, r) => sum + r.valor, 0)
 
-    return [
-      {
-        key: 'active-projects',
-        label: 'Projetos ativos',
-        value: String(activeCount),
-        valueClass: 'text-3xl text-ink',
-        context:
-          inDevCount > 0
-            ? `${inDevCount} em desenvolvimento`
-            : 'nenhum em desenvolvimento',
-        icon: FolderKanban,
-      },
-      {
-        key: 'leads',
-        label: 'Leads no pipeline',
-        value: String(leadCount),
-        valueClass: 'text-3xl text-ink',
-        context:
-          leadCount === 1 ? 'oportunidade em aberto' : 'oportunidades em aberto',
-        icon: Target,
-      },
-      {
-        key: 'proposals-sent',
-        label: 'Propostas aguardando',
-        value: String(sentProposals.length),
-        valueClass: 'text-3xl text-ink',
-        context:
-          sentProposals.length > 0
-            ? `${formatBRL(sentSum)} em negociação`
-            : 'nenhuma em negociação',
-        icon: FileText,
-      },
-      {
-        key: 'receivable',
-        label: 'A receber',
-        value: formatBRL(pendingSum),
-        valueClass: 'text-2xl text-ink',
-        context:
-          overdueSum > 0 ? (
-            <span className="text-red-400">
-              {formatBRL(overdueSum)} em atraso
-            </span>
-          ) : (
-            'sem atrasos'
-          ),
-        icon: Wallet,
-      },
-      {
-        key: 'paid-month',
-        label: 'Recebido no mês',
-        value: formatBRL(paidSum),
-        valueClass: 'text-2xl text-emerald-300',
-        context: `${paidThisMonth.length} pagamento${
-          paidThisMonth.length === 1 ? '' : 's'
-        } em ${monthName}`,
-        icon: TrendingUp,
-      },
-    ]
-  }, [projects.data, proposals.data, receivables.data])
+    const activeProjects = projectRows.filter((p) => isActiveStatus(p.status))
+    const activeSparkline = countSparkline(projectRows, now, (row) =>
+      isActiveStatus(row.status)
+    )
+
+    const sentProposals = proposalRows.filter((p) => p.status === 'enviada')
+
+    const openBriefings = briefingRows.filter((b) => b.status !== 'preenchido')
+
+    return {
+      revenueThisMonth,
+      revenueDelta,
+      revenueSparkline,
+      activeCount: activeProjects.length,
+      activeSparkline,
+      sentProposalsCount: sentProposals.length,
+      openBriefingsCount: openBriefings.length,
+    }
+  }, [projects.data, proposals.data, receivables.data, briefings.data])
 
   if (isLoading) {
     return (
       <div
         aria-label="Carregando indicadores"
-        className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         {Array.from({ length: SKELETON_CARDS }, (_, i) => (
           <div
             key={i}
-            className="h-28 animate-pulse rounded-2xl border border-white/5 bg-surface-1"
+            className="h-36 animate-pulse rounded-2xl border border-white/5 bg-surface-1"
             style={{ opacity: 1 - i * 0.12 }}
           />
         ))}
@@ -172,32 +140,46 @@ export default function KpiRow() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-      {cards.map((card, index) => {
-        const Icon = card.icon
-        return (
-          <motion.article
-            key={card.key}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * CARD_STAGGER_S }}
-            className="rounded-2xl border border-white/5 bg-surface-1 p-5 transition-colors duration-200 hover:border-white/10"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted/70">
-                {card.label}
-              </p>
-              <Icon aria-hidden className="h-4 w-4 shrink-0 text-muted/40" />
-            </div>
-            <p
-              className={`mt-3 font-kanit font-bold leading-none ${card.valueClass}`}
-            >
-              {card.value}
-            </p>
-            <p className="mt-2 text-xs font-light text-muted">{card.context}</p>
-          </motion.article>
-        )
-      })}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiCard
+        index={0}
+        label="Receita do mês"
+        value={metrics.revenueThisMonth}
+        format={formatBRL}
+        icon={Wallet}
+        chipClass="bg-accent/10 text-accent"
+        sparkline={metrics.revenueSparkline}
+        delta={
+          metrics.revenueDelta !== null
+            ? { percent: metrics.revenueDelta, label: 'vs. mês anterior' }
+            : undefined
+        }
+      />
+      <KpiCard
+        index={1}
+        label="Projetos ativos"
+        value={metrics.activeCount}
+        format={(v) => String(Math.round(v))}
+        icon={FolderKanban}
+        chipClass="bg-sky-400/10 text-sky-300"
+        sparkline={metrics.activeSparkline}
+      />
+      <KpiCard
+        index={2}
+        label="Propostas aguardando"
+        value={metrics.sentProposalsCount}
+        format={(v) => String(Math.round(v))}
+        icon={FileText}
+        chipClass="bg-amber-400/10 text-amber-300"
+      />
+      <KpiCard
+        index={3}
+        label="Briefings abertos"
+        value={metrics.openBriefingsCount}
+        format={(v) => String(Math.round(v))}
+        icon={ClipboardList}
+        chipClass="bg-emerald-400/10 text-emerald-300"
+      />
     </div>
   )
 }

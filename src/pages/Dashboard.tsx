@@ -1,18 +1,10 @@
+import AcoesPendentes from '../components/dashboard/AcoesPendentes'
+import AtividadesCard from '../components/dashboard/AtividadesCard'
+import DonutTipos from '../components/dashboard/DonutTipos'
+import EtapasBars from '../components/dashboard/EtapasBars'
 import KpiRow from '../components/dashboard/KpiRow'
-import PipelineFunnel from '../components/dashboard/PipelineFunnel'
-import RecentActivity from '../components/dashboard/RecentActivity'
+import ResumoFinanceiro from '../components/dashboard/ResumoFinanceiro'
 import RevenueChart from '../components/dashboard/RevenueChart'
-import UpcomingDues from '../components/dashboard/UpcomingDues'
-
-const fullDateFormatter = new Intl.DateTimeFormat('pt-BR', {
-  dateStyle: 'full',
-})
-
-/** "sábado, 12 de julho de 2026" → "Sábado, 12 de julho de 2026". */
-function formatTodayLong(): string {
-  const formatted = fullDateFormatter.format(new Date())
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1)
-}
 
 /** Home executiva do painel — rota index de /admin. */
 export default function Dashboard() {
@@ -20,33 +12,40 @@ export default function Dashboard() {
     <div>
       {/* Header da página */}
       <div>
-        <h1 className="hero-heading font-kanit text-4xl font-bold leading-tight sm:text-5xl">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted/70">
+          Bem-vindo de volta
+        </p>
+        <h1 className="hero-heading font-kanit mt-2 text-4xl font-bold leading-tight sm:text-5xl">
           Visão geral
         </h1>
         <p className="mt-2 text-sm font-light text-muted">
-          {formatTodayLong()} — o pulso da Vertix em uma tela.
+          O pulso da Vertix em uma tela — dados em tempo real do seu negócio.
         </p>
       </div>
 
-      {/* Linha de KPIs */}
+      {/* Fileira de KPIs */}
       <div className="mt-8">
         <KpiRow />
       </div>
 
-      {/* Grid principal: funil 2/3 + atividade 1/3; receita 1/2 + vencimentos 1/2 */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8">
-          <PipelineFunnel />
+      {/* Gráfico de receita */}
+      <div className="mt-6">
+        <RevenueChart />
+      </div>
+
+      {/* Atividades / Etapas / Ações pendentes */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <AtividadesCard />
+        <EtapasBars />
+        <AcoesPendentes />
+      </div>
+
+      {/* Resumo financeiro / Distribuição por tipo */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ResumoFinanceiro />
         </div>
-        <div className="lg:col-span-4">
-          <RecentActivity />
-        </div>
-        <div className="lg:col-span-6">
-          <RevenueChart />
-        </div>
-        <div className="lg:col-span-6">
-          <UpcomingDues />
-        </div>
+        <DonutTipos />
       </div>
     </div>
   )

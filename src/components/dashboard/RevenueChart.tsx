@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { BarChart3 } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { TrendingUp } from 'lucide-react'
 import { formatBRL } from '../../lib/commercial'
 import DashboardCard from './DashboardCard'
 import { CardEmptyState, CardErrorState, CardSkeleton } from './CardStates'
@@ -15,10 +15,11 @@ interface MonthBucket {
 }
 
 const MONTHS_SHOWN = 6
-const BAR_STAGGER_S = 0.06
-const BAR_DURATION_S = 0.55
-/** Altura mínima visível quando o mês teve algum recebimento. */
-const MIN_BAR_PERCENT = 6
+const VIEW_WIDTH = 600
+const VIEW_HEIGHT = 220
+const PADDING_X = 24
+const PADDING_TOP = 20
+const PADDING_BOTTOM = 36
 
 const shortMonthFormatter = new Intl.DateTimeFormat('pt-BR', {
   month: 'short',
@@ -29,7 +30,7 @@ function monthKey(date: Date): string {
   return `${date.getFullYear()}-${month}`
 }
 
-/** Agrupa recebíveis PAGOS por mês de pagamento (pago_em), últimos 6 meses. */
+/** Agrupa recebíveis PAGOS por mês de vencimento, últimos 6 meses (0 quando sem dado). */
 function buildMonthBuckets(
   receivables: readonly DashboardReceivable[],
   now: Date
@@ -43,12 +44,7 @@ function buildMonthBuckets(
     )
     const key = monthKey(date)
     const total = receivables
-      .filter(
-        (r) =>
-          r.status === 'pago' &&
-          r.pago_em !== null &&
-          r.pago_em.slice(0, 7) === key
-      )
+      .filter((r) => r.status === 'pago' && r.vencimento.slice(0, 7) === key)
       .reduce((sum, r) => sum + r.valor, 0)
     return {
       key,
@@ -59,8 +55,45 @@ function buildMonthBuckets(
   })
 }
 
+interface PlottedPoint extends MonthBucket {
+  x: number
+  y: number
+}
+
+/** Posiciona os buckets no viewBox e devolve também o path suavizado (Catmull-Rom → Bezier). */
+function plotPoints(buckets: readonly MonthBucket[], maxTotal: number): PlottedPoint[] {
+  const innerWidth = VIEW_WIDTH - PADDING_X * 2
+  const innerHeight = VIEW_HEIGHT - PADDING_TOP - PADDING_BOTTOM
+  const step = buckets.length > 1 ? innerWidth / (buckets.length - 1) : 0
+
+  return buckets.map((bucket, index) => {
+    const x = PADDING_X + index * step
+    const ratio = maxTotal === 0 ? 0 : bucket.total / maxTotal
+    const y = PADDING_TOP + innerHeight * (1 - ratio)
+    return { ...bucket, x, y }
+  })
+}
+
+/** Curva suave usando pontos de controle intermediários (aproxima Catmull-Rom). */
+function buildSmoothPath(points: readonly PlottedPoint[]): string {
+  if (points.length === 0) return ''
+  if (points.length === 1) return `M${points[0].x},${points[0].y}`
+
+  let path = `M${points[0].x},${points[0].y}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const current = points[i]
+    const next = points[i + 1]
+    const controlX = (current.x + next.x) / 2
+    path += ` C${controlX},${current.y} ${controlX},${next.y} ${next.x},${next.y}`
+  }
+  return path
+}
+
 export default function RevenueChart() {
   const { data: receivables, isLoading, isError } = useDashboardReceivables()
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+  const gradientId = useId()
+  const prefersReducedMotion = useReducedMotion()
 
   const buckets = useMemo(
     () => buildMonthBuckets(receivables ?? [], new Date()),
@@ -70,86 +103,126 @@ export default function RevenueChart() {
   const maxTotal = Math.max(...buckets.map((b) => b.total), 1)
   const hasRevenue = buckets.some((b) => b.total > 0)
 
+  const points = useMemo(() => plotPoints(buckets, maxTotal), [buckets, maxTotal])
+  const linePath = useMemo(() => buildSmoothPath(points), [points])
+  const areaPath = `${linePath} L${points[points.length - 1]?.x ?? 0},${VIEW_HEIGHT - PADDING_BOTTOM} L${points[0]?.x ?? 0},${VIEW_HEIGHT - PADDING_BOTTOM} Z`
+
+  const hoveredPoint = points.find((p) => p.key === hoveredKey) ?? null
+
   return (
     <DashboardCard
-      title="Receita"
-      subtitle="Recebimentos confirmados nos últimos 6 meses"
+      title="Receita dos últimos 6 meses"
+      subtitle="Recebimentos confirmados por mês de vencimento"
       action={{ label: 'ver financeiro', to: '/admin/financeiro' }}
     >
-      {isLoading && <CardSkeleton rows={3} rowClassName="h-12" />}
+      {isLoading && <CardSkeleton rows={1} rowClassName="h-48" />}
 
       {isError && <CardErrorState />}
 
       {!isLoading && !isError && !hasRevenue && (
         <CardEmptyState
-          icon={BarChart3}
+          icon={TrendingUp}
           title="Nenhum recebimento ainda"
           description="Quando os primeiros pagamentos forem confirmados, a evolução mensal aparece aqui."
         />
       )}
 
       {!isLoading && !isError && hasRevenue && (
-        <div className="flex h-full flex-col justify-end">
-          <div className="flex items-end gap-3 sm:gap-4">
-            {buckets.map((bucket, index) => {
-              const percent =
-                bucket.total === 0
-                  ? 0
-                  : Math.max(
-                      (bucket.total / maxTotal) * 100,
-                      MIN_BAR_PERCENT
-                    )
-              return (
-                <div
-                  key={bucket.key}
-                  className="group relative flex flex-1 flex-col items-center gap-2"
-                >
-                  {/* Tooltip com o valor do mês */}
-                  <span
-                    role="tooltip"
-                    className="pointer-events-none absolute -top-8 z-10 whitespace-nowrap rounded-md border border-white/10 bg-surface-2 px-2 py-1 text-[11px] font-medium text-ink opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-                  >
-                    {formatBRL(bucket.total)}
-                  </span>
-                  <span
-                    aria-label={`${bucket.label}: ${formatBRL(bucket.total)}`}
-                    className="flex h-36 w-full max-w-12 items-end overflow-hidden rounded-t-md"
-                  >
-                    {bucket.total > 0 ? (
-                      <motion.span
-                        initial={{ height: 0 }}
-                        animate={{ height: `${percent}%` }}
-                        transition={{
-                          duration: BAR_DURATION_S,
-                          ease: 'easeOut',
-                          delay: index * BAR_STAGGER_S,
-                        }}
-                        className={`block w-full rounded-t-md transition-colors duration-150 ${
-                          bucket.isCurrent
-                            ? 'bg-accent group-hover:bg-accent-2'
-                            : 'bg-white/10 group-hover:bg-white/20'
-                        }`}
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className="block h-px w-full bg-white/10"
-                      />
-                    )}
-                  </span>
-                  <span
-                    className={`text-[11px] uppercase tracking-wider ${
-                      bucket.isCurrent
-                        ? 'font-medium text-accent'
-                        : 'text-muted/70'
-                    }`}
-                  >
-                    {bucket.label}
-                  </span>
-                </div>
-              )
-            })}
+        <div className="relative">
+          <div className="absolute left-0 top-0 text-[11px] font-medium uppercase tracking-widest text-muted/60">
+            máx. {formatBRL(maxTotal)}
           </div>
+          <svg
+            viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+            className="mt-6 h-56 w-full overflow-visible"
+            role="img"
+            aria-label="Gráfico de receita mensal"
+          >
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6C5BF2" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#6C5BF2" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Linhas de referência horizontais */}
+            {[0.25, 0.5, 0.75].map((ratio) => (
+              <line
+                key={ratio}
+                x1={PADDING_X}
+                x2={VIEW_WIDTH - PADDING_X}
+                y1={PADDING_TOP + (VIEW_HEIGHT - PADDING_TOP - PADDING_BOTTOM) * ratio}
+                y2={PADDING_TOP + (VIEW_HEIGHT - PADDING_TOP - PADDING_BOTTOM) * ratio}
+                stroke="white"
+                strokeOpacity={0.04}
+              />
+            ))}
+
+            <motion.path
+              d={areaPath}
+              fill={`url(#${gradientId})`}
+              stroke="none"
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+            />
+
+            <motion.path
+              d={linePath}
+              fill="none"
+              stroke="#6C5BF2"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={prefersReducedMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+            />
+
+            {points.map((point, index) => (
+              <g key={point.key}>
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r={hoveredKey === point.key ? 6 : 4}
+                  fill={point.isCurrent ? '#6C5BF2' : '#0C0C0C'}
+                  stroke="#6C5BF2"
+                  strokeWidth={2}
+                  className="cursor-pointer transition-[r] duration-150"
+                  onMouseEnter={() => setHoveredKey(point.key)}
+                  onMouseLeave={() => setHoveredKey(null)}
+                >
+                  <title>{`${point.label}: ${formatBRL(point.total)}`}</title>
+                </circle>
+                <text
+                  x={point.x}
+                  y={VIEW_HEIGHT - 10}
+                  textAnchor="middle"
+                  className={`fill-current text-[10px] uppercase tracking-wider ${
+                    point.isCurrent ? 'fill-accent font-medium' : 'fill-muted/60'
+                  }`}
+                  style={{ fontSize: '10px' }}
+                >
+                  {point.label}
+                </text>
+                {index === points.length - 1 && (
+                  <title>{`${point.label}: ${formatBRL(point.total)}`}</title>
+                )}
+              </g>
+            ))}
+          </svg>
+
+          {hoveredPoint && (
+            <div
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-md border border-white/10 bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-ink shadow-lg"
+              style={{
+                left: `${(hoveredPoint.x / VIEW_WIDTH) * 100}%`,
+                top: `${(hoveredPoint.y / VIEW_HEIGHT) * 100}%`,
+              }}
+            >
+              {formatBRL(hoveredPoint.total)}
+            </div>
+          )}
         </div>
       )}
     </DashboardCard>

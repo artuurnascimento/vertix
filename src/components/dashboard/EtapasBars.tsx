@@ -12,7 +12,8 @@ const BAR_DURATION_S = 0.6
 /** Barra mínima visível quando a etapa tem ao menos 1 projeto. */
 const MIN_BAR_PERCENT = 4
 
-export default function PipelineFunnel() {
+/** Projetos por etapa do kanban — barras horizontais com contagem real. */
+export default function EtapasBars() {
   const navigate = useNavigate()
   const { data: projects, isLoading, isError } = useDashboardProjects()
 
@@ -30,13 +31,11 @@ export default function PipelineFunnel() {
 
   return (
     <DashboardCard
-      title="Funil do pipeline"
+      title="Projetos por etapa"
       subtitle={
         total > 0
-          ? `${total} projeto${total === 1 ? '' : 's'} distribuído${
-              total === 1 ? '' : 's'
-            } por etapa`
-          : 'Distribuição dos projetos por etapa'
+          ? `${total} projeto${total === 1 ? '' : 's'} no pipeline`
+          : 'Distribuição por etapa do kanban'
       }
       action={{ label: 'ver board', to: '/admin/projetos' }}
     >
@@ -48,7 +47,7 @@ export default function PipelineFunnel() {
         <CardEmptyState
           icon={FolderKanban}
           title="Pipeline vazio"
-          description="Crie o primeiro projeto para acompanhar as etapas do funil por aqui."
+          description="Crie o primeiro projeto para acompanhar as etapas por aqui."
         />
       )}
 
@@ -58,10 +57,7 @@ export default function PipelineFunnel() {
             const percent =
               stage.count === 0
                 ? 0
-                : Math.max(
-                    (stage.count / maxCount) * 100,
-                    MIN_BAR_PERCENT
-                  )
+                : Math.max((stage.count / maxCount) * 100, MIN_BAR_PERCENT)
             return (
               <li key={stage.status}>
                 <button
@@ -70,14 +66,14 @@ export default function PipelineFunnel() {
                   aria-label={`${stage.meta.label}: ${stage.count} projeto${
                     stage.count === 1 ? '' : 's'
                   } — abrir board`}
-                  className="group flex w-full items-center gap-4 rounded-lg px-2 py-1.5 text-left transition-colors duration-150 hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors duration-150 hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
-                  <span className="flex w-40 shrink-0 items-center gap-2">
+                  <span className="flex w-32 shrink-0 items-center gap-2 sm:w-36">
                     <span
                       aria-hidden
-                      className={`h-2 w-2 rounded-full ${stage.meta.dotClass}`}
+                      className={`h-2 w-2 shrink-0 rounded-full ${stage.meta.dotClass}`}
                     />
-                    <span className="truncate text-sm text-ink/90 transition-colors duration-150 group-hover:text-ink">
+                    <span className="truncate text-xs text-ink/90 transition-colors duration-150 group-hover:text-ink sm:text-sm">
                       {stage.meta.label}
                     </span>
                   </span>
@@ -93,7 +89,7 @@ export default function PipelineFunnel() {
                       className={`block h-full rounded-full ${stage.meta.dotClass} opacity-80 transition-opacity duration-150 group-hover:opacity-100`}
                     />
                   </span>
-                  <span className="w-8 shrink-0 text-right font-kanit text-sm font-semibold text-ink">
+                  <span className="w-6 shrink-0 text-right font-kanit text-sm font-semibold text-ink">
                     {stage.count}
                   </span>
                 </button>
