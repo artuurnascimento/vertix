@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { PieChart } from 'lucide-react'
 import { getTipoServicoMeta } from '../../lib/format'
@@ -16,7 +16,7 @@ interface DonutSlice {
   strokeHex: string
 }
 
-/** Ordem fixa + cor dedicada por tipo de serviço (paleta do design system). */
+/** Ordem fixa + cor dedicada por tipo de serviço — mesma linguagem neon dos KPIs. */
 const TIPO_COLORS: Record<string, { colorClass: string; strokeHex: string }> = {
   ecommerce: { colorClass: 'text-accent', strokeHex: '#6C5BF2' },
   sistema: { colorClass: 'text-emerald-400', strokeHex: '#34D399' },
@@ -35,6 +35,7 @@ const VIEW_SIZE = (RADIUS + STROKE_WIDTH) * 2
 export default function DonutTipos() {
   const { data: projects, isLoading, isError } = useDashboardProjects()
   const prefersReducedMotion = useReducedMotion()
+  const glowId = useId()
 
   const { slices, total } = useMemo(() => {
     const rows = projects ?? []
@@ -94,6 +95,11 @@ export default function DonutTipos() {
               role="img"
               aria-label="Distribuição de projetos por tipo de serviço"
             >
+              <defs>
+                <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" />
+                </filter>
+              </defs>
               <circle
                 cx={VIEW_SIZE / 2}
                 cy={VIEW_SIZE / 2}
@@ -108,23 +114,41 @@ export default function DonutTipos() {
                 const offset = -((cumulativePercent / 100) * CIRCUMFERENCE)
                 cumulativePercent += slice.percent
                 return (
-                  <motion.circle
-                    key={slice.tipo}
-                    cx={VIEW_SIZE / 2}
-                    cy={VIEW_SIZE / 2}
-                    r={RADIUS}
-                    fill="none"
-                    stroke={slice.strokeHex}
-                    strokeWidth={STROKE_WIDTH}
-                    strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
-                    strokeDashoffset={offset}
-                    strokeLinecap="butt"
-                    initial={prefersReducedMotion ? false : { opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.1 + index * 0.08 }}
-                  >
-                    <title>{`${slice.label}: ${slice.count} (${slice.percent.toFixed(0)}%)`}</title>
-                  </motion.circle>
+                  <g key={slice.tipo}>
+                    {/* Camada borrada atrás → glow neon sutil no segmento */}
+                    <motion.circle
+                      cx={VIEW_SIZE / 2}
+                      cy={VIEW_SIZE / 2}
+                      r={RADIUS}
+                      fill="none"
+                      stroke={slice.strokeHex}
+                      strokeWidth={STROKE_WIDTH}
+                      strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
+                      strokeDashoffset={offset}
+                      strokeLinecap="round"
+                      filter={`url(#${glowId})`}
+                      opacity={0.5}
+                      initial={prefersReducedMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 0.5 }}
+                      transition={{ duration: 0.5, delay: 0.1 + index * 0.08 }}
+                    />
+                    <motion.circle
+                      cx={VIEW_SIZE / 2}
+                      cy={VIEW_SIZE / 2}
+                      r={RADIUS}
+                      fill="none"
+                      stroke={slice.strokeHex}
+                      strokeWidth={STROKE_WIDTH}
+                      strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
+                      strokeDashoffset={offset}
+                      strokeLinecap="round"
+                      initial={prefersReducedMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.1 + index * 0.08 }}
+                    >
+                      <title>{`${slice.label}: ${slice.count} (${slice.percent.toFixed(0)}%)`}</title>
+                    </motion.circle>
+                  </g>
                 )
               })}
             </svg>
@@ -132,7 +156,7 @@ export default function DonutTipos() {
               <AnimatedNumber
                 value={total}
                 format={(v) => String(Math.round(v))}
-                className="font-kanit text-2xl font-bold leading-none text-ink"
+                className="font-kanit text-3xl font-bold leading-none text-ink"
               />
               <span className="mt-1 text-[10px] uppercase tracking-widest text-muted/70">
                 projetos
@@ -146,7 +170,10 @@ export default function DonutTipos() {
                 <span
                   aria-hidden
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: slice.strokeHex }}
+                  style={{
+                    backgroundColor: slice.strokeHex,
+                    boxShadow: `0 0 6px ${slice.strokeHex}`,
+                  }}
                 />
                 <span className="text-ink/90">{slice.label}</span>
                 <span className="ml-auto font-kanit font-semibold text-ink">

@@ -3,6 +3,7 @@ import { ClipboardList, FileText, FolderKanban, Wallet } from 'lucide-react'
 import { formatBRL } from '../../lib/commercial'
 import { isActiveStatus } from '../../lib/format'
 import KpiCard from './KpiCard'
+import type { KpiAccent } from './KpiCard'
 import {
   useDashboardBriefings,
   useDashboardProjects,
@@ -16,6 +17,28 @@ import type {
 
 const SKELETON_CARDS = 4
 const MONTHS_FOR_SPARKLINE = 6
+
+/** Paleta neon por módulo — uma cor própria por KPI (identidade visual da referência). */
+const ACCENT_REVENUE: KpiAccent = {
+  hex: '#6C5BF2',
+  chipClass: 'bg-accent/15 text-accent',
+  borderHoverClass: 'hover:border-accent/30 hover:shadow-[0_0_24px_-8px_rgba(108,91,242,0.5)]',
+}
+const ACCENT_PROJECTS: KpiAccent = {
+  hex: '#38BDF8',
+  chipClass: 'bg-sky-400/15 text-sky-400',
+  borderHoverClass: 'hover:border-sky-400/30 hover:shadow-[0_0_24px_-8px_rgba(56,189,248,0.5)]',
+}
+const ACCENT_PROPOSALS: KpiAccent = {
+  hex: '#22D3D8',
+  chipClass: 'bg-cyan-300/15 text-cyan-300',
+  borderHoverClass: 'hover:border-cyan-300/30 hover:shadow-[0_0_24px_-8px_rgba(45,212,216,0.5)]',
+}
+const ACCENT_BRIEFINGS: KpiAccent = {
+  hex: '#FBBF24',
+  chipClass: 'bg-amber-400/15 text-amber-400',
+  borderHoverClass: 'hover:border-amber-400/30 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.5)]',
+}
 
 function monthKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -147,7 +170,7 @@ export default function KpiRow() {
         value={metrics.revenueThisMonth}
         format={formatBRL}
         icon={Wallet}
-        chipClass="bg-accent/10 text-accent"
+        accent={ACCENT_REVENUE}
         sparkline={metrics.revenueSparkline}
         delta={
           metrics.revenueDelta !== null
@@ -161,7 +184,7 @@ export default function KpiRow() {
         value={metrics.activeCount}
         format={(v) => String(Math.round(v))}
         icon={FolderKanban}
-        chipClass="bg-sky-400/10 text-sky-300"
+        accent={ACCENT_PROJECTS}
         sparkline={metrics.activeSparkline}
       />
       <KpiCard
@@ -170,7 +193,7 @@ export default function KpiRow() {
         value={metrics.sentProposalsCount}
         format={(v) => String(Math.round(v))}
         icon={FileText}
-        chipClass="bg-amber-400/10 text-amber-300"
+        accent={ACCENT_PROPOSALS}
       />
       <KpiCard
         index={3}
@@ -178,7 +201,7 @@ export default function KpiRow() {
         value={metrics.openBriefingsCount}
         format={(v) => String(Math.round(v))}
         icon={ClipboardList}
-        chipClass="bg-emerald-400/10 text-emerald-300"
+        accent={ACCENT_BRIEFINGS}
       />
     </div>
   )

@@ -8,12 +8,13 @@ interface SparkLinePoint {
 
 interface SparkLineProps {
   points: readonly SparkLinePoint[]
-  colorClass?: string
+  /** Cor neon do card (hex) — usada na linha, no glow e no gradiente de preenchimento. */
+  colorHex?: string
 }
 
-const VIEW_WIDTH = 100
-const VIEW_HEIGHT = 32
-const PADDING_Y = 4
+const VIEW_WIDTH = 200
+const VIEW_HEIGHT = 56
+const PADDING_Y = 6
 
 /** Constrói o path SVG (linha) normalizado ao viewBox. */
 function buildPath(points: readonly SparkLinePoint[]): string {
@@ -34,12 +35,13 @@ function buildPath(points: readonly SparkLinePoint[]): string {
     .join(' ')
 }
 
-/** Mini gráfico de linha sem eixos — tendência dos últimos N meses de um KPI. */
+/** Mini gráfico de linha sem eixos — tendência dos últimos N meses de um KPI, com glow neon. */
 export default function SparkLine({
   points,
-  colorClass = 'text-accent',
+  colorHex = '#6C5BF2',
 }: SparkLineProps) {
   const gradientId = useId()
+  const glowId = useId()
   const prefersReducedMotion = useReducedMotion()
   const path = useMemo(() => buildPath(points), [points])
 
@@ -49,14 +51,17 @@ export default function SparkLine({
     <svg
       viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
       preserveAspectRatio="none"
-      className={`h-8 w-full ${colorClass}`}
+      className="h-12 w-full sm:h-14"
       aria-hidden
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          <stop offset="0%" stopColor={colorHex} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={colorHex} stopOpacity="0" />
         </linearGradient>
+        <filter id={glowId} x="-20%" y="-100%" width="140%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" />
+        </filter>
       </defs>
       <motion.path
         d={`${path} L${VIEW_WIDTH},${VIEW_HEIGHT} L0,${VIEW_HEIGHT} Z`}
@@ -66,11 +71,25 @@ export default function SparkLine({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       />
+      {/* Camada duplicada borrada → glow neon atrás da linha nítida */}
       <motion.path
         d={path}
         fill="none"
-        stroke="currentColor"
-        strokeWidth={1.75}
+        stroke={colorHex}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        filter={`url(#${glowId})`}
+        opacity={0.8}
+        initial={prefersReducedMotion ? false : { pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+      />
+      <motion.path
+        d={path}
+        fill="none"
+        stroke={colorHex}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         initial={prefersReducedMotion ? false : { pathLength: 0 }}

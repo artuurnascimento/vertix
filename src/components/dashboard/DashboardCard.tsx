@@ -21,9 +21,14 @@ export default function DashboardCard({
 }: DashboardCardProps) {
   return (
     <section
-      className={`flex h-full flex-col rounded-2xl border border-white/5 bg-surface-1 p-6 ${className}`}
+      className={`group/card relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-b from-surface-1 to-[#101018] p-6 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] transition-colors duration-300 hover:border-white/10 ${className}`}
     >
-      <header className="flex items-start justify-between gap-4">
+      {/* highlight interno no topo — separa o card do fundo sem borda dura */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+      />
+      <header className="relative flex items-start justify-between gap-4">
         <div>
           <h2 className="font-kanit text-base font-semibold text-ink">
             {title}
@@ -42,7 +47,7 @@ export default function DashboardCard({
           </Link>
         )}
       </header>
-      <div className="mt-5 flex-1">{children}</div>
+      <div className="relative mt-5 flex-1">{children}</div>
     </section>
   )
 }

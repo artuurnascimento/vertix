@@ -23,7 +23,16 @@ body {
 }
 
 .hero-heading {
-  background: linear-gradient(180deg, #6b6b64 0%, #f4f4f0 100%);
+  /* Cromado metálico: bandas claras/escuras simulando reflexo de aço. */
+  background: linear-gradient(
+    180deg,
+    #f7f7f5 0%,
+    #dddedb 28%,
+    #9a9c99 48%,
+    #6e706d 54%,
+    #c9cbc8 68%,
+    #f4f4f0 100%
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

@@ -21,31 +21,31 @@ interface ActivityVisual {
   iconClass: string
 }
 
-/** Vocabulário visual por tipo de activity_log — mesma paleta do detalhe do projeto. */
+/** Vocabulário visual por tipo de activity_log — paleta neon variada e determinística. */
 const ACTIVITY_VISUALS: Record<string, ActivityVisual> = {
   status_change: {
     icon: ArrowRightLeft,
-    wrapClass: 'border-accent/25 bg-accent/10',
+    wrapClass: 'bg-accent/15',
     iconClass: 'text-accent',
   },
   briefing_submitted: {
     icon: Check,
-    wrapClass: 'border-emerald-400/25 bg-emerald-400/10',
+    wrapClass: 'bg-emerald-400/15',
     iconClass: 'text-emerald-300',
   },
   nota: {
     icon: MessageSquare,
-    wrapClass: 'border-white/10 bg-white/5',
-    iconClass: 'text-muted',
+    wrapClass: 'bg-cyan-300/15',
+    iconClass: 'text-cyan-300',
   },
   proposta: {
     icon: Send,
-    wrapClass: 'border-sky-400/25 bg-sky-400/10',
+    wrapClass: 'bg-sky-400/15',
     iconClass: 'text-sky-300',
   },
   financeiro: {
     icon: Receipt,
-    wrapClass: 'border-amber-400/25 bg-amber-400/10',
+    wrapClass: 'bg-amber-400/15',
     iconClass: 'text-amber-300',
   },
 }
@@ -109,10 +109,10 @@ export default function AtividadesCard() {
                 )}
                 <Link
                   to={`/admin/projetos/${entry.project_id}`}
-                  className="group flex gap-3 rounded-lg pb-4 transition-colors duration-150 last:pb-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="group -mx-2 flex gap-3 rounded-lg px-2 pb-4 transition-colors duration-150 last:pb-0 hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${visual.wrapClass}`}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${visual.wrapClass}`}
                   >
                     <Icon className={`h-3.5 w-3.5 ${visual.iconClass}`} />
                   </span>

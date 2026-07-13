@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  ChevronRight,
   ClipboardList,
   FileText,
   KanbanSquare,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
+import QuickSearch from './QuickSearch'
 import { useAuth } from '../../lib/auth'
 
 const NAV_ITEMS = [
@@ -64,8 +66,13 @@ export default function AdminLayout() {
       <aside className="fixed inset-y-0 left-0 z-20 flex w-16 flex-col border-r border-white/5 bg-surface-1 md:w-60">
         <div className="flex items-center gap-3 px-4 py-6 md:px-6">
           <LogoMark className="h-8 w-8 shrink-0" />
-          <span className="hidden text-lg font-bold uppercase tracking-[0.25em] text-ink md:inline">
-            Vertix
+          <span className="hidden flex-col leading-none md:flex">
+            <span className="text-lg font-bold uppercase tracking-[0.25em] text-ink">
+              Vertix
+            </span>
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-accent">
+              Admin
+            </span>
           </span>
         </div>
 
@@ -81,28 +88,27 @@ export default function AdminLayout() {
               title={label}
               className={({ isActive }) =>
                 [
-                  'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200',
+                  'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-accent/10 text-ink'
+                    ? 'bg-gradient-to-r from-accent to-accent-2 text-white shadow-[0_4px_24px_rgba(108,91,242,0.4)]'
                     : 'text-muted hover:bg-white/5 hover:text-ink',
                 ].join(' ')
               }
             >
               {({ isActive }) => (
                 <>
-                  {isActive && (
-                    <span
-                      aria-hidden
-                      className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent"
-                    />
-                  )}
                   <Icon
                     className={[
                       'h-5 w-5 shrink-0 transition-colors duration-200',
-                      isActive ? 'text-accent' : 'text-muted group-hover:text-ink',
+                      isActive
+                        ? 'text-white'
+                        : 'text-muted group-hover:text-ink',
                     ].join(' ')}
                   />
                   <span className="hidden md:inline">{label}</span>
+                  {isActive && (
+                    <ChevronRight className="ml-auto hidden h-4 w-4 text-white/70 md:block" />
+                  )}
                 </>
               )}
             </NavLink>
@@ -124,6 +130,7 @@ export default function AdminLayout() {
                 >
                   <Plus className="h-3.5 w-3.5 text-accent/70 transition-transform duration-200 group-hover:scale-110" />
                   {label}
+                  <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 </Link>
               ))}
             </div>
@@ -132,8 +139,14 @@ export default function AdminLayout() {
 
         {/* Usuário */}
         <div className="hidden border-t border-white/5 px-4 py-4 md:flex md:items-center md:gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-accent">
-            {(profile?.nome ?? '?').charAt(0).toUpperCase()}
+          <span className="relative shrink-0">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-accent ring-2 ring-accent/30">
+              {(profile?.nome ?? '?').charAt(0).toUpperCase()}
+            </span>
+            <span
+              aria-hidden
+              className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-1 bg-emerald-400"
+            />
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium leading-tight text-ink">
@@ -149,7 +162,13 @@ export default function AdminLayout() {
       {/* Conteúdo */}
       <div className="flex min-h-screen flex-1 flex-col pl-16 md:pl-60">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-bg/80 px-6 py-4 backdrop-blur md:px-10">
-          <h2 className="text-base font-semibold text-ink">{sectionTitle}</h2>
+          <h2 className="shrink-0 text-base font-semibold text-ink">
+            {sectionTitle}
+          </h2>
+
+          <div className="hidden flex-1 justify-center px-6 md:flex">
+            <QuickSearch />
+          </div>
 
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">

@@ -17,9 +17,17 @@ interface MonthBucket {
 const MONTHS_SHOWN = 6
 const VIEW_WIDTH = 600
 const VIEW_HEIGHT = 220
-const PADDING_X = 24
+const PADDING_X = 44
 const PADDING_TOP = 20
 const PADDING_BOTTOM = 36
+
+/** Formata um valor em milhares curtos para o eixo Y (ex.: 20000 → "20k"). */
+function formatAxisK(value: number): string {
+  if (value === 0) return '0'
+  const thousands = value / 1000
+  const rounded = Number.isInteger(thousands) ? thousands : thousands.toFixed(1)
+  return `${rounded}k`
+}
 
 const shortMonthFormatter = new Intl.DateTimeFormat('pt-BR', {
   month: 'short',
@@ -93,6 +101,7 @@ export default function RevenueChart() {
   const { data: receivables, isLoading, isError } = useDashboardReceivables()
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
   const gradientId = useId()
+  const glowId = useId()
   const prefersReducedMotion = useReducedMotion()
 
   const buckets = useMemo(
@@ -129,8 +138,8 @@ export default function RevenueChart() {
 
       {!isLoading && !isError && hasRevenue && (
         <div className="relative">
-          <div className="absolute left-0 top-0 text-[11px] font-medium uppercase tracking-widest text-muted/60">
-            máx. {formatBRL(maxTotal)}
+          <div className="absolute right-0 top-0 z-10 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-medium uppercase tracking-widest text-muted/80">
+            Últimos 6 meses
           </div>
           <svg
             viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
@@ -143,20 +152,37 @@ export default function RevenueChart() {
                 <stop offset="0%" stopColor="#6C5BF2" stopOpacity="0.35" />
                 <stop offset="100%" stopColor="#6C5BF2" stopOpacity="0" />
               </linearGradient>
+              <filter id={glowId} x="-20%" y="-60%" width="140%" height="220%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+              </filter>
             </defs>
 
-            {/* Linhas de referência horizontais */}
-            {[0.25, 0.5, 0.75].map((ratio) => (
-              <line
-                key={ratio}
-                x1={PADDING_X}
-                x2={VIEW_WIDTH - PADDING_X}
-                y1={PADDING_TOP + (VIEW_HEIGHT - PADDING_TOP - PADDING_BOTTOM) * ratio}
-                y2={PADDING_TOP + (VIEW_HEIGHT - PADDING_TOP - PADDING_BOTTOM) * ratio}
-                stroke="white"
-                strokeOpacity={0.04}
-              />
-            ))}
+            {/* Linhas de referência horizontais + labels do eixo Y em "k" */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+              const y = PADDING_TOP + (VIEW_HEIGHT - PADDING_TOP - PADDING_BOTTOM) * (1 - ratio)
+              return (
+                <g key={ratio}>
+                  <line
+                    x1={PADDING_X}
+                    x2={VIEW_WIDTH - PADDING_X}
+                    y1={y}
+                    y2={y}
+                    stroke="white"
+                    strokeOpacity={0.04}
+                  />
+                  <text
+                    x={PADDING_X - 10}
+                    y={y}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    className="fill-muted/50"
+                    style={{ fontSize: '9px' }}
+                  >
+                    {formatAxisK(maxTotal * ratio)}
+                  </text>
+                </g>
+              )
+            })}
 
             <motion.path
               d={areaPath}
@@ -165,6 +191,21 @@ export default function RevenueChart() {
               initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.15 }}
+            />
+
+            {/* Camada duplicada e borrada → glow neon atrás da linha nítida */}
+            <motion.path
+              d={linePath}
+              fill="none"
+              stroke="#6C5BF2"
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter={`url(#${glowId})`}
+              opacity={0.75}
+              initial={prefersReducedMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1, ease: 'easeOut' }}
             />
 
             <motion.path
@@ -181,6 +222,16 @@ export default function RevenueChart() {
 
             {points.map((point, index) => (
               <g key={point.key}>
+                {point.isCurrent && (
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={9}
+                    fill="#6C5BF2"
+                    opacity={0.18}
+                    filter={`url(#${glowId})`}
+                  />
+                )}
                 <circle
                   cx={point.x}
                   cy={point.y}
@@ -214,13 +265,16 @@ export default function RevenueChart() {
 
           {hoveredPoint && (
             <div
-              className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-md border border-white/10 bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-ink shadow-lg"
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg border border-accent/30 bg-surface-2 px-3 py-1.5 text-xs font-medium text-ink shadow-lg"
               style={{
                 left: `${(hoveredPoint.x / VIEW_WIDTH) * 100}%`,
                 top: `${(hoveredPoint.y / VIEW_HEIGHT) * 100}%`,
               }}
             >
-              {formatBRL(hoveredPoint.total)}
+              <span className="capitalize text-muted">{hoveredPoint.label}</span>{' '}
+              <span className="font-kanit font-semibold text-ink">
+                {formatBRL(hoveredPoint.total)}
+              </span>
             </div>
           )}
         </div>

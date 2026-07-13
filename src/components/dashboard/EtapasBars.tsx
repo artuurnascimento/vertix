@@ -86,7 +86,7 @@ export default function EtapasBars() {
                         ease: 'easeOut',
                         delay: index * BAR_STAGGER_S,
                       }}
-                      className={`block h-full rounded-full ${stage.meta.dotClass} opacity-80 transition-opacity duration-150 group-hover:opacity-100`}
+                      className="block h-full rounded-full bg-gradient-to-r from-accent to-accent-2 opacity-80 shadow-[0_0_8px_rgba(108,91,242,0.45)] transition-opacity duration-150 group-hover:opacity-100"
                     />
                   </span>
                   <span className="w-6 shrink-0 text-right font-kanit text-sm font-semibold text-ink">

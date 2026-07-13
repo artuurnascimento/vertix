@@ -23,10 +23,18 @@ interface PendingAction {
   icon: LucideIcon
 }
 
+/** Pílula de status — fundo cor/15, borda cor/30, texto cor (linguagem da referência). */
 const CHIP_CLASSES: Record<ActionChipTone, string> = {
-  red: 'border-red-400/25 bg-red-400/10 text-red-300',
-  amber: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
-  sky: 'border-sky-400/20 bg-sky-400/10 text-sky-300',
+  red: 'border-red-400/30 bg-red-400/15 text-red-400',
+  amber: 'border-amber-400/30 bg-amber-400/15 text-amber-300',
+  sky: 'border-sky-300/30 bg-sky-300/15 text-sky-300',
+}
+
+/** Quadradinho de ícone colorido à esquerda — mesma linguagem visual dos KPIs. */
+const ICON_WRAP_CLASSES: Record<ActionChipTone, string> = {
+  red: 'bg-red-400/15 text-red-400',
+  amber: 'bg-amber-400/15 text-amber-300',
+  sky: 'bg-sky-300/15 text-sky-300',
 }
 
 const MAX_ITEMS = 6
@@ -128,10 +136,11 @@ export default function AcoesPendentes() {
                   to={action.to}
                   className="group flex items-center gap-3 rounded-lg transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
-                  <Icon
-                    aria-hidden
-                    className="h-4 w-4 shrink-0 text-muted/50"
-                  />
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${ICON_WRAP_CLASSES[action.chipTone]}`}
+                  >
+                    <Icon aria-hidden className="h-4 w-4" />
+                  </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-ink/90 transition-colors duration-150 group-hover:text-ink">
                     {action.title}
                   </span>
@@ -145,6 +154,18 @@ export default function AcoesPendentes() {
             )
           })}
         </ul>
+      )}
+
+      {!isLoading && !isError && actions.length > 0 && (
+        <Link
+          to="/admin/projetos"
+          className="group -mx-6 -mb-6 mt-4 flex items-center justify-center gap-1 border-t border-white/5 px-6 py-3 text-xs font-medium text-muted transition-colors duration-150 hover:bg-accent/5 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Ver todas as ações
+          <span aria-hidden className="transition-transform duration-150 group-hover:translate-x-0.5">
+            →
+          </span>
+        </Link>
       )}
     </DashboardCard>
   )
