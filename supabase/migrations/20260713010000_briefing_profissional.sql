@@ -1,25 +1,31 @@
 -- =============================================================================
--- Seed: templates de briefing (ecommerce, sistema, site)
+-- Vertix Admin — Briefing em nível profissional de agência (Fase 5)
 --
--- Perguntas em nível profissional de agência (capturam o que um dev/designer
--- precisa para orçar e executar) mas em linguagem 100% leiga (cliente
--- não-técnico responde sozinho). Cada pergunta tem `ajuda` explicando em 1-2
--- frases o porquê/como responder. Fluxo: negócio → público → específicas →
--- logística (orçamento/prazo no fim). Mantido idêntico ao gerado pela
--- migration supabase/migrations/20260713010000_briefing_profissional.sql —
--- ambiente fresh (seed) e ambiente já migrado ficam com o mesmo conteúdo.
+-- Reescreve as perguntas dos 3 briefing_templates (ecommerce, sistema, site)
+-- para capturar tudo que um dev/designer precisa para orçar e executar o
+-- projeto, mantendo linguagem 100% leiga (cliente não-técnico responde
+-- sozinho, sem ajuda). Motivo: feedback do usuário de que as perguntas atuais
+-- não continham o necessário para um profissional.
 --
--- CONTRATO (wizard público depende): o template ecommerce tem âncoras fixas
--- — catalogo_produtos ("Quantos produtos", tipo numero), meio_pagamento
--- (select com opção exata "Mercado Pago"), prazo (tipo texto, label contém
--- "prazo"), orcamento (select com opção exata "R$ 5 mil a R$ 15 mil") e uma
--- pergunta escolha_visual de estilo com opção "Minimalista e clean".
+-- Compatibilidade: os ids usados em respostas antigas são preservados quando
+-- a pergunta sobrevive semanticamente (catalogo_produtos, meio_pagamento,
+-- prazo, orcamento, processo_automatizar, objetivo_site) — respostas
+-- anteriores continuam associadas corretamente pelo id.
+--
+-- Âncoras E2E mantidas (wizard público depende):
+--   - ecommerce.catalogo_produtos: tipo numero, label contém "Quantos produtos"
+--   - ecommerce.meio_pagamento: select com opção exata "Mercado Pago"
+--   - ecommerce.prazo: tipo texto, label contém "prazo"
+--   - ecommerce.orcamento: select com opção exata "R$ 5 mil a R$ 15 mil"
+--   - ecommerce: 1 escolha_visual de estilo com opção "Minimalista e clean"
+--   - Nenhuma outra pergunta do ecommerce contém "Quantos produtos" no label
 -- =============================================================================
 
-insert into public.briefing_templates (tipo_servico, perguntas) values
-(
-  'ecommerce',
-  '[
+begin;
+
+update public.briefing_templates
+set
+  perguntas = $json$[
   {
     "id": "sobre_negocio",
     "label": "Conte um pouco sobre sua empresa e o que você vende.",
@@ -126,7 +132,12 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": true,
     "ajuda": "São as empresas que processam cartão e Pix na loja — se não conhecer, escolha a última opção.",
-    "opcoes": ["Mercado Pago", "Stripe", "Pagar.me", "Ainda não sei"]
+    "opcoes": [
+      "Mercado Pago",
+      "Stripe",
+      "Pagar.me",
+      "Ainda não sei"
+    ]
   },
   {
     "id": "formas_entrega",
@@ -134,7 +145,13 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Isso define como a loja vai calcular o frete na hora da compra.",
-    "opcoes": ["Correios", "Transportadora", "Entrega local / motoboy", "Retirada no local", "Ainda não sei"]
+    "opcoes": [
+      "Correios",
+      "Transportadora",
+      "Entrega local / motoboy",
+      "Retirada no local",
+      "Ainda não sei"
+    ]
   },
   {
     "id": "recorrencia",
@@ -168,7 +185,12 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Ex.: cupom de primeira compra, frete grátis, desconto por quantidade.",
-    "opcoes": ["Sim, com frequência", "Só em datas especiais", "Não pretendo", "Ainda não sei"]
+    "opcoes": [
+      "Sim, com frequência",
+      "Só em datas especiais",
+      "Não pretendo",
+      "Ainda não sei"
+    ]
   },
   {
     "id": "concorrentes",
@@ -238,7 +260,12 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Fotos e textos prontos aceleram bastante o lançamento da loja.",
-    "opcoes": ["Sim, tudo pronto", "Tenho uma parte", "Ainda vou produzir", "Preciso de ajuda com isso"]
+    "opcoes": [
+      "Sim, tudo pronto",
+      "Tenho uma parte",
+      "Ainda vou produzir",
+      "Preciso de ajuda com isso"
+    ]
   },
   {
     "id": "redes_sociais",
@@ -291,13 +318,20 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": true,
     "ajuda": "Com uma faixa de valor, propomos a solução que cabe no seu bolso.",
-    "opcoes": ["Até R$ 5 mil", "R$ 5 mil a R$ 15 mil", "R$ 15 mil a R$ 30 mil", "Acima de R$ 30 mil", "Ainda não sei"]
+    "opcoes": [
+      "Até R$ 5 mil",
+      "R$ 5 mil a R$ 15 mil",
+      "R$ 15 mil a R$ 30 mil",
+      "Acima de R$ 30 mil",
+      "Ainda não sei"
+    ]
   }
-]'::jsonb
-),
-(
-  'sistema',
-  '[
+]$json$::jsonb
+where tipo_servico = 'ecommerce';
+
+update public.briefing_templates
+set
+  perguntas = $json$[
   {
     "id": "sobre_negocio",
     "label": "Conte um pouco sobre sua empresa e o que vocês fazem.",
@@ -508,7 +542,11 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Se ainda não tiver, sem problema — podemos usar um visual neutro e profissional.",
-    "opcoes": ["Sim, tenho logotipo e cores", "Tenho só o logotipo", "Ainda não tenho nada"]
+    "opcoes": [
+      "Sim, tenho logotipo e cores",
+      "Tenho só o logotipo",
+      "Ainda não tenho nada"
+    ]
   },
   {
     "id": "quem_decide",
@@ -554,13 +592,20 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": true,
     "ajuda": "Com uma faixa de valor, propomos a solução que cabe no seu bolso.",
-    "opcoes": ["Até R$ 5 mil", "R$ 5 mil a R$ 15 mil", "R$ 15 mil a R$ 30 mil", "Acima de R$ 30 mil", "Ainda não sei"]
+    "opcoes": [
+      "Até R$ 5 mil",
+      "R$ 5 mil a R$ 15 mil",
+      "R$ 15 mil a R$ 30 mil",
+      "Acima de R$ 30 mil",
+      "Ainda não sei"
+    ]
   }
-]'::jsonb
-),
-(
-  'site',
-  '[
+]$json$::jsonb
+where tipo_servico = 'sistema';
+
+update public.briefing_templates
+set
+  perguntas = $json$[
   {
     "id": "sobre_negocio",
     "label": "Conte um pouco sobre sua empresa e o que vocês oferecem.",
@@ -736,7 +781,12 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Conteúdo pronto acelera o projeto — e podemos produzir o que faltar.",
-    "opcoes": ["Sim, está tudo pronto", "Tenho uma parte", "Preciso que vocês produzam", "Ainda não sei"]
+    "opcoes": [
+      "Sim, está tudo pronto",
+      "Tenho uma parte",
+      "Preciso que vocês produzam",
+      "Ainda não sei"
+    ]
   },
   {
     "id": "blog_novidades",
@@ -744,7 +794,12 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Isso define se o site precisa de uma área que você mesmo consegue atualizar.",
-    "opcoes": ["Sim, quero publicar com frequência", "Só ocasionalmente", "Não pretendo", "Ainda não sei"]
+    "opcoes": [
+      "Sim, quero publicar com frequência",
+      "Só ocasionalmente",
+      "Não pretendo",
+      "Ainda não sei"
+    ]
   },
   {
     "id": "redes_sociais",
@@ -759,7 +814,11 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Domínio é o endereço que as pessoas digitam, como suaempresa.com.br.",
-    "opcoes": ["Sim, já tenho", "Não, preciso registrar", "Não sei o que é isso"]
+    "opcoes": [
+      "Sim, já tenho",
+      "Não, preciso registrar",
+      "Não sei o que é isso"
+    ]
   },
   {
     "id": "formas_contato",
@@ -767,7 +826,12 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": false,
     "ajuda": "Colocamos o canal preferido em destaque em todas as páginas.",
-    "opcoes": ["WhatsApp", "Formulário no site", "Telefone ou e-mail", "Ainda não sei"]
+    "opcoes": [
+      "WhatsApp",
+      "Formulário no site",
+      "Telefone ou e-mail",
+      "Ainda não sei"
+    ]
   },
   {
     "id": "quem_decide",
@@ -813,7 +877,15 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "tipo": "select",
     "obrigatoria": true,
     "ajuda": "Com uma faixa de valor, propomos a solução que cabe no seu bolso.",
-    "opcoes": ["Até R$ 5 mil", "R$ 5 mil a R$ 15 mil", "R$ 15 mil a R$ 30 mil", "Acima de R$ 30 mil", "Ainda não sei"]
+    "opcoes": [
+      "Até R$ 5 mil",
+      "R$ 5 mil a R$ 15 mil",
+      "R$ 15 mil a R$ 30 mil",
+      "Acima de R$ 30 mil",
+      "Ainda não sei"
+    ]
   }
-]'::jsonb
-);
+]$json$::jsonb
+where tipo_servico = 'site';
+
+commit;

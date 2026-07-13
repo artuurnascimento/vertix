@@ -37,6 +37,18 @@ export const BRIEFING_ILUSTRACOES = [
   'conteudo',
   'agendamento',
   'metas',
+  'publico_alvo',
+  'concorrentes',
+  'orcamento',
+  'prazo',
+  'dominio',
+  'redes_sociais',
+  'estoque',
+  'recorrencia',
+  'relatorios',
+  'seguranca',
+  'mobile',
+  'suporte',
 ] as const
 
 export type BriefingIlustracao = (typeof BRIEFING_ILUSTRACOES)[number]

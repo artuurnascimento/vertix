@@ -10,6 +10,8 @@ import WizardIntro from '../../components/public-briefing/WizardIntro'
 import WizardProgress from '../../components/public-briefing/WizardProgress'
 import WizardReview from '../../components/public-briefing/WizardReview'
 import QuestionField from '../../components/public-briefing/QuestionField'
+import SuccessBurst from '../../components/public-briefing/SuccessBurst'
+import { SPRING_SCREEN, slideVariants } from '../../components/public-briefing/motion'
 import { parseBriefingByToken, parseSubmitResult } from '../../lib/briefing'
 import type { BriefingPergunta } from '../../lib/briefing'
 
@@ -18,9 +20,6 @@ const INVALID_UUID_CODE = '22P02'
 
 /** Delay entre selecionar um card visual e avançar automaticamente. */
 const AUTO_ADVANCE_MS = 350
-
-/** Deslocamento horizontal do slide entre telas do wizard. */
-const SLIDE_PX = 36
 
 function Shell({ children }: { children: ReactNode }) {
   return (
@@ -42,19 +41,24 @@ function StatusScreen({
   icon,
   title,
   message,
+  celebrate,
 }: {
   icon: ReactNode
   title: string
   message: string
+  /** Dispara o burst de partículas uma única vez (tela de sucesso). */
+  celebrate?: boolean
 }) {
+  const reducedMotion = useReducedMotion()
   return (
     <Shell>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-        className="mt-14 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-16 text-center sm:mt-20"
+        className="relative mt-14 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-16 text-center sm:mt-20"
       >
+        {celebrate && !reducedMotion && <SuccessBurst />}
         {icon}
         <h1 className="hero-heading mt-6 text-2xl font-bold sm:text-3xl">
           {title}
@@ -119,7 +123,8 @@ function SuccessScreen() {
     <StatusScreen
       icon={<SuccessCheck />}
       title="Briefing enviado!"
-      message="Recebemos seu briefing. A equipe Vertix entra em contato em breve."
+      message="Recebemos seu briefing. Foi um prazer ouvir sobre seu projeto — a equipe Vertix entra em contato em breve."
+      celebrate
     />
   )
 }
@@ -237,11 +242,7 @@ function BriefingWizard({
     onSubmit(respostas)
   }
 
-  const variants = {
-    enter: (dir: number) => ({ opacity: 0, x: reducedMotion ? 0 : dir * SLIDE_PX }),
-    center: { opacity: 1, x: 0 },
-    exit: (dir: number) => ({ opacity: 0, x: reducedMotion ? 0 : dir * -SLIDE_PX }),
-  }
+  const variants = slideVariants(reducedMotion)
 
   const stageKey =
     stage.kind === 'pergunta' ? `pergunta-${stage.index}` : stage.kind
@@ -261,7 +262,7 @@ function BriefingWizard({
         />
       )}
 
-      <AnimatePresence mode="wait" initial={false} custom={direction}>
+      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
         <motion.div
           key={stageKey}
           custom={direction}
@@ -269,10 +270,7 @@ function BriefingWizard({
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{
-            duration: reducedMotion ? 0.15 : 0.28,
-            ease: [0.25, 0.1, 0.25, 1],
-          }}
+          transition={reducedMotion ? { duration: 0.12 } : SPRING_SCREEN}
         >
           {stage.kind === 'intro' && (
             <WizardIntro
@@ -342,12 +340,15 @@ function BriefingWizard({
                       Pular
                     </button>
                   )}
-                  <button
+                  <motion.button
                     type="submit"
-                    className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    whileHover={reducedMotion ? undefined : { scale: 1.02, y: -1 }}
+                    whileTap={reducedMotion ? undefined : { scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+                    className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     Continuar
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             )

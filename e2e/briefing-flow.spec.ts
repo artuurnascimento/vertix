@@ -227,6 +227,9 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
     const MAX_PASSOS = 25
     for (let passo = 0; passo < MAX_PASSOS; passo++) {
       if (await reviewHeading.isVisible().catch(() => false)) break
+      // Transição popLayout mantém a pergunta anterior no DOM por ~350ms —
+      // esperar a saída concluir antes de ler a label (senão strict mode).
+      await expect(questionLabel).toHaveCount(1)
       await expect(questionLabel).toBeVisible()
       const label = (await questionLabel.innerText()).trim()
 
@@ -261,9 +264,23 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
         await page.getByLabel(/prazo/i).fill(RESPOSTA_PRAZO)
         await continuar.click()
       } else {
-        throw new Error(
-          `Pergunta obrigatória inesperada no wizard (sem handler): "${label}"`
-        )
+        // Fallback genérico — templates são editáveis; obrigatórias novas de
+        // texto livre não podem quebrar o fluxo.
+        const campoLivre = page
+          .locator('textarea, input[type="text"]')
+          .first()
+        const campoNumero = page.locator('input[type="number"]').first()
+        if ((await campoLivre.count()) > 0) {
+          await campoLivre.fill('Resposta E2E genérica')
+          await continuar.click()
+        } else if ((await campoNumero.count()) > 0) {
+          await campoNumero.fill('10')
+          await continuar.click()
+        } else {
+          throw new Error(
+            `Pergunta obrigatória inesperada no wizard (sem handler): "${label}"`
+          )
+        }
       }
 
       // Espera a transição: próxima pergunta (label diferente) ou revisão.

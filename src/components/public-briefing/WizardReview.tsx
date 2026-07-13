@@ -1,8 +1,12 @@
+import { motion, useReducedMotion } from 'framer-motion'
 import type { BriefingPergunta } from '../../lib/briefing'
+import { staggerContainer, staggerItem } from './motion'
 
 /**
  * Revisão final do wizard: lista compacta pergunta → resposta com "Editar"
  * (volta à pergunta) e o botão de envio real. Erros de envio aparecem aqui.
+ * Itens entram em stagger para reforçar que o cliente está prestes a
+ * concluir algo — sem exagero, é uma lista, não um showcase.
  */
 
 interface WizardReviewProps {
@@ -24,6 +28,8 @@ export default function WizardReview({
   onBack,
   onSubmit,
 }: WizardReviewProps) {
+  const reducedMotion = useReducedMotion()
+
   return (
     <div className="rounded-2xl border border-white/5 bg-surface-1 p-5 shadow-[0_24px_80px_-40px_rgba(108,91,242,0.3)] sm:p-8">
       <h2 className="text-2xl font-semibold leading-snug text-ink sm:text-3xl">
@@ -33,12 +39,18 @@ export default function WizardReview({
         Confira antes de enviar — dá para ajustar qualquer resposta.
       </p>
 
-      <ul className="mt-6 divide-y divide-white/5">
+      <motion.ul
+        variants={staggerContainer(reducedMotion)}
+        initial="hidden"
+        animate="show"
+        className="mt-6 divide-y divide-white/5"
+      >
         {perguntas.map((pergunta, index) => {
           const resposta = (values[pergunta.id] ?? '').trim()
           return (
-            <li
+            <motion.li
               key={pergunta.id}
+              variants={staggerItem(reducedMotion)}
               className="flex items-start justify-between gap-4 py-3.5"
             >
               <div className="min-w-0">
@@ -63,18 +75,20 @@ export default function WizardReview({
               >
                 Editar
               </button>
-            </li>
+            </motion.li>
           )
         })}
-      </ul>
+      </motion.ul>
 
       {rootError && (
-        <p
+        <motion.p
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
           role="alert"
           className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"
         >
           {rootError}
-        </p>
+        </motion.p>
       )}
 
       <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
@@ -86,14 +100,17 @@ export default function WizardReview({
           Voltar
         </button>
         <div className="hidden flex-1 sm:block" />
-        <button
+        <motion.button
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          whileHover={reducedMotion || isSubmitting ? undefined : { scale: 1.02, y: -1 }}
+          whileTap={reducedMotion || isSubmitting ? undefined : { scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+          className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {isSubmitting ? 'Enviando…' : 'Enviar briefing'}
-        </button>
+        </motion.button>
       </div>
     </div>
   )

@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import clsx from 'clsx'
+import { motion, useReducedMotion } from 'framer-motion'
 import type { BriefingPergunta } from '../../lib/briefing'
 import { BRIEFING_ILLUSTRATIONS } from '../briefings/illustrations'
+import { SPRING_SNAPPY } from './motion'
 
 /**
  * Renderiza uma pergunta do wizard (uma por tela) conforme o tipo:
@@ -11,6 +13,11 @@ import { BRIEFING_ILLUSTRATIONS } from '../briefings/illustrations'
  *
  * Semântica: inputs com <label htmlFor>; grupos de opção com fieldset/legend
  * e rádios reais (sr-only) — navegação por setas e Enter nativas.
+ *
+ * Motion: cards de opção reagem a hover (lift leve) e tap (spring), e a
+ * seleção acende a borda accent + desenha um check (pathLength). Inputs de
+ * texto ganham um glow accent sutil ao focar. Tudo respeita
+ * prefers-reduced-motion via useReducedMotion().
  */
 
 interface QuestionFieldProps {
@@ -25,7 +32,7 @@ interface QuestionFieldProps {
 }
 
 const inputBase =
-  'w-full rounded-xl border border-white/10 bg-surface-2 px-4 py-3.5 text-ink placeholder:text-muted/40 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/20'
+  'w-full rounded-xl border border-white/10 bg-surface-2 px-4 py-3.5 text-ink placeholder:text-muted/40 outline-none transition-[border-color,box-shadow] duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/20'
 
 function OptionalBadge() {
   return (
@@ -77,6 +84,41 @@ function Ajuda({ texto }: { texto?: string }) {
   )
 }
 
+/** Dica discreta de atalho, mostrada abaixo dos campos de texto/número. */
+function DicaEnter() {
+  return (
+    <p className="mt-2 text-[11px] font-light text-muted/60">
+      Enter para continuar
+    </p>
+  )
+}
+
+/** Check animado (pathLength) exibido quando o card de opção está selecionado. */
+function SelectedCheck({ reducedMotion }: { reducedMotion: boolean | null }) {
+  return (
+    <motion.svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-3 w-3"
+      aria-hidden
+      initial={false}
+    >
+      <motion.path
+        d="M4 12.5 9.5 18 20 6.5"
+        stroke="#F4F4F0"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={
+          reducedMotion ? { duration: 0.01 } : { duration: 0.3, ease: 'easeOut' }
+        }
+      />
+    </motion.svg>
+  )
+}
+
 export default function QuestionField({
   pergunta,
   value,
@@ -87,6 +129,8 @@ export default function QuestionField({
 }: QuestionFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const reducedMotion = useReducedMotion()
+  const [focused, setFocused] = useState(false)
 
   // Foco automático ao entrar na pergunta: opção marcada > primeiro campo.
   useEffect(() => {
@@ -117,7 +161,13 @@ export default function QuestionField({
     id: `campo-${pergunta.id}`,
     'aria-invalid': Boolean(errorId),
     'aria-describedby': errorId,
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
   }
+
+  const focusGlowClass = focused
+    ? 'shadow-[0_0_0_4px_rgba(108,91,242,0.15)]'
+    : ''
 
   if (pergunta.tipo === 'select') {
     return (
@@ -129,8 +179,11 @@ export default function QuestionField({
             {(pergunta.opcoes ?? []).map((opcao) => {
               const selected = value === opcao
               return (
-                <label
+                <motion.label
                   key={opcao}
+                  whileHover={reducedMotion ? undefined : { y: -2, scale: 1.01 }}
+                  whileTap={reducedMotion ? undefined : { scale: 0.99 }}
+                  transition={SPRING_SNAPPY}
                   className={clsx(
                     'flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors duration-150',
                     'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/60',
@@ -156,11 +209,16 @@ export default function QuestionField({
                     )}
                   >
                     {selected && (
-                      <span className="h-2 w-2 rounded-full bg-accent" />
+                      <motion.span
+                        initial={reducedMotion ? false : { scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={SPRING_SNAPPY}
+                        className="h-2 w-2 rounded-full bg-accent"
+                      />
                     )}
                   </span>
                   <span className="text-sm text-ink">{opcao}</span>
-                </label>
+                </motion.label>
               )
             })}
           </div>
@@ -180,10 +238,15 @@ export default function QuestionField({
               const Ilustracao = BRIEFING_ILLUSTRATIONS[opcao.ilustracao]
               const selected = value === opcao.valor
               return (
-                <label
+                <motion.label
                   key={opcao.valor}
+                  whileHover={
+                    reducedMotion ? undefined : { y: -2, scale: 1.02 }
+                  }
+                  whileTap={reducedMotion ? undefined : { scale: 0.97 }}
+                  transition={SPRING_SNAPPY}
                   className={clsx(
-                    'flex cursor-pointer flex-col rounded-xl border p-3 transition-all duration-150',
+                    'relative flex cursor-pointer flex-col rounded-xl border p-3 transition-colors duration-150',
                     'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/60',
                     selected
                       ? 'border-accent/60 bg-accent/10 ring-2 ring-accent'
@@ -199,6 +262,16 @@ export default function QuestionField({
                     className="sr-only"
                     aria-describedby={errorId}
                   />
+                  {selected && (
+                    <motion.span
+                      initial={reducedMotion ? false : { scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent"
+                    >
+                      <SelectedCheck reducedMotion={reducedMotion} />
+                    </motion.span>
+                  )}
                   <Ilustracao className="w-full rounded-lg" />
                   <span className="mt-2.5 text-sm font-medium leading-snug text-ink">
                     {opcao.valor}
@@ -208,7 +281,7 @@ export default function QuestionField({
                       {opcao.descricao}
                     </span>
                   )}
-                </label>
+                </motion.label>
               )
             })}
           </div>
@@ -223,29 +296,36 @@ export default function QuestionField({
       <Ajuda texto={pergunta.ajuda} />
 
       {pergunta.tipo === 'texto' && (
-        <input
-          {...sharedInputProps}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Escreva aqui…"
-          className={clsx(inputBase, 'mt-6 text-lg')}
-        />
+        <>
+          <input
+            {...sharedInputProps}
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Escreva aqui…"
+            className={clsx(inputBase, 'mt-6 text-lg', focusGlowClass)}
+          />
+          <DicaEnter />
+        </>
       )}
 
       {pergunta.tipo === 'numero' && (
-        <input
-          {...sharedInputProps}
-          type="number"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="0"
-          className={clsx(
-            inputBase,
-            'mt-6 text-2xl font-medium [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
-          )}
-        />
+        <>
+          <input
+            {...sharedInputProps}
+            type="number"
+            inputMode="numeric"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="0"
+            className={clsx(
+              inputBase,
+              'mt-6 text-2xl font-medium [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+              focusGlowClass
+            )}
+          />
+          <DicaEnter />
+        </>
       )}
 
       {pergunta.tipo === 'textarea' && (
@@ -260,7 +340,8 @@ export default function QuestionField({
             placeholder="Conte com suas palavras…"
             className={clsx(
               inputBase,
-              'mt-6 min-h-28 resize-none overflow-hidden text-base leading-relaxed'
+              'mt-6 min-h-28 resize-none overflow-hidden text-base leading-relaxed',
+              focusGlowClass
             )}
           />
           <p className="mt-2 text-[11px] font-light text-muted/60">

@@ -34,6 +34,18 @@ export const ILUSTRACAO_LABELS: Record<BriefingIlustracao, string> = {
   conteudo: 'Conteúdo',
   agendamento: 'Agendamento',
   metas: 'Metas',
+  publico_alvo: 'Público-alvo',
+  concorrentes: 'Concorrentes',
+  orcamento: 'Orçamento',
+  prazo: 'Prazo',
+  dominio: 'Domínio',
+  redes_sociais: 'Redes sociais',
+  estoque: 'Estoque',
+  recorrencia: 'Assinatura / recorrência',
+  relatorios: 'Relatórios',
+  seguranca: 'Segurança',
+  mobile: 'Mobile',
+  suporte: 'Suporte',
 }
 
 const NEW_ID_LENGTH = 8
