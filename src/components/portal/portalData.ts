@@ -64,3 +64,37 @@ export function parsePortalByToken(json: Json | null): PortalData | null {
   const parsed = portalDataSchema.safeParse(json)
   return parsed.success ? parsed.data : null
 }
+
+// ---------------------------------------------------------------------------
+// Arquivos do portal (get_portal_files) — Fase 14.
+// ---------------------------------------------------------------------------
+
+const portalFileSchema = z.object({
+  id: z.string(),
+  nome: z.string(),
+  tamanho: z.number().nullish(),
+  tipo_mime: z.string().nullish(),
+  storage_path: z.string(),
+})
+
+export type PortalFile = z.infer<typeof portalFileSchema>
+
+/** Payload de get_portal_files — shape inválido ou lista ausente = []. */
+export function parsePortalFiles(json: Json | null): PortalFile[] {
+  const parsed = z.array(portalFileSchema).safeParse(json)
+  return parsed.success ? parsed.data : []
+}
+
+/** 1536 → "1.5 KB" — sem lib externa, só o essencial para a lista de arquivos. */
+export function formatFileSize(bytes: number | null | undefined): string {
+  if (bytes == null || Number.isNaN(bytes)) return ''
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+  const decimals = unitIndex === 0 ? 0 : 1
+  return `${value.toFixed(decimals)} ${units[unitIndex]}`
+}

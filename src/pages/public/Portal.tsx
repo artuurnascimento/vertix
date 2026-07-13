@@ -1,7 +1,13 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, CheckCheck, ClipboardList, LinkIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  CheckCheck,
+  ClipboardList,
+  LinkIcon,
+  ShieldCheck,
+} from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import LogoMark from '../../components/ui/LogoMark'
@@ -11,13 +17,19 @@ import {
   formatDateBR,
   getProposalStatusMeta,
 } from '../../lib/commercial'
-import { parsePortalByToken } from '../../components/portal/portalData'
+import {
+  parsePortalByToken,
+  parsePortalFiles,
+} from '../../components/portal/portalData'
 import type {
   PortalData,
   PortalProposta,
 } from '../../components/portal/portalData'
 import PortalStepper from '../../components/portal/PortalStepper'
 import PortalTimeline from '../../components/portal/PortalTimeline'
+import PortalFiles from '../../components/portal/PortalFiles'
+import PortalApproval from '../../components/portal/PortalApproval'
+import PortalTicketForm from '../../components/portal/PortalTicketForm'
 
 /** Código Postgres para uuid malformado — tratado como link inválido. */
 const INVALID_UUID_CODE = '22P02'
@@ -199,7 +211,23 @@ function ProposalRow({ proposta }: { proposta: PortalProposta }) {
   )
 }
 
-function PortalContent({ data }: { data: PortalData }) {
+function DeliveryApprovedSeal() {
+  return (
+    <div className="flex items-center gap-3.5">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10">
+        <ShieldCheck aria-hidden className="h-[18px] w-[18px] text-emerald-300" />
+      </span>
+      <div>
+        <p className="text-sm font-medium text-ink">Entrega aprovada</p>
+        <p className="mt-0.5 text-sm font-light text-muted">
+          Obrigado por revisar o projeto com a gente.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function PortalContent({ data, token }: { data: PortalData; token: string }) {
   const { projeto, cliente, briefing, propostas, atividades } = data
   const tipoMeta = getTipoServicoMeta(projeto.tipo_servico)
 
@@ -207,6 +235,23 @@ function PortalContent({ data }: { data: PortalData }) {
     briefing != null && briefing.status !== 'preenchido' && Boolean(briefing.token)
   const showBriefingDone = briefing != null && briefing.status === 'preenchido'
   const showBriefingCard = showBriefingCta || showBriefingDone
+
+  const showApprovalCard = projeto.status === 'revisao'
+  const showApprovedSeal = projeto.status === 'entregue'
+
+  const { data: files } = useQuery({
+    queryKey: ['portal-files', token],
+    enabled: Boolean(token),
+    retry: false,
+    queryFn: async () => {
+      const { data: payload, error } = await supabase.rpc('get_portal_files', {
+        p_token: token,
+      })
+      if (error) throw new Error(error.message)
+      return parsePortalFiles(payload)
+    },
+  })
+  const showFilesCard = Boolean(files && files.length > 0)
 
   let cardIndex = 0
 
@@ -242,6 +287,21 @@ function PortalContent({ data }: { data: PortalData }) {
           <PortalStepper status={projeto.status} />
         </PortalCard>
 
+        {(showApprovalCard || showApprovedSeal) && (
+          <PortalCard
+            index={cardIndex++}
+            className={
+              showApprovalCard ? 'border-accent/20 bg-accent/[0.04]' : undefined
+            }
+          >
+            {showApprovalCard ? (
+              <PortalApproval token={token} />
+            ) : (
+              <DeliveryApprovedSeal />
+            )}
+          </PortalCard>
+        )}
+
         {showBriefingCard && (
           <PortalCard
             index={cardIndex++}
@@ -267,8 +327,18 @@ function PortalContent({ data }: { data: PortalData }) {
           </PortalCard>
         )}
 
+        {showFilesCard && (
+          <PortalCard index={cardIndex++} title="Arquivos">
+            <PortalFiles files={files ?? []} />
+          </PortalCard>
+        )}
+
         <PortalCard index={cardIndex++} title="Últimas atualizações">
           <PortalTimeline atividades={atividades} />
+        </PortalCard>
+
+        <PortalCard index={cardIndex++}>
+          <PortalTicketForm token={token} />
         </PortalCard>
       </div>
 
@@ -313,5 +383,5 @@ export default function Portal() {
   if (isLoading) return <LoadingScreen />
   if (isError || !data) return <InvalidLinkScreen />
 
-  return <PortalContent data={data} />
+  return <PortalContent data={data} token={token ?? ''} />
 }

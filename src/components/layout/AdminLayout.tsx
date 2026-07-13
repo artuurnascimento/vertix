@@ -1,10 +1,13 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  BarChart3,
   ChevronRight,
   ClipboardList,
+  FileSignature,
   FileText,
   KanbanSquare,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Plus,
   Users,
@@ -21,7 +24,10 @@ const NAV_ITEMS = [
   { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
   { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
   { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
+  { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
   { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
+  { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
+  { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
 ] as const
 
 const SECTION_TITLES: Record<string, string> = {
@@ -29,7 +35,10 @@ const SECTION_TITLES: Record<string, string> = {
   '/admin/projetos': 'Projetos',
   '/admin/briefings': 'Briefings',
   '/admin/propostas': 'Propostas',
+  '/admin/contratos': 'Contratos',
   '/admin/financeiro': 'Financeiro',
+  '/admin/relatorios': 'Relatórios',
+  '/admin/suporte': 'Suporte',
 }
 
 const ROLE_LABELS: Record<string, string> = {

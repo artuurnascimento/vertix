@@ -10,9 +10,13 @@ import ProjectDetail from './pages/ProjectDetail'
 import Propostas from './pages/Propostas'
 import Briefings from './pages/Briefings'
 import Financeiro from './pages/Financeiro'
+import Relatorios from './pages/Relatorios'
+import Contratos from './pages/Contratos'
+import Suporte from './pages/Suporte'
 import BriefingForm from './pages/public/BriefingForm'
 import Proposta from './pages/public/Proposta'
 import Portal from './pages/public/Portal'
+import ContractSign from './pages/public/ContractSign'
 
 export default function App() {
   return (
@@ -23,6 +27,7 @@ export default function App() {
       <Route path="/briefing/:token" element={<BriefingForm />} />
       <Route path="/proposta/:token" element={<Proposta />} />
       <Route path="/portal/:token" element={<Portal />} />
+      <Route path="/contrato/:token" element={<ContractSign />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
@@ -34,6 +39,9 @@ export default function App() {
           <Route path="briefings" element={<Briefings />} />
           <Route path="propostas" element={<Propostas />} />
           <Route path="financeiro" element={<Financeiro />} />
+          <Route path="relatorios" element={<Relatorios />} />
+          <Route path="contratos" element={<Contratos />} />
+          <Route path="suporte" element={<Suporte />} />
         </Route>
       </Route>
 

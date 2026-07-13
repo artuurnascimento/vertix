@@ -23,6 +23,10 @@ import {
 import { formatResposta, parsePerguntas } from '../lib/briefing'
 import ActivityTimeline from '../components/projects/ActivityTimeline'
 import NoteComposer from '../components/projects/NoteComposer'
+import TasksCard from '../components/projects/TasksCard'
+import FilesCard from '../components/projects/FilesCard'
+import HoursCard from '../components/projects/HoursCard'
+import ContractSection from '../components/projects/ContractSection'
 import ProposalsSection from '../components/proposals/ProposalsSection'
 import PortalLinkButton from '../components/portal/PortalLinkButton'
 
@@ -266,7 +270,16 @@ export default function ProjectDetail() {
             {formatRelativeTime(project.updated_at)}
           </p>
         </div>
-        <PortalLinkButton portalToken={project.portal_token} />
+        <div className="flex flex-wrap items-start gap-2">
+          <PortalLinkButton portalToken={project.portal_token} />
+          <ContractSection
+            projectId={project.id}
+            projectNome={project.nome}
+            tipoServico={project.tipo_servico}
+            clienteNome={project.clients?.nome ?? ''}
+            clienteEmpresa={project.clients?.empresa ?? null}
+          />
+        </div>
       </div>
 
       {/* Briefing */}
@@ -393,6 +406,15 @@ export default function ProjectDetail() {
 
       {/* Propostas */}
       <ProposalsSection projectId={project.id} />
+
+      {/* Tarefas, Arquivos e Horas */}
+      <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <TasksCard projectId={project.id} />
+        <FilesCard projectId={project.id} />
+      </div>
+      <div className="mt-6">
+        <HoursCard projectId={project.id} />
+      </div>
 
       {/* Atividade */}
       <section aria-labelledby="activity-heading" className="mt-10">
