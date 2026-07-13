@@ -76,6 +76,57 @@ export type Database = {
           },
         ]
       }
+      agenda_events: {
+        Row: {
+          cor: string
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          fim: string
+          id: string
+          inicio: string
+          project_id: string | null
+          titulo: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          fim: string
+          id?: string
+          inicio: string
+          project_id?: string | null
+          titulo: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          fim?: string
+          id?: string
+          inicio?: string
+          project_id?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_events_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       briefing_templates: {
         Row: {
           id: string

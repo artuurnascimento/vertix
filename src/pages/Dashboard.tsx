@@ -1,4 +1,5 @@
 import AcoesPendentes from '../components/dashboard/AcoesPendentes'
+import AgendaCard from '../components/dashboard/AgendaCard'
 import AtividadesCard from '../components/dashboard/AtividadesCard'
 import DonutTipos from '../components/dashboard/DonutTipos'
 import EtapasBars from '../components/dashboard/EtapasBars'
@@ -40,12 +41,17 @@ export default function Dashboard() {
         <AcoesPendentes />
       </div>
 
-      {/* Resumo financeiro / Distribuição por tipo */}
+      {/* Agenda semanal / Distribuição por tipo */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <ResumoFinanceiro />
+          <AgendaCard />
         </div>
         <DonutTipos />
+      </div>
+
+      {/* Resumo financeiro */}
+      <div className="mt-6 grid grid-cols-1 gap-6">
+        <ResumoFinanceiro />
       </div>
     </div>
   )
