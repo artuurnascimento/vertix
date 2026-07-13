@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { BRIEFING_FIELD_TIPOS } from '../../lib/briefing'
-import type { BriefingFieldTipo, BriefingPergunta } from '../../lib/briefing'
+import { BRIEFING_FIELD_TIPOS, BRIEFING_ILUSTRACOES } from '../../lib/briefing'
+import type {
+  BriefingFieldTipo,
+  BriefingIlustracao,
+  BriefingOpcaoVisual,
+  BriefingPergunta,
+} from '../../lib/briefing'
 import { OPCOES_MIN } from '../../lib/briefing'
-import { TIPO_CAMPO_LABELS } from './draft'
+import { ILUSTRACAO_LABELS, TIPO_CAMPO_LABELS } from './draft'
+import { BRIEFING_ILLUSTRATIONS } from './illustrations'
 
 interface PerguntaCardProps {
   pergunta: BriefingPergunta
@@ -22,6 +28,13 @@ const inputClass =
 
 const orderButtonClass =
   'rounded-md p-1 text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink disabled:pointer-events-none disabled:opacity-25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent'
+
+/** Ilustração padrão ao criar/migrar opções visuais sem ilustração definida. */
+const ILUSTRACAO_PADRAO: BriefingIlustracao = BRIEFING_ILUSTRACOES[0]
+
+function createOpcaoVisual(): BriefingOpcaoVisual {
+  return { valor: '', ilustracao: ILUSTRACAO_PADRAO }
+}
 
 function ObrigatoriaSwitch({
   checked,
@@ -120,6 +133,110 @@ function OpcoesEditor({
   )
 }
 
+function OpcoesVisuaisEditor({
+  pergunta,
+  onChange,
+}: {
+  pergunta: BriefingPergunta
+  onChange: (next: BriefingPergunta) => void
+}) {
+  const opcoes = pergunta.opcoes_visuais ?? []
+
+  const setOpcoes = (next: BriefingOpcaoVisual[]) => {
+    onChange({ ...pergunta, opcoes_visuais: next })
+  }
+
+  const updateOpcao = (
+    opcaoIndex: number,
+    patch: Partial<BriefingOpcaoVisual>
+  ) => {
+    setOpcoes(
+      opcoes.map((atual, i) =>
+        i === opcaoIndex ? { ...atual, ...patch } : atual
+      )
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-white/5 bg-bg/40 p-3">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-muted/70">
+        Opções visuais (mínimo {OPCOES_MIN})
+      </p>
+      <div className="mt-2.5 flex flex-col gap-2.5">
+        {opcoes.map((opcao, opcaoIndex) => {
+          const Ilustracao = BRIEFING_ILLUSTRATIONS[opcao.ilustracao]
+          return (
+            <div
+              key={opcaoIndex}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-white/5 bg-surface-1/60 p-2"
+            >
+              <span className="shrink-0 overflow-hidden rounded-md border border-white/5">
+                <Ilustracao aria-hidden className="h-10 w-auto" />
+              </span>
+              <input
+                type="text"
+                value={opcao.valor}
+                onChange={(e) =>
+                  updateOpcao(opcaoIndex, { valor: e.target.value })
+                }
+                placeholder={`Opção ${opcaoIndex + 1}`}
+                aria-label={`Valor da opção visual ${opcaoIndex + 1}`}
+                className={`${inputClass} min-w-28 flex-1`}
+              />
+              <input
+                type="text"
+                value={opcao.descricao ?? ''}
+                onChange={(e) =>
+                  updateOpcao(opcaoIndex, {
+                    descricao: e.target.value || undefined,
+                  })
+                }
+                placeholder="Descrição (opcional)"
+                aria-label={`Descrição da opção visual ${opcaoIndex + 1}`}
+                className={`${inputClass} min-w-28 flex-1`}
+              />
+              <select
+                value={opcao.ilustracao}
+                onChange={(e) =>
+                  updateOpcao(opcaoIndex, {
+                    ilustracao: e.target.value as BriefingIlustracao,
+                  })
+                }
+                aria-label={`Ilustração da opção visual ${opcaoIndex + 1}`}
+                className="rounded-lg border border-white/5 bg-surface-1 px-2.5 py-2 text-xs text-ink outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25"
+              >
+                {BRIEFING_ILUSTRACOES.map((ilustracao) => (
+                  <option key={ilustracao} value={ilustracao}>
+                    {ILUSTRACAO_LABELS[ilustracao]}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() =>
+                  setOpcoes(opcoes.filter((_, i) => i !== opcaoIndex))
+                }
+                aria-label={`Remover opção visual ${opcaoIndex + 1}`}
+                className="rounded-md p-1.5 text-muted/60 transition-colors duration-150 hover:bg-white/5 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpcoes([...opcoes, createOpcaoVisual()])}
+        className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:border-accent/40 hover:bg-accent/10 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Adicionar opção visual
+      </button>
+    </div>
+  )
+}
+
 export default function PerguntaCard({
   pergunta,
   index,
@@ -135,11 +252,37 @@ export default function PerguntaCard({
 
   const handleTipoChange = (tipo: BriefingFieldTipo) => {
     if (tipo === 'select') {
-      const opcoes = pergunta.opcoes ?? []
+      // escolha_visual → select: os valores das opções visuais migram.
+      const existentes = pergunta.opcoes ?? []
+      const migradas =
+        existentes.length > 0
+          ? existentes
+          : (pergunta.opcoes_visuais ?? [])
+              .map((opcao) => opcao.valor)
+              .filter((valor) => valor.trim() !== '')
       onChange({
         ...pergunta,
         tipo,
-        opcoes: opcoes.length > 0 ? opcoes : ['', ''],
+        opcoes: migradas.length > 0 ? migradas : ['', ''],
+      })
+      return
+    }
+    if (tipo === 'escolha_visual') {
+      // select → escolha_visual: cada opção vira o valor de um card visual.
+      const existentes = pergunta.opcoes_visuais ?? []
+      const migradas =
+        existentes.length > 0
+          ? existentes
+          : (pergunta.opcoes ?? [])
+              .filter((opcao) => opcao.trim() !== '')
+              .map((valor) => ({ valor, ilustracao: ILUSTRACAO_PADRAO }))
+      onChange({
+        ...pergunta,
+        tipo,
+        opcoes_visuais:
+          migradas.length > 0
+            ? migradas
+            : [createOpcaoVisual(), createOpcaoVisual()],
       })
       return
     }
@@ -257,8 +400,23 @@ export default function PerguntaCard({
           className={`${inputClass} mt-3`}
         />
 
+        <input
+          type="text"
+          value={pergunta.ajuda ?? ''}
+          onChange={(e) =>
+            onChange({ ...pergunta, ajuda: e.target.value || undefined })
+          }
+          placeholder="Texto de apoio (opcional) — explica em linguagem simples por que você pergunta isso"
+          aria-label={`Texto de apoio da pergunta ${index + 1} (opcional)`}
+          className={`${inputClass} mt-2 text-xs`}
+        />
+
         {pergunta.tipo === 'select' && (
           <OpcoesEditor pergunta={pergunta} onChange={onChange} />
+        )}
+
+        {pergunta.tipo === 'escolha_visual' && (
+          <OpcoesVisuaisEditor pergunta={pergunta} onChange={onChange} />
         )}
 
         {error && (

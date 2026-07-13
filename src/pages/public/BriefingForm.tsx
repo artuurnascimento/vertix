@@ -1,31 +1,31 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CheckCheck, LinkIcon } from 'lucide-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import LogoMark from '../../components/ui/LogoMark'
-import {
-  parseBriefingByToken,
-  parseSubmitResult,
-} from '../../lib/briefing'
+import WizardIntro from '../../components/public-briefing/WizardIntro'
+import WizardProgress from '../../components/public-briefing/WizardProgress'
+import WizardReview from '../../components/public-briefing/WizardReview'
+import QuestionField from '../../components/public-briefing/QuestionField'
+import { parseBriefingByToken, parseSubmitResult } from '../../lib/briefing'
 import type { BriefingPergunta } from '../../lib/briefing'
 
 /** Código Postgres para uuid malformado — tratado como link inválido. */
 const INVALID_UUID_CODE = '22P02'
 
-const FIELD_STAGGER_S = 0.05
+/** Delay entre selecionar um card visual e avançar automaticamente. */
+const AUTO_ADVANCE_MS = 350
 
-type FieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-
-const fieldClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-sm text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
+/** Deslocamento horizontal do slide entre telas do wizard. */
+const SLIDE_PX = 36
 
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-bg px-4 py-10 font-kanit sm:px-6 sm:py-16">
-      <div className="mx-auto w-full max-w-2xl">
+    <div className="min-h-screen bg-bg px-4 py-8 font-kanit sm:px-6 sm:py-14">
+      <div className="mx-auto w-full max-w-xl">
         <header className="flex items-center gap-2.5">
           <LogoMark className="h-7 w-7" />
           <span className="text-sm font-semibold tracking-[0.35em] text-ink">
@@ -70,12 +70,7 @@ function StatusScreen({
 function SuccessCheck() {
   return (
     <span className="flex h-16 w-16 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10">
-      <motion.svg
-        viewBox="0 0 24 24"
-        fill="none"
-        className="h-7 w-7"
-        aria-hidden
-      >
+      <motion.svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
         <motion.path
           d="M4 12.5 9.5 18 20 6.5"
           stroke="#34d399"
@@ -129,121 +124,265 @@ function SuccessScreen() {
   )
 }
 
-interface BriefingFieldProps {
-  pergunta: BriefingPergunta
-  value: string
-  error?: string
-  index: number
-  onChange: (value: string) => void
-  registerRef: (element: FieldElement | null) => void
+// ---------------------------------------------------------------------------
+// Wizard — uma pergunta por tela
+// ---------------------------------------------------------------------------
+
+type WizardStage =
+  | { kind: 'intro' }
+  | { kind: 'pergunta'; index: number }
+  | { kind: 'revisao' }
+
+interface BriefingWizardProps {
+  perguntas: BriefingPergunta[]
+  projetoNome: string
+  isSubmitting: boolean
+  rootError: string | null
+  onSubmit: (respostas: Record<string, string>) => void
 }
 
-function BriefingField({
-  pergunta,
-  value,
-  error,
-  index,
-  onChange,
-  registerRef,
-}: BriefingFieldProps) {
-  const errorId = `erro-${pergunta.id}`
-  const shared = {
-    id: `campo-${pergunta.id}`,
-    'aria-invalid': Boolean(error),
-    'aria-describedby': error ? errorId : undefined,
+const ghostButtonClass =
+  'rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+
+function BriefingWizard({
+  perguntas,
+  projetoNome,
+  isSubmitting,
+  rootError,
+  onSubmit,
+}: BriefingWizardProps) {
+  const reducedMotion = useReducedMotion()
+  const [stage, setStage] = useState<WizardStage>({ kind: 'intro' })
+  const [direction, setDirection] = useState(1)
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [stepError, setStepError] = useState<string | null>(null)
+  const [shakeKey, setShakeKey] = useState(0)
+  const [fromReview, setFromReview] = useState(false)
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearAutoAdvance = () => {
+    if (autoAdvanceTimer.current) {
+      clearTimeout(autoAdvanceTimer.current)
+      autoAdvanceTimer.current = null
+    }
   }
+  useEffect(() => clearAutoAdvance, [])
+
+  const goTo = (next: WizardStage, dir: number) => {
+    clearAutoAdvance()
+    setDirection(dir)
+    setStepError(null)
+    setStage(next)
+  }
+
+  /** Avança sem validar (Pular, auto-avanço visual e pós-validação). */
+  const goForward = () => {
+    if (stage.kind !== 'pergunta') return
+    if (fromReview) {
+      setFromReview(false)
+      goTo({ kind: 'revisao' }, 1)
+      return
+    }
+    if (stage.index >= perguntas.length - 1) {
+      goTo({ kind: 'revisao' }, 1)
+      return
+    }
+    goTo({ kind: 'pergunta', index: stage.index + 1 }, 1)
+  }
+
+  /** Continuar: valida a pergunta atual antes de avançar. */
+  const advance = () => {
+    if (stage.kind !== 'pergunta') return
+    const pergunta = perguntas[stage.index]
+    const vazio = (values[pergunta.id] ?? '').trim() === ''
+    if (pergunta.obrigatoria && vazio) {
+      setStepError(
+        pergunta.tipo === 'select' || pergunta.tipo === 'escolha_visual'
+          ? 'Escolha uma das opções para continuar.'
+          : 'Essa a gente precisa saber para continuar.'
+      )
+      setShakeKey((k) => k + 1)
+      return
+    }
+    goForward()
+  }
+
+  const back = () => {
+    if (stage.kind === 'revisao') {
+      goTo({ kind: 'pergunta', index: perguntas.length - 1 }, -1)
+      return
+    }
+    if (stage.kind !== 'pergunta') return
+    if (fromReview) {
+      setFromReview(false)
+      goTo({ kind: 'revisao' }, -1)
+      return
+    }
+    if (stage.index > 0) goTo({ kind: 'pergunta', index: stage.index - 1 }, -1)
+  }
+
+  const handleVisualSelect = (perguntaId: string, valor: string) => {
+    setValues((prev) => ({ ...prev, [perguntaId]: valor }))
+    setStepError(null)
+    clearAutoAdvance()
+    autoAdvanceTimer.current = setTimeout(goForward, AUTO_ADVANCE_MS)
+  }
+
+  const handleSubmit = () => {
+    const respostas: Record<string, string> = {}
+    for (const pergunta of perguntas) {
+      const value = (values[pergunta.id] ?? '').trim()
+      if (value !== '') respostas[pergunta.id] = value
+    }
+    onSubmit(respostas)
+  }
+
+  const variants = {
+    enter: (dir: number) => ({ opacity: 0, x: reducedMotion ? 0 : dir * SLIDE_PX }),
+    center: { opacity: 1, x: 0 },
+    exit: (dir: number) => ({ opacity: 0, x: reducedMotion ? 0 : dir * -SLIDE_PX }),
+  }
+
+  const stageKey =
+    stage.kind === 'pergunta' ? `pergunta-${stage.index}` : stage.kind
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * FIELD_STAGGER_S }}
-      className="flex flex-col gap-2"
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+      className="mt-8 sm:mt-12"
     >
-      <label
-        htmlFor={`campo-${pergunta.id}`}
-        className="text-sm font-medium leading-snug text-ink"
-      >
-        {pergunta.label}
-        {pergunta.obrigatoria && (
-          <span aria-hidden className="ml-1 text-accent">
-            *
-          </span>
-        )}
-      </label>
-
-      {pergunta.tipo === 'texto' && (
-        <input
-          {...shared}
-          ref={registerRef}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Sua resposta"
-          className={fieldClass}
+      {stage.kind !== 'intro' && (
+        <WizardProgress
+          current={stage.kind === 'pergunta' ? stage.index : 0}
+          total={perguntas.length}
+          isReview={stage.kind === 'revisao'}
         />
       )}
 
-      {pergunta.tipo === 'numero' && (
-        <input
-          {...shared}
-          ref={registerRef}
-          type="number"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="0"
-          className={fieldClass}
-        />
-      )}
-
-      {pergunta.tipo === 'textarea' && (
-        <textarea
-          {...shared}
-          ref={registerRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={4}
-          placeholder="Conte com detalhes…"
-          className={`${fieldClass} min-h-28 resize-y leading-relaxed`}
-        />
-      )}
-
-      {pergunta.tipo === 'select' && (
-        <select
-          {...shared}
-          ref={registerRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`${fieldClass} appearance-none`}
+      <AnimatePresence mode="wait" initial={false} custom={direction}>
+        <motion.div
+          key={stageKey}
+          custom={direction}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            duration: reducedMotion ? 0.15 : 0.28,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}
         >
-          <option value="">Selecionar…</option>
-          {(pergunta.opcoes ?? []).map((opcao) => (
-            <option key={opcao} value={opcao}>
-              {opcao}
-            </option>
-          ))}
-        </select>
-      )}
+          {stage.kind === 'intro' && (
+            <WizardIntro
+              projetoNome={projetoNome}
+              totalPerguntas={perguntas.length}
+              onStart={() => goTo({ kind: 'pergunta', index: 0 }, 1)}
+            />
+          )}
 
-      {error && (
-        <span id={errorId} className="text-xs text-red-400">
-          {error}
-        </span>
-      )}
+          {stage.kind === 'pergunta' && (() => {
+            const pergunta = perguntas[stage.index]
+            const errorId = stepError ? `erro-${pergunta.id}` : undefined
+            const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault()
+              advance()
+            }
+            return (
+              <form
+                onSubmit={handleFormSubmit}
+                noValidate
+                className="flex min-h-[340px] flex-col rounded-2xl border border-white/5 bg-surface-1 p-5 shadow-[0_24px_80px_-40px_rgba(108,91,242,0.3)] sm:p-8"
+              >
+                <motion.div
+                  key={shakeKey}
+                  animate={
+                    shakeKey > 0 && !reducedMotion
+                      ? { x: [0, -8, 8, -5, 5, 0] }
+                      : { x: 0 }
+                  }
+                  transition={{ duration: 0.4 }}
+                >
+                  <QuestionField
+                    pergunta={pergunta}
+                    value={values[pergunta.id] ?? ''}
+                    errorId={errorId}
+                    onChange={(value) =>
+                      setValues((prev) => ({ ...prev, [pergunta.id]: value }))
+                    }
+                    onAdvance={advance}
+                    onVisualSelect={(valor) =>
+                      handleVisualSelect(pergunta.id, valor)
+                    }
+                  />
+                </motion.div>
+
+                <div aria-live="polite" className="mt-3 min-h-6">
+                  {stepError && (
+                    <p id={`erro-${pergunta.id}`} className="text-sm text-red-400">
+                      {stepError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-auto flex items-center gap-2 pt-6">
+                  {(stage.index > 0 || fromReview) && (
+                    <button type="button" onClick={back} className={ghostButtonClass}>
+                      Voltar
+                    </button>
+                  )}
+                  <div className="flex-1" />
+                  {!pergunta.obrigatoria && (
+                    <button
+                      type="button"
+                      onClick={goForward}
+                      className={`${ghostButtonClass} text-xs`}
+                    >
+                      Pular
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </form>
+            )
+          })()}
+
+          {stage.kind === 'revisao' && (
+            <WizardReview
+              perguntas={perguntas}
+              values={values}
+              isSubmitting={isSubmitting}
+              rootError={rootError}
+              onEdit={(index) => {
+                setFromReview(true)
+                goTo({ kind: 'pergunta', index }, -1)
+              }}
+              onBack={back}
+              onSubmit={handleSubmit}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </motion.div>
   )
 }
 
+// ---------------------------------------------------------------------------
+// Página pública — busca por token, estados e envio
+// ---------------------------------------------------------------------------
+
 export default function BriefingForm() {
   const { token } = useParams<{ token: string }>()
-  const [values, setValues] = useState<Record<string, string>>({})
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [rootError, setRootError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState<'success' | 'ja_preenchido' | null>(
     null
   )
-  const fieldRefs = useRef(new Map<string, FieldElement>())
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['public-briefing', token],
@@ -305,104 +444,18 @@ export default function BriefingForm() {
   if (isError || !data) return <InvalidLinkScreen />
   if (data.briefing.status === 'preenchido') return <AlreadySubmittedScreen />
 
-  const { perguntas, projeto_nome: projetoNome } = data
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setRootError(null)
-
-    const nextErrors: Record<string, string> = {}
-    for (const pergunta of perguntas) {
-      const value = (values[pergunta.id] ?? '').trim()
-      if (pergunta.obrigatoria && value === '') {
-        nextErrors[pergunta.id] =
-          pergunta.tipo === 'select'
-            ? 'Selecione uma opção para continuar.'
-            : 'Este campo é obrigatório.'
-      }
-    }
-    setErrors(nextErrors)
-
-    const firstInvalid = perguntas.find((p) => nextErrors[p.id])
-    if (firstInvalid) {
-      const element = fieldRefs.current.get(firstInvalid.id)
-      element?.focus()
-      element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      return
-    }
-
-    const respostas: Record<string, string> = {}
-    for (const pergunta of perguntas) {
-      const value = (values[pergunta.id] ?? '').trim()
-      if (value !== '') respostas[pergunta.id] = value
-    }
-    mutation.mutate(respostas)
-  }
-
   return (
     <Shell>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-        className="mt-10 sm:mt-14"
-      >
-        <h1 className="hero-heading text-3xl font-bold leading-tight sm:text-4xl">
-          Briefing — {projetoNome}
-        </h1>
-        <p className="mt-3 text-sm font-light leading-relaxed text-muted">
-          Suas respostas orientam cada decisão do projeto — leva poucos
-          minutos.
-        </p>
-
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="mt-8 rounded-2xl border border-white/5 bg-surface-1 p-5 shadow-[0_24px_80px_-40px_rgba(108,91,242,0.3)] sm:p-8"
-        >
-          <div className="flex flex-col gap-7">
-            {perguntas.map((pergunta, index) => (
-              <BriefingField
-                key={pergunta.id}
-                pergunta={pergunta}
-                index={index}
-                value={values[pergunta.id] ?? ''}
-                error={errors[pergunta.id]}
-                onChange={(value) =>
-                  setValues((prev) => ({ ...prev, [pergunta.id]: value }))
-                }
-                registerRef={(element) => {
-                  if (element) fieldRefs.current.set(pergunta.id, element)
-                  else fieldRefs.current.delete(pergunta.id)
-                }}
-              />
-            ))}
-          </div>
-
-          {rootError && (
-            <p
-              role="alert"
-              className="mt-6 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"
-            >
-              {rootError}
-            </p>
-          )}
-
-          <div className="mt-8 flex flex-col gap-3">
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="w-full rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
-              {mutation.isPending ? 'Enviando…' : 'Enviar briefing'}
-            </button>
-            <p className="text-center text-[11px] font-light text-muted/70">
-              Campos marcados com <span className="text-accent">*</span> são
-              obrigatórios.
-            </p>
-          </div>
-        </form>
-      </motion.div>
+      <BriefingWizard
+        perguntas={data.perguntas}
+        projetoNome={data.projeto_nome}
+        isSubmitting={mutation.isPending}
+        rootError={rootError}
+        onSubmit={(respostas) => {
+          setRootError(null)
+          mutation.mutate(respostas)
+        }}
+      />
     </Shell>
   )
 }

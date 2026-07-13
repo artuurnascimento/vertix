@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Eye } from 'lucide-react'
 import type { BriefingPergunta } from '../../lib/briefing'
+import { BRIEFING_ILLUSTRATIONS } from './illustrations'
 
 /**
  * Réplica visual read-only do form público (/briefing/:token). O BriefingForm
@@ -25,6 +26,12 @@ function PreviewField({ pergunta }: { pergunta: BriefingPergunta }) {
           </span>
         )}
       </span>
+
+      {pergunta.ajuda && (
+        <span className="-mt-1 text-xs font-light leading-relaxed text-muted">
+          {pergunta.ajuda}
+        </span>
+      )}
 
       {pergunta.tipo === 'texto' && (
         <input
@@ -59,6 +66,32 @@ function PreviewField({ pergunta }: { pergunta: BriefingPergunta }) {
               </option>
             ))}
         </select>
+      )}
+
+      {pergunta.tipo === 'escolha_visual' && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {(pergunta.opcoes_visuais ?? [])
+            .filter((opcao) => opcao.valor.trim() !== '')
+            .map((opcao) => {
+              const Ilustracao = BRIEFING_ILLUSTRATIONS[opcao.ilustracao]
+              return (
+                <div
+                  key={opcao.valor}
+                  className="flex cursor-default flex-col gap-2 rounded-xl border border-white/5 bg-surface-2 p-4 opacity-80"
+                >
+                  <Ilustracao aria-hidden className="h-16 w-full" />
+                  <span className="text-sm font-medium leading-snug text-ink">
+                    {opcao.valor}
+                  </span>
+                  {opcao.descricao && (
+                    <span className="text-xs font-light leading-relaxed text-muted">
+                      {opcao.descricao}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+        </div>
       )}
     </div>
   )

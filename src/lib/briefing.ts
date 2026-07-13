@@ -11,16 +11,54 @@ export const BRIEFING_FIELD_TIPOS = [
   'textarea',
   'select',
   'numero',
+  'escolha_visual',
 ] as const
 
 export type BriefingFieldTipo = (typeof BRIEFING_FIELD_TIPOS)[number]
+
+/**
+ * Chaves das ilustrações disponíveis para perguntas visuais. O catálogo de
+ * SVGs (componentes) vive em src/components/briefings/illustrations e DEVE
+ * cobrir todas as chaves — a UI usa Record<BriefingIlustracao, ...>.
+ */
+export const BRIEFING_ILUSTRACOES = [
+  'loja',
+  'catalogo',
+  'pagamento',
+  'entrega',
+  'identidade_visual',
+  'estilo_minimalista',
+  'estilo_vibrante',
+  'estilo_premium',
+  'automacao',
+  'usuarios',
+  'integracoes',
+  'site_paginas',
+  'conteudo',
+  'agendamento',
+  'metas',
+] as const
+
+export type BriefingIlustracao = (typeof BRIEFING_ILUSTRACOES)[number]
+
+const opcaoVisualSchema = z.object({
+  valor: z.string(),
+  descricao: z.string().optional(),
+  ilustracao: z.enum(BRIEFING_ILUSTRACOES),
+})
+
+export type BriefingOpcaoVisual = z.infer<typeof opcaoVisualSchema>
 
 const perguntaSchema = z.object({
   id: z.string(),
   label: z.string(),
   tipo: z.enum(BRIEFING_FIELD_TIPOS),
   obrigatoria: z.boolean().optional().default(false),
+  /** Texto de apoio em linguagem leiga, exibido abaixo da pergunta. */
+  ajuda: z.string().optional(),
   opcoes: z.array(z.string()).optional(),
+  /** Opções ilustradas — apenas para tipo 'escolha_visual'. */
+  opcoes_visuais: z.array(opcaoVisualSchema).optional(),
 })
 
 export type BriefingPergunta = z.infer<typeof perguntaSchema>
@@ -129,6 +167,15 @@ export function validatePerguntasDraft(
           `Perguntas de seleção precisam de pelo menos ${OPCOES_MIN} opções preenchidas.`
       }
     }
+    if (pergunta.tipo === 'escolha_visual') {
+      const preenchidas = (pergunta.opcoes_visuais ?? []).filter(
+        (opcao) => opcao.valor.trim() !== ''
+      )
+      if (preenchidas.length < OPCOES_MIN) {
+        fieldErrors[pergunta.id] =
+          `Perguntas visuais precisam de pelo menos ${OPCOES_MIN} opções preenchidas.`
+      }
+    }
   }
 
   const success = rootError === null && Object.keys(fieldErrors).length === 0
@@ -144,19 +191,35 @@ export function normalizePerguntasForSave(
   perguntas: BriefingPergunta[]
 ): BriefingPergunta[] {
   return perguntas.map((pergunta) => {
+    const ajuda = pergunta.ajuda?.trim()
     const base: BriefingPergunta = {
       id: pergunta.id,
       label: pergunta.label.trim(),
       tipo: pergunta.tipo,
       obrigatoria: pergunta.obrigatoria,
+      ...(ajuda ? { ajuda } : {}),
     }
-    if (pergunta.tipo !== 'select') return base
-    return {
-      ...base,
-      opcoes: (pergunta.opcoes ?? [])
-        .map((opcao) => opcao.trim())
-        .filter((opcao) => opcao !== ''),
+    if (pergunta.tipo === 'select') {
+      return {
+        ...base,
+        opcoes: (pergunta.opcoes ?? [])
+          .map((opcao) => opcao.trim())
+          .filter((opcao) => opcao !== ''),
+      }
     }
+    if (pergunta.tipo === 'escolha_visual') {
+      return {
+        ...base,
+        opcoes_visuais: (pergunta.opcoes_visuais ?? [])
+          .map((opcao) => ({
+            ...opcao,
+            valor: opcao.valor.trim(),
+            descricao: opcao.descricao?.trim() || undefined,
+          }))
+          .filter((opcao) => opcao.valor !== ''),
+      }
+    }
+    return base
   })
 }
 

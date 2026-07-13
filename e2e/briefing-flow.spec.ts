@@ -50,6 +50,36 @@ function fetchBriefingToken(projectName: string): string {
   )
 }
 
+/**
+ * O template ecommerce novo (com pergunta escolha_visual) é gravado por um
+ * processo paralelo. Espera (leitura, poll) até ele estar no banco; se o
+ * timeout estourar, segue com o template atual — o wizard e o loop de
+ * navegação abaixo funcionam com qualquer conjunto de perguntas.
+ */
+const TEMPLATE_VISUAL_SQL = `select count(*)
+  from public.briefing_templates bt, jsonb_array_elements(bt.perguntas) p
+  where bt.tipo_servico = 'ecommerce' and p->>'tipo' = 'escolha_visual'`
+
+async function waitForTemplateEscolhaVisual(maxMs = 600_000): Promise<void> {
+  const start = Date.now()
+  for (;;) {
+    let count = 0
+    try {
+      count = Number(queryDb(TEMPLATE_VISUAL_SQL))
+    } catch {
+      // Banco momentaneamente indisponível — tenta de novo.
+    }
+    if (count >= 1) return
+    if (Date.now() - start > maxMs) {
+      console.warn(
+        '[e2e] Timeout aguardando template ecommerce com escolha_visual — seguindo com o template atual.'
+      )
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10_000))
+  }
+}
+
 async function openProjectDetail(page: Page): Promise<void> {
   await page.goto('/admin/clientes')
   await waitClientsLoaded(page)
@@ -162,9 +192,13 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
     expect(briefingToken).toMatch(UUID_RE)
   })
 
-  test('cliente anônimo abre o link, preenche e envia o briefing', async ({
+  test('cliente anônimo abre o link, responde o wizard e envia o briefing', async ({
     browser,
   }) => {
+    // Inclui a espera pelo template novo (poll psql de leitura, até 10min).
+    test.setTimeout(720_000)
+    await waitForTemplateEscolhaVisual()
+
     expect(briefingToken, 'token deve ter sido obtido no passo anterior').toMatch(
       UUID_RE
     )
@@ -174,24 +208,84 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
     const page = await anonContext.newPage()
     await page.goto(`${BASE_URL}/briefing/${briefingToken}`)
 
+    // Intro do wizard: título do projeto + botão de início.
     await expect(
       page.getByRole('heading', { name: `Briefing — ${PROJECT_NAME}` })
     ).toBeVisible()
+    await page.getByRole('button', { name: 'Começar' }).click()
 
-    // Perguntas do template ecommerce visíveis (obrigatórias e opcionais).
-    // Labels por regex parcial: os templates são editáveis pelo admin.
-    await expect(page.getByLabel(/Quantos produtos/)).toBeVisible()
-    await expect(page.getByLabel(/integrações com ERP/)).toBeVisible()
+    // Wizard: uma pergunta por tela. Loop robusto — identifica cada tela
+    // pelo conteúdo (rádios-alvo ou regex da label), responde as
+    // obrigatórias do contrato e pula opcionais, até chegar na revisão.
+    const questionLabel = page.getByTestId('wizard-question-label')
+    const reviewHeading = page.getByRole('heading', {
+      name: 'Revise suas respostas',
+    })
+    const continuar = page.getByRole('button', { name: 'Continuar' })
+    const pular = page.getByRole('button', { name: 'Pular' })
 
-    // Preenche apenas as obrigatórias: numero, selects e prazo.
-    await page.getByLabel(/Quantos produtos/).fill(RESPOSTA_CATALOGO)
-    await page
-      .getByLabel(/meio de pagamento/)
-      .selectOption(RESPOSTA_PAGAMENTO)
-    await page.getByLabel(/prazo desejado/).fill(RESPOSTA_PRAZO)
-    await page
-      .getByLabel(/orçamento previsto/)
-      .selectOption(RESPOSTA_ORCAMENTO)
+    const MAX_PASSOS = 25
+    for (let passo = 0; passo < MAX_PASSOS; passo++) {
+      if (await reviewHeading.isVisible().catch(() => false)) break
+      await expect(questionLabel).toBeVisible()
+      const label = (await questionLabel.innerText()).trim()
+
+      const radioPagamento = page.getByRole('radio', {
+        name: RESPOSTA_PAGAMENTO,
+        exact: true,
+      })
+      const radioEstilo = page.getByRole('radio', {
+        name: /Minimalista e clean/,
+      })
+      const radioOrcamento = page.getByRole('radio', {
+        name: RESPOSTA_ORCAMENTO,
+      })
+
+      if ((await radioPagamento.count()) > 0) {
+        // Rádio sr-only (card customizado) → force pula o hit-test visual.
+        await radioPagamento.check({ force: true })
+        await continuar.click()
+      } else if ((await radioEstilo.count()) > 0) {
+        // escolha_visual: selecionar o card avança sozinho (~350ms).
+        await radioEstilo.check({ force: true })
+      } else if ((await radioOrcamento.count()) > 0) {
+        await radioOrcamento.check({ force: true })
+        await continuar.click()
+      } else if (await pular.isVisible().catch(() => false)) {
+        // Toda pergunta opcional expõe "Pular" — obrigatórias, nunca.
+        await pular.click()
+      } else if (/quantos produtos/i.test(label)) {
+        await page.getByLabel(/Quantos produtos/).fill(RESPOSTA_CATALOGO)
+        await continuar.click()
+      } else if (/prazo/i.test(label)) {
+        await page.getByLabel(/prazo/i).fill(RESPOSTA_PRAZO)
+        await continuar.click()
+      } else {
+        throw new Error(
+          `Pergunta obrigatória inesperada no wizard (sem handler): "${label}"`
+        )
+      }
+
+      // Espera a transição: próxima pergunta (label diferente) ou revisão.
+      await expect
+        .poll(
+          async () => {
+            if (await reviewHeading.isVisible().catch(() => false)) {
+              return '__revisao__'
+            }
+            return (await questionLabel.innerText().catch(() => '')).trim()
+          },
+          { timeout: 10_000 }
+        )
+        .not.toBe(label)
+    }
+
+    // Revisão final: respostas obrigatórias listadas antes do envio.
+    await expect(reviewHeading).toBeVisible()
+    await expect(
+      page.getByText(RESPOSTA_PAGAMENTO, { exact: true })
+    ).toBeVisible()
+    await expect(page.getByText(RESPOSTA_PRAZO, { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: 'Enviar briefing' }).click()
     await expect(

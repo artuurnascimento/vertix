@@ -1,4 +1,8 @@
-import type { BriefingFieldTipo, BriefingPergunta } from '../../lib/briefing'
+import type {
+  BriefingFieldTipo,
+  BriefingIlustracao,
+  BriefingPergunta,
+} from '../../lib/briefing'
 
 /**
  * Helpers puros do rascunho do editor de templates: criação, reordenação e
@@ -10,6 +14,26 @@ export const TIPO_CAMPO_LABELS: Record<BriefingFieldTipo, string> = {
   textarea: 'Texto longo',
   select: 'Seleção',
   numero: 'Número',
+  escolha_visual: 'Escolha visual',
+}
+
+/** Nomes legíveis das ilustrações no editor de opções visuais. */
+export const ILUSTRACAO_LABELS: Record<BriefingIlustracao, string> = {
+  loja: 'Loja virtual',
+  catalogo: 'Catálogo de produtos',
+  pagamento: 'Pagamento',
+  entrega: 'Entrega',
+  identidade_visual: 'Identidade visual',
+  estilo_minimalista: 'Estilo minimalista',
+  estilo_vibrante: 'Estilo vibrante',
+  estilo_premium: 'Estilo sofisticado',
+  automacao: 'Automação',
+  usuarios: 'Usuários',
+  integracoes: 'Integrações',
+  site_paginas: 'Páginas do site',
+  conteudo: 'Conteúdo',
+  agendamento: 'Agendamento',
+  metas: 'Metas',
 }
 
 const NEW_ID_LENGTH = 8
