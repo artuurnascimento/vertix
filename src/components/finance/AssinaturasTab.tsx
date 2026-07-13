@@ -111,7 +111,7 @@ export default function AssinaturasTab() {
               type="button"
               onClick={() => generateCharges.mutate()}
               disabled={generateCharges.isPending}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             >
               <RefreshCw
                 className={`h-4 w-4 ${generateCharges.isPending ? 'animate-spin' : ''}`}
@@ -133,7 +133,7 @@ export default function AssinaturasTab() {
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/5 bg-surface-1">
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/5 bg-surface-1">
         {isLoading && (
           <div className="divide-y divide-white/5" aria-label="Carregando assinaturas">
             {Array.from({ length: SKELETON_ROWS }, (_, i) => (
@@ -226,10 +226,10 @@ export default function AssinaturasTab() {
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-4 font-medium text-ink">
+                  <td className="px-4 py-4 font-medium tabular-nums text-ink">
                     {formatBRL(sub.valor_mensal)}
                   </td>
-                  <td className="hidden px-4 py-4 text-ink/90 sm:table-cell">
+                  <td className="hidden px-4 py-4 tabular-nums text-ink/90 sm:table-cell">
                     Dia {sub.dia_vencimento}
                   </td>
                   <td className="px-4 py-4">
@@ -243,7 +243,7 @@ export default function AssinaturasTab() {
                         toggleAtivo.mutate({ id: sub.id, ativo: !sub.ativo })
                       }}
                       disabled={toggleAtivo.isPending}
-                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                         sub.ativo ? 'bg-emerald-500/80' : 'bg-white/10'
                       }`}
                     >

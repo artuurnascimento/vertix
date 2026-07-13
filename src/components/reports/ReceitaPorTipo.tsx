@@ -75,7 +75,7 @@ export default function ReceitaPorTipo() {
               <li key={row.tipo}>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-sm text-ink/90">{row.label}</span>
-                  <span className="font-kanit text-sm font-semibold text-ink">
+                  <span className="font-kanit text-sm font-semibold tabular-nums text-ink">
                     {formatBRL(row.total)}
                   </span>
                 </div>

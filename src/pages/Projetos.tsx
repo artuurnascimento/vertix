@@ -42,7 +42,7 @@ export default function Projetos() {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-kanit text-sm font-semibold text-ink shadow-lg shadow-accent/25 transition-colors duration-200 hover:bg-accent-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+          className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-kanit text-sm font-semibold text-ink shadow-lg shadow-accent/25 transition-colors duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <Plus size={16} strokeWidth={2.5} />
           Novo projeto

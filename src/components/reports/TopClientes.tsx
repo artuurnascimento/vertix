@@ -67,12 +67,12 @@ export default function TopClientes() {
               <li key={cliente.id}>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="flex items-center gap-2 truncate text-sm text-ink/90">
-                    <span className="font-kanit text-xs font-semibold text-muted/60">
+                    <span className="font-kanit text-xs font-semibold tabular-nums text-muted">
                       {index + 1}
                     </span>
                     <span className="truncate">{cliente.nome}</span>
                   </span>
-                  <span className="shrink-0 font-kanit text-sm font-semibold text-ink">
+                  <span className="shrink-0 font-kanit text-sm font-semibold tabular-nums text-ink">
                     {formatBRL(cliente.total)}
                   </span>
                 </div>

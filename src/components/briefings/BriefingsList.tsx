@@ -131,7 +131,7 @@ export default function BriefingsList() {
               ].join(' ')}
             >
               {label}
-              <span className={ativo ? 'text-accent' : 'text-muted/70'}>
+              <span className={`tabular-nums ${ativo ? 'text-accent' : 'text-muted/70'}`}>
                 {total}
               </span>
             </button>
@@ -174,7 +174,7 @@ export default function BriefingsList() {
                     {projeto ? (
                       <Link
                         to={`/admin/projetos/${projeto.id}`}
-                        className="text-sm font-medium text-ink transition-colors duration-200 hover:text-accent"
+                        className="text-sm font-medium text-ink transition-colors duration-200 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                       >
                         {projeto.nome}
                       </Link>
@@ -201,7 +201,7 @@ export default function BriefingsList() {
                     {badge.label}
                   </span>
 
-                  <span className="text-xs font-light text-muted">
+                  <span className="text-xs font-light tabular-nums text-muted">
                     {briefing.submitted_at
                       ? `respondido ${formatRelativeTime(briefing.submitted_at)}`
                       : '—'}

@@ -93,7 +93,7 @@ export default function TempoMedioEtapas() {
                 <Clock aria-hidden className="h-3.5 w-3.5 text-muted/60" />
                 {etapa.label}
               </span>
-              <span className="font-kanit text-sm font-semibold text-ink">
+              <span className="font-kanit text-sm font-semibold tabular-nums text-ink">
                 {etapa.mediaDias !== null
                   ? `${etapa.mediaDias.toFixed(1)} dias`
                   : '—'}

@@ -132,7 +132,7 @@ export default function ProposalViewModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -247,7 +247,7 @@ export default function ProposalViewModal({
                 <button
                   type="button"
                   onClick={() => void handleCopy()}
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3.5 py-2 text-xs font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3.5 py-2 text-xs font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 >
                   {copied ? (
                     <>

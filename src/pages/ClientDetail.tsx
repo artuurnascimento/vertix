@@ -236,7 +236,7 @@ export default function ClientDetail() {
                       />
                       {statusMeta.label}
                     </span>
-                    <span className="w-24 text-right text-xs font-light text-muted">
+                    <span className="w-24 text-right text-xs font-light tabular-nums text-muted">
                       {formatRelativeTime(project.updated_at)}
                     </span>
                   </Link>

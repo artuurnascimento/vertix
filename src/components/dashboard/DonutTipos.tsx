@@ -31,6 +31,13 @@ const STROKE_WIDTH = 18
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 const VIEW_SIZE = (RADIUS + STROKE_WIDTH) * 2
 
+/** Gera o aria-label do donut com o insight real (tipo dominante). */
+function buildDonutAriaLabel(slices: readonly DonutSlice[], total: number): string {
+  if (total === 0) return 'Distribuição de projetos por tipo de serviço, sem projetos ainda'
+  const top = slices.reduce((max, s) => (s.count > max.count ? s : max), slices[0])
+  return `Distribuição de ${total} projetos por tipo de serviço, maioria ${top.label.toLowerCase()} com ${top.percent.toFixed(0)}%`
+}
+
 /** Distribuição de projetos por tipo de serviço — donut SVG com legenda. */
 export default function DonutTipos() {
   const { data: projects, isLoading, isError } = useDashboardProjects()
@@ -68,6 +75,7 @@ export default function DonutTipos() {
   }, [projects])
 
   let cumulativePercent = 0
+  const donutAriaLabel = buildDonutAriaLabel(slices, total)
 
   return (
     <DashboardCard
@@ -88,12 +96,32 @@ export default function DonutTipos() {
 
       {!isLoading && !isError && total > 0 && (
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-around">
+          {/* Alternativa textual acessível — mesmos dados do SVG, oculta visualmente. */}
+          <table className="sr-only">
+            <caption>{donutAriaLabel}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Tipo de projeto</th>
+                <th scope="col">Quantidade</th>
+                <th scope="col">Percentual</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slices.map((slice) => (
+                <tr key={slice.tipo}>
+                  <th scope="row">{slice.label}</th>
+                  <td>{slice.count}</td>
+                  <td>{slice.percent.toFixed(0)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <div className="relative shrink-0" style={{ width: VIEW_SIZE, height: VIEW_SIZE }}>
             <svg
               viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
               className="-rotate-90"
               role="img"
-              aria-label="Distribuição de projetos por tipo de serviço"
+              aria-label={donutAriaLabel}
             >
               <defs>
                 <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
@@ -156,9 +184,9 @@ export default function DonutTipos() {
               <AnimatedNumber
                 value={total}
                 format={(v) => String(Math.round(v))}
-                className="font-kanit text-3xl font-bold leading-none text-ink"
+                className="font-kanit text-3xl font-bold leading-none tabular-nums text-ink"
               />
-              <span className="mt-1 text-[10px] uppercase tracking-widest text-muted/70">
+              <span className="mt-1 text-[10px] uppercase tracking-widest text-muted">
                 projetos
               </span>
             </div>
@@ -176,10 +204,10 @@ export default function DonutTipos() {
                   }}
                 />
                 <span className="text-ink/90">{slice.label}</span>
-                <span className="ml-auto font-kanit font-semibold text-ink">
+                <span className="ml-auto font-kanit font-semibold tabular-nums text-ink">
                   {slice.percent.toFixed(0)}%
                 </span>
-                <span className="w-8 text-right text-xs font-light text-muted">
+                <span className="w-8 text-right text-xs font-light tabular-nums text-muted">
                   ({slice.count})
                 </span>
               </li>

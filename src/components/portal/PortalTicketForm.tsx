@@ -12,7 +12,7 @@ import { supabase } from '../../lib/supabase'
  */
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-sm text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
+  'w-full min-h-11 rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
 
 interface PortalTicketFormProps {
   token: string
@@ -31,7 +31,7 @@ function ConfirmationBanner({ onNovoChamado }: { onNovoChamado: () => void }) {
       <button
         type="button"
         onClick={onNovoChamado}
-        className="mt-1 text-xs font-medium text-accent transition-colors duration-200 hover:text-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="mt-1 flex min-h-11 touch-manipulation items-center px-2 text-xs font-medium text-accent transition-colors duration-200 hover:text-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Abrir novo chamado
       </button>
@@ -91,7 +91,7 @@ export default function PortalTicketForm({ token }: PortalTicketFormProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-3.5 rounded-xl border border-white/5 bg-surface-2 p-4 text-left transition-colors duration-200 hover:bg-white/5"
+        className="flex w-full touch-manipulation items-center gap-3.5 rounded-xl border border-white/5 bg-surface-2 p-4 text-left transition-colors duration-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5">
           <LifeBuoy aria-hidden className="h-[18px] w-[18px] text-muted" />
@@ -140,7 +140,9 @@ export default function PortalTicketForm({ token }: PortalTicketFormProps) {
             className={inputClass}
           />
           {tituloError && (
-            <span className="text-xs text-red-400">{tituloError}</span>
+            <span role="alert" className="text-xs text-red-400">
+              {tituloError}
+            </span>
           )}
         </label>
 
@@ -166,7 +168,7 @@ export default function PortalTicketForm({ token }: PortalTicketFormProps) {
             type="button"
             onClick={() => setOpen(false)}
             disabled={mutation.isPending}
-            className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 touch-manipulation rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             Cancelar
           </button>
@@ -174,7 +176,7 @@ export default function PortalTicketForm({ token }: PortalTicketFormProps) {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-11 touch-manipulation rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             {mutation.isPending ? 'Enviando…' : 'Enviar chamado'}
           </button>

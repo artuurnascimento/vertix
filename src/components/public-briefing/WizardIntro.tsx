@@ -37,7 +37,7 @@ export default function WizardIntro({
     >
       <motion.h1
         variants={staggerItem(reducedMotion)}
-        className="hero-heading text-3xl font-bold leading-tight sm:text-4xl"
+        className="hero-heading break-words text-3xl font-bold leading-tight sm:text-4xl"
       >
         Briefing — {projetoNome}
       </motion.h1>
@@ -71,7 +71,7 @@ export default function WizardIntro({
         whileHover={reducedMotion ? undefined : { scale: 1.02, y: -1 }}
         whileTap={reducedMotion ? undefined : { scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-        className="mt-8 w-full rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
+        className="mt-8 min-h-11 w-full touch-manipulation rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
       >
         Começar
       </motion.button>

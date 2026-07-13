@@ -78,11 +78,11 @@ export default function FunilComercial() {
                   <span className="text-sm text-ink/90">{etapa.label}</span>
                   <span className="flex items-baseline gap-2">
                     {etapa.conversao !== null && (
-                      <span className="text-xs font-light text-muted">
+                      <span className="text-xs font-light tabular-nums text-muted">
                         {etapa.conversao.toFixed(0)}%
                       </span>
                     )}
-                    <span className="font-kanit text-sm font-semibold text-ink">
+                    <span className="font-kanit text-sm font-semibold tabular-nums text-ink">
                       {etapa.count}
                     </span>
                   </span>

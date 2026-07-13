@@ -126,7 +126,7 @@ export default function HoursCard({ projectId }: HoursCardProps) {
         <Clock className="h-4 w-4 text-accent" />
         Horas
         {totalHoras > 0 && (
-          <span className="text-xs font-light text-muted">
+          <span className="text-xs font-light tabular-nums text-muted">
             ({totalHoras}h no total)
           </span>
         )}
@@ -145,12 +145,12 @@ export default function HoursCard({ projectId }: HoursCardProps) {
             type="date"
             value={data}
             onChange={(e) => setData(e.target.value)}
-            className="rounded-lg border border-white/5 bg-surface-2 px-3 py-2 text-sm text-ink outline-none focus:border-accent/60"
+            className="rounded-lg border border-white/5 bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25"
           />
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="hours-value" className="text-[11px] text-muted">
-            Horas
+            Horas *
           </label>
           <input
             id="hours-value"
@@ -161,7 +161,7 @@ export default function HoursCard({ projectId }: HoursCardProps) {
             onChange={(e) => setHoras(e.target.value)}
             placeholder="0"
             required
-            className="w-24 rounded-lg border border-white/5 bg-surface-2 px-3 py-2 text-sm text-ink outline-none focus:border-accent/60"
+            className="w-24 rounded-lg border border-white/5 bg-surface-2 px-3 py-2 text-sm text-ink outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25"
           />
         </div>
         <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
@@ -174,13 +174,13 @@ export default function HoursCard({ projectId }: HoursCardProps) {
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="O que foi feito…"
-            className="w-full rounded-lg border border-white/5 bg-surface-2 px-3 py-2 text-sm text-ink placeholder:text-muted/50 outline-none focus:border-accent/60"
+            className="w-full rounded-lg border border-white/5 bg-surface-2 px-3 py-2 text-sm text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25"
           />
         </div>
         <button
           type="submit"
           disabled={createMutation.isPending}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-accent-2 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {createMutation.isPending ? 'Salvando…' : 'Registrar'}
         </button>
@@ -209,10 +209,10 @@ export default function HoursCard({ projectId }: HoursCardProps) {
               key={entry.id}
               className="flex items-center gap-3 py-2 text-sm"
             >
-              <span className="w-12 shrink-0 text-xs text-muted">
+              <span className="w-12 shrink-0 tabular-nums text-xs text-muted">
                 {formatEntryDate(entry.data)}
               </span>
-              <span className="w-12 shrink-0 font-medium text-ink">
+              <span className="w-12 shrink-0 font-medium tabular-nums text-ink">
                 {entry.horas}h
               </span>
               <span className="min-w-0 flex-1 truncate text-muted">
@@ -231,13 +231,13 @@ export default function HoursCard({ projectId }: HoursCardProps) {
           Rentabilidade
         </p>
         <p
-          className={`mt-1.5 text-lg font-semibold ${
+          className={`mt-1.5 text-lg font-semibold tabular-nums ${
             isPositive ? 'text-emerald-300' : 'text-red-400'
           }`}
         >
           {formatBRL(rentabilidade)}
         </p>
-        <p className="mt-1 text-xs font-light text-muted">
+        <p className="mt-1 text-xs font-light tabular-nums text-muted">
           {formatBRL(receita)} − {totalHoras}h × {formatBRL(valorHora)}
         </p>
       </div>

@@ -21,6 +21,14 @@ interface MonthResult {
 
 const monthLabelFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
 
+/** Gera o aria-label do gráfico com o insight real (saldo acumulado + melhor mês). */
+function buildResultadoAriaLabel(meses: readonly MonthResult[]): string {
+  if (meses.length === 0) return 'Entradas e despesas dos últimos 6 meses, sem dados'
+  const saldoTotal = meses.reduce((sum, m) => sum + m.saldo, 0)
+  const melhor = meses.reduce((max, m) => (m.saldo > max.saldo ? m : max), meses[0])
+  return `Entradas e despesas dos últimos ${meses.length} meses, saldo acumulado ${formatBRL(saldoTotal)}, melhor resultado em ${melhor.label}`
+}
+
 /** Últimos N meses (mais antigo primeiro), incluindo o mês corrente. */
 function buildLastMonths(count: number, now = new Date()): { key: string; label: string }[] {
   const months: { key: string; label: string }[] = []
@@ -100,6 +108,7 @@ export default function ResultadoMensal() {
   }, [meses])
 
   const saldoTotal = meses.reduce((sum, m) => sum + m.saldo, 0)
+  const resultadoAriaLabel = useMemo(() => buildResultadoAriaLabel(meses), [meses])
 
   return (
     <DashboardCard
@@ -120,12 +129,34 @@ export default function ResultadoMensal() {
 
       {!isLoading && !isError && hasData && (
         <div>
+          {/* Alternativa textual acessível — mesmos dados do SVG, oculta visualmente. */}
+          <table className="sr-only">
+            <caption>{resultadoAriaLabel}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Mês</th>
+                <th scope="col">Entradas</th>
+                <th scope="col">Despesas</th>
+                <th scope="col">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {meses.map((m) => (
+                <tr key={m.key}>
+                  <th scope="row">{m.label}</th>
+                  <td>{formatBRL(m.entradas)}</td>
+                  <td>{formatBRL(m.despesas)}</td>
+                  <td>{formatBRL(m.saldo)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <svg
             viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
             preserveAspectRatio="none"
             className="h-32 w-full sm:h-36"
             role="img"
-            aria-label="Entradas e despesas dos últimos 6 meses"
+            aria-label={resultadoAriaLabel}
           >
             <defs>
               <filter id={glowIdEntradas} x="-20%" y="-100%" width="140%" height="300%">
@@ -135,6 +166,18 @@ export default function ResultadoMensal() {
                 <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
               </filter>
             </defs>
+            {/* Gridlines sutis de referência (25/50/75%) — nunca competem com as linhas de dado. */}
+            {[0.25, 0.5, 0.75].map((ratio) => (
+              <line
+                key={ratio}
+                x1={0}
+                x2={VIEW_WIDTH}
+                y1={PADDING_Y + (VIEW_HEIGHT - PADDING_Y * 2) * ratio}
+                y2={PADDING_Y + (VIEW_HEIGHT - PADDING_Y * 2) * ratio}
+                stroke="white"
+                strokeOpacity={0.04}
+              />
+            ))}
             {/* Despesas — vermelho */}
             <motion.path
               d={pathDespesas}
@@ -187,7 +230,7 @@ export default function ResultadoMensal() {
             />
           </svg>
 
-          <div className="mt-2 flex justify-between text-[10px] uppercase tracking-widest text-muted/60">
+          <div className="mt-2 flex justify-between text-[10px] uppercase tracking-widest tabular-nums text-muted">
             {meses.map((m) => (
               <span key={m.key}>{m.label}</span>
             ))}
@@ -205,7 +248,7 @@ export default function ResultadoMensal() {
             <span className="ml-auto flex items-center gap-1.5">
               <span className="text-muted">Saldo 6 meses</span>
               <span
-                className={`font-kanit text-sm font-semibold ${saldoTotal >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
+                className={`font-kanit text-sm font-semibold tabular-nums ${saldoTotal >= 0 ? 'text-emerald-300' : 'text-red-300'}`}
               >
                 {formatBRL(saldoTotal)}
               </span>

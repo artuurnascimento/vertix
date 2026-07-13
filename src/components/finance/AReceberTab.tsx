@@ -134,13 +134,13 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
                 aria-pressed={isActive}
                 className={
                   isActive
-                    ? 'inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3.5 py-1.5 text-xs font-semibold text-accent transition-colors duration-150'
-                    : 'inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink'
+                    ? 'inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3.5 py-1.5 text-xs font-semibold text-accent transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent'
+                    : 'inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3.5 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent'
                 }
               >
                 {item.label}
                 <span
-                  className={isActive ? 'text-accent/70' : 'text-muted/50'}
+                  className={`tabular-nums ${isActive ? 'text-accent/70' : 'text-muted/50'}`}
                 >
                   {counts[item.key]}
                 </span>
@@ -162,7 +162,7 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
       )}
 
       {/* Conteúdo */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-white/5 bg-surface-1">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-white/5 bg-surface-1">
         {isLoading && (
           <div
             className="divide-y divide-white/5"
@@ -268,10 +268,10 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-4 font-medium text-ink">
+                    <td className="px-4 py-4 font-medium tabular-nums text-ink">
                       {formatBRL(row.valor)}
                     </td>
-                    <td className="hidden px-4 py-4 sm:table-cell">
+                    <td className="hidden px-4 py-4 tabular-nums sm:table-cell">
                       <p className="text-ink/90">
                         {formatDateBR(row.vencimento)}
                       </p>
@@ -323,7 +323,7 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
                           onClick={() => setReceivableToAct(row)}
                           aria-label={`Desfazer pagamento de ${row.descricao}`}
                           title="Desfazer pagamento"
-                          className="rounded-lg p-2 text-muted/50 opacity-0 transition-all duration-150 hover:bg-white/5 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+                          className="rounded-lg p-2 text-muted/50 opacity-0 transition-all duration-150 hover:bg-white/5 hover:text-ink focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent group-hover:opacity-100"
                         >
                           <Undo2 className="h-4 w-4" />
                         </button>

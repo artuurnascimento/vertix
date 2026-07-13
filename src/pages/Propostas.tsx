@@ -193,7 +193,7 @@ export default function Propostas() {
       )}
 
       {/* Conteúdo */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-white/5 bg-surface-1">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-white/5 bg-surface-1">
         {isLoading && (
           <div
             className="divide-y divide-white/5"
@@ -307,19 +307,19 @@ export default function Propostas() {
                         {statusMeta.label}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-4 text-muted md:table-cell">
+                    <td className="hidden px-4 py-4 tabular-nums text-muted md:table-cell">
                       {proposal.validade
                         ? formatDateBR(proposal.validade)
                         : '—'}
                     </td>
-                    <td className="hidden px-4 py-4 text-muted lg:table-cell">
+                    <td className="hidden px-4 py-4 tabular-nums text-muted lg:table-cell">
                       {proposal.sent_at
                         ? formatRelativeTime(proposal.sent_at)
                         : '—'}
                     </td>
                     <td className="px-4 py-4">
                       <div
-                        className="flex items-center justify-end gap-1"
+                        className="flex items-center justify-end gap-2"
                         onClick={(event) => event.stopPropagation()}
                       >
                         {isRascunho && (
@@ -348,7 +348,7 @@ export default function Propostas() {
                               title="Excluir rascunho"
                               aria-label={`Excluir proposta ${proposal.titulo}`}
                               onClick={() => setToDelete(proposal)}
-                              className="rounded-lg p-2 text-muted/60 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400"
+                              className="rounded-lg p-2 text-muted/60 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -410,7 +410,7 @@ export default function Propostas() {
                   type="button"
                   onClick={() => setFeedback(null)}
                   aria-label="Fechar aviso"
-                  className="shrink-0 rounded-lg p-1 text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink"
+                  className="shrink-0 rounded-lg p-2 text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>

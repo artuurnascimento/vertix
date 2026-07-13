@@ -125,13 +125,13 @@ export default function ResumoFinanceiro() {
               key={row.key}
               className="rounded-xl border border-white/5 bg-surface-2 px-4 py-4"
             >
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted/70">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-muted">
                 {row.label}
               </p>
               <AnimatedNumber
                 value={row.value}
                 format={formatBRL}
-                className={`mt-2 block font-kanit text-xl font-bold leading-none sm:text-2xl ${row.valueClass}`}
+                className={`mt-2 block font-kanit text-xl font-bold leading-none tabular-nums sm:text-2xl ${row.valueClass}`}
               />
             </div>
           ))}

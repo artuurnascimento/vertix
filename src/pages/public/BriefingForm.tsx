@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { CheckCheck, LinkIcon } from 'lucide-react'
+import { CheckCheck, LinkIcon, RotateCw } from 'lucide-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import LogoMark from '../../components/ui/LogoMark'
@@ -24,7 +24,8 @@ const AUTO_ADVANCE_MS = 350
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg px-4 py-8 font-kanit sm:px-6 sm:py-14">
-      <div className="mx-auto w-full max-w-xl">
+      <div aria-hidden className="app-ambient pointer-events-none fixed inset-0" />
+      <div className="relative mx-auto w-full max-w-xl">
         <header className="flex items-center gap-2.5">
           <LogoMark className="h-7 w-7" />
           <span className="text-sm font-semibold tracking-[0.35em] text-ink">
@@ -42,12 +43,18 @@ function StatusScreen({
   title,
   message,
   celebrate,
+  onRetry,
+  alert,
 }: {
   icon: ReactNode
   title: string
   message: string
   /** Dispara o burst de partículas uma única vez (tela de sucesso). */
   celebrate?: boolean
+  /** Quando presente, exibe botão "Recarregar" (erro de carregamento). */
+  onRetry?: () => void
+  /** Anuncia a tela via aria-live para leitores de tela (erro/status). */
+  alert?: boolean
 }) {
   const reducedMotion = useReducedMotion()
   return (
@@ -56,6 +63,7 @@ function StatusScreen({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+        role={alert ? 'alert' : undefined}
         className="relative mt-14 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-16 text-center sm:mt-20"
       >
         {celebrate && !reducedMotion && <SuccessBurst />}
@@ -66,6 +74,15 @@ function StatusScreen({
         <p className="mt-3 max-w-sm text-sm font-light leading-relaxed text-muted">
           {message}
         </p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-6 touch-manipulation rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Recarregar
+          </button>
+        )}
       </motion.div>
     </Shell>
   )
@@ -100,6 +117,22 @@ function InvalidLinkScreen() {
       }
       title="Link inválido ou expirado"
       message="Este link de briefing não é válido. Peça um novo link para a equipe Vertix."
+    />
+  )
+}
+
+function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+  return (
+    <StatusScreen
+      alert
+      icon={
+        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+          <RotateCw className="h-6 w-6 text-muted" />
+        </span>
+      }
+      title="Não foi possível carregar o briefing"
+      message="Houve um problema de conexão. Tente novamente."
+      onRetry={onRetry}
     />
   )
 }
@@ -147,7 +180,7 @@ interface BriefingWizardProps {
 }
 
 const ghostButtonClass =
-  'rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  'min-h-11 touch-manipulation rounded-lg px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 function BriefingWizard({
   perguntas,
@@ -318,7 +351,11 @@ function BriefingWizard({
 
                 <div aria-live="polite" className="mt-3 min-h-6">
                   {stepError && (
-                    <p id={`erro-${pergunta.id}`} className="text-sm text-red-400">
+                    <p
+                      id={`erro-${pergunta.id}`}
+                      role="alert"
+                      className="text-sm text-red-400"
+                    >
                       {stepError}
                     </p>
                   )}
@@ -345,7 +382,7 @@ function BriefingWizard({
                     whileHover={reducedMotion ? undefined : { scale: 1.02, y: -1 }}
                     whileTap={reducedMotion ? undefined : { scale: 0.98 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-                    className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    className="min-h-11 touch-manipulation rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     Continuar
                   </motion.button>
@@ -385,7 +422,7 @@ export default function BriefingForm() {
     null
   )
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['public-briefing', token],
     enabled: Boolean(token),
     retry: false,
@@ -442,7 +479,8 @@ export default function BriefingForm() {
     )
   }
 
-  if (isError || !data) return <InvalidLinkScreen />
+  if (isError) return <LoadErrorScreen onRetry={() => refetch()} />
+  if (!data) return <InvalidLinkScreen />
   if (data.briefing.status === 'preenchido') return <AlreadySubmittedScreen />
 
   return (

@@ -123,7 +123,7 @@ export default function ContractsList() {
                 {projeto ? (
                   <Link
                     to={`/admin/projetos/${projeto.id}`}
-                    className="text-sm font-medium text-ink transition-colors duration-200 hover:text-accent"
+                    className="text-sm font-medium text-ink transition-colors duration-200 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     {projeto.nome}
                   </Link>
@@ -143,7 +143,7 @@ export default function ContractsList() {
                 {badge.label}
               </span>
 
-              <span className="text-xs font-light text-muted">
+              <span className="text-xs font-light tabular-nums text-muted">
                 {assinado && contract.signed_at
                   ? `assinado em ${formatDateBR(contract.signed_at.slice(0, 10))}`
                   : `criado ${formatRelativeTime(contract.created_at)}`}

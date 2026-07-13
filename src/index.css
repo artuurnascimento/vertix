@@ -38,6 +38,44 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+/* Atmosfera: glow ambiente accent + grain sutil (aplicado via div .app-ambient
+   pointer-events-none nos layouts; frontend-design: profundidade > preto chapado). */
+.app-ambient {
+  background:
+    radial-gradient(640px circle at 12% -4%, rgba(108, 91, 242, 0.07), transparent 62%),
+    radial-gradient(880px circle at 88% 104%, rgba(85, 70, 224, 0.05), transparent 62%);
+}
+.app-ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgba(108, 91, 242, 0.4);
+  color: #f4f4f0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2c2c2c transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2c2c2c;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

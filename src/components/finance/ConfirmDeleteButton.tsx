@@ -37,7 +37,7 @@ export default function ConfirmDeleteButton({
         }}
         disabled={isPending}
         aria-label={`Confirmar: ${label}`}
-        className={`rounded-lg border border-red-500/30 bg-red-500/15 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition-colors duration-150 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+        className={`rounded-lg border border-red-500/30 bg-red-500/15 px-2.5 py-1.5 text-xs font-semibold text-red-300 transition-colors duration-150 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400 ${className}`}
       >
         {isPending ? 'Excluindo…' : 'Confirmar?'}
       </button>
@@ -53,7 +53,7 @@ export default function ConfirmDeleteButton({
       }}
       aria-label={label}
       title={label}
-      className={`rounded-lg p-2 text-muted/50 opacity-0 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100 ${className}`}
+      className={`rounded-lg p-2 text-muted/50 opacity-0 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400 group-hover:opacity-100 ${className}`}
     >
       <Trash2 className="h-4 w-4" />
     </button>

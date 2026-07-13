@@ -129,7 +129,7 @@ export default function Briefings() {
                   {meta.label}
                   <span
                     className={[
-                      'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                      'rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
                       isActive ? 'bg-accent/25 text-accent' : 'bg-white/5 text-muted',
                     ].join(' ')}
                   >

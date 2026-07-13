@@ -64,7 +64,7 @@ export default function KpiCard({
         >
           <Icon aria-hidden className="h-4 w-4" />
         </span>
-        <p className="pt-1.5 text-[11px] font-medium uppercase tracking-widest text-muted/70">
+        <p className="pt-1.5 text-[11px] font-medium uppercase tracking-widest text-muted">
           {label}
         </p>
       </div>
@@ -72,22 +72,25 @@ export default function KpiCard({
       <AnimatedNumber
         value={value}
         format={format}
-        className="mt-4 block font-kanit text-3xl font-bold leading-none text-ink sm:text-4xl"
+        className="mt-4 block font-kanit text-3xl font-bold leading-none tabular-nums text-ink sm:text-4xl"
       />
 
       <div className="mt-2 flex items-center justify-between gap-3">
         {delta ? (
           <span
-            className={`inline-flex items-center gap-1 text-xs font-medium ${
+            className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${
               isPositive ? 'text-emerald-300' : 'text-red-400'
             }`}
           >
             {isPositive ? (
-              <ArrowUp className="h-3 w-3" />
+              <ArrowUp className="h-3 w-3" aria-hidden />
             ) : (
-              <ArrowDown className="h-3 w-3" />
+              <ArrowDown className="h-3 w-3" aria-hidden />
             )}
-            {Math.abs(delta.percent).toFixed(0)}% {delta.label}
+            <span>
+              {isPositive ? 'Alta de' : 'Queda de'} {Math.abs(delta.percent).toFixed(0)}%{' '}
+              {delta.label}
+            </span>
           </span>
         ) : (
           <span aria-hidden />

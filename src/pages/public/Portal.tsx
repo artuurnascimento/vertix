@@ -6,6 +6,7 @@ import {
   CheckCheck,
   ClipboardList,
   LinkIcon,
+  RotateCw,
   ShieldCheck,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -43,7 +44,8 @@ const CONTACT_EMAIL = 'contato@vertix.com.br'
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg px-4 py-10 font-kanit sm:px-6 sm:py-16">
-      <div className="mx-auto w-full max-w-2xl">
+      <div aria-hidden className="app-ambient pointer-events-none fixed inset-0" />
+      <div className="relative mx-auto w-full max-w-2xl">
         <header className="flex items-center gap-2.5">
           <LogoMark className="h-7 w-7" />
           <span className="text-sm font-semibold tracking-[0.35em] text-ink">
@@ -75,6 +77,37 @@ function InvalidLinkScreen() {
           Este link do portal não é válido. Peça um novo link para a equipe
           Vertix.
         </p>
+      </motion.div>
+    </Shell>
+  )
+}
+
+function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Shell>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE_OUT }}
+        role="alert"
+        className="mt-14 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-16 text-center sm:mt-20"
+      >
+        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+          <RotateCw className="h-6 w-6 text-muted" />
+        </span>
+        <h1 className="hero-heading mt-6 text-2xl font-bold sm:text-3xl">
+          Não foi possível carregar o portal
+        </h1>
+        <p className="mt-3 max-w-sm text-sm font-light leading-relaxed text-muted">
+          Houve um problema de conexão. Tente novamente.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-6 touch-manipulation rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Recarregar
+        </button>
       </motion.div>
     </Shell>
   )
@@ -143,7 +176,7 @@ function BriefingCta({ token }: { token: string }) {
       </div>
       <Link
         to={`/briefing/${token}`}
-        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex min-h-11 shrink-0 touch-manipulation items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Preencher briefing
         <ArrowRight aria-hidden className="h-4 w-4" />
@@ -178,8 +211,10 @@ function ProposalRow({ proposta }: { proposta: PortalProposta }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-ink">{proposta.titulo}</p>
-          <p className="mt-1 text-lg font-semibold text-ink">
+          <p className="break-words text-sm font-medium text-ink">
+            {proposta.titulo}
+          </p>
+          <p className="mt-1 tabular-nums text-lg font-semibold text-ink">
             {formatBRL(proposta.valor_total)}
           </p>
         </div>
@@ -193,7 +228,7 @@ function ProposalRow({ proposta }: { proposta: PortalProposta }) {
       {proposta.status === 'enviada' && (
         <Link
           to={`/proposta/${proposta.token}`}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
+          className="mt-4 inline-flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto"
         >
           Ver e responder proposta
           <ArrowRight aria-hidden className="h-4 w-4" />
@@ -267,7 +302,7 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
           Acompanhamento do projeto
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h1 className="hero-heading text-3xl font-bold leading-tight sm:text-4xl">
+          <h1 className="hero-heading break-words text-3xl font-bold leading-tight sm:text-4xl">
             {projeto.nome}
           </h1>
           <span
@@ -351,7 +386,7 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
         <p className="text-sm font-light text-muted">Dúvidas? Fale com a Vertix.</p>
         <a
           href={`mailto:${CONTACT_EMAIL}`}
-          className="text-xs font-medium text-accent transition-colors duration-200 hover:text-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="flex min-h-11 items-center px-2 text-xs font-medium text-accent transition-colors duration-200 hover:text-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {CONTACT_EMAIL}
         </a>
@@ -363,7 +398,7 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
 export default function Portal() {
   const { token } = useParams<{ token: string }>()
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['portal', token],
     enabled: Boolean(token),
     retry: false,
@@ -381,7 +416,8 @@ export default function Portal() {
   })
 
   if (isLoading) return <LoadingScreen />
-  if (isError || !data) return <InvalidLinkScreen />
+  if (isError) return <LoadErrorScreen onRetry={() => refetch()} />
+  if (!data) return <InvalidLinkScreen />
 
   return <PortalContent data={data} token={token ?? ''} />
 }

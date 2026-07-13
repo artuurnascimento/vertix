@@ -82,7 +82,7 @@ export default function PortalApproval({ token }: PortalApprovalProps) {
         whileHover={mutation.isPending ? undefined : { scale: 1.02, y: -1 }}
         whileTap={mutation.isPending ? undefined : { scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 shrink-0 touch-manipulation items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
       >
         {mutation.isPending ? 'Aprovando…' : 'Aprovar entrega'}
       </motion.button>

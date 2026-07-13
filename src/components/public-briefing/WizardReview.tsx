@@ -62,7 +62,7 @@ export default function WizardReview({
                     {resposta}
                   </p>
                 ) : (
-                  <p className="mt-1 text-sm font-light italic text-muted/60">
+                  <p className="mt-1 text-sm font-light italic text-muted">
                     Sem resposta
                   </p>
                 )}
@@ -71,7 +71,7 @@ export default function WizardReview({
                 type="button"
                 onClick={() => onEdit(index)}
                 aria-label={`Editar: ${pergunta.label}`}
-                className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="flex min-h-11 shrink-0 touch-manipulation items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 Editar
               </button>
@@ -95,7 +95,7 @@ export default function WizardReview({
         <button
           type="button"
           onClick={onBack}
-          className="rounded-lg px-5 py-3 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="min-h-11 touch-manipulation rounded-lg px-5 py-3 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           Voltar
         </button>
@@ -107,7 +107,7 @@ export default function WizardReview({
           whileHover={reducedMotion || isSubmitting ? undefined : { scale: 1.02, y: -1 }}
           whileTap={reducedMotion || isSubmitting ? undefined : { scale: 0.98 }}
           transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-          className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="min-h-11 touch-manipulation rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {isSubmitting ? 'Enviando…' : 'Enviar briefing'}
         </motion.button>

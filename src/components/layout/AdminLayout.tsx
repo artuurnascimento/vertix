@@ -71,6 +71,7 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-bg font-kanit text-ink">
+      <div aria-hidden className="app-ambient pointer-events-none fixed inset-0" />
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-20 flex w-16 flex-col border-r border-white/5 bg-surface-1 md:w-60">
         <div className="flex items-center gap-3 px-4 py-6 md:px-6">

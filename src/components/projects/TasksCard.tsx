@@ -198,7 +198,7 @@ export default function TasksCard({ projectId }: TasksCardProps) {
                     task.concluida ? 'Marcar como pendente' : 'Concluir tarefa'
                   }
                   onClick={() => toggleMutation.mutate(task)}
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors duration-150 ${
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     task.concluida
                       ? 'border-emerald-400/40 bg-emerald-400/20 text-emerald-300'
                       : 'border-white/15 text-transparent hover:border-accent/50'
@@ -226,7 +226,7 @@ export default function TasksCard({ projectId }: TasksCardProps) {
                       })
                     }
                     onBlur={() => setEditingAssigneeId(null)}
-                    className="rounded-md border border-white/10 bg-surface-2 px-2 py-1 text-xs text-ink outline-none focus:border-accent/60"
+                    className="rounded-md border border-white/10 bg-surface-2 px-2 py-1 text-xs text-ink outline-none focus:border-accent/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <option value="">Sem responsável</option>
                     {profiles?.map((p) => (
@@ -246,7 +246,7 @@ export default function TasksCard({ projectId }: TasksCardProps) {
 
                 {task.prazo && (
                   <span
-                    className={`hidden text-xs sm:inline ${
+                    className={`hidden tabular-nums text-xs sm:inline ${
                       late ? 'font-medium text-red-400' : 'text-muted'
                     }`}
                   >
@@ -254,13 +254,13 @@ export default function TasksCard({ projectId }: TasksCardProps) {
                   </span>
                 )}
 
-                <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+                <div className="flex items-center gap-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
                   <button
                     type="button"
                     aria-label="Subir tarefa"
                     disabled={index === 0}
                     onClick={() => moveTask(index, -1)}
-                    className="rounded p-1 text-muted/60 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                    className="rounded-lg p-2 text-muted/60 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <ArrowUp className="h-3.5 w-3.5" />
                   </button>
@@ -269,7 +269,7 @@ export default function TasksCard({ projectId }: TasksCardProps) {
                     aria-label="Descer tarefa"
                     disabled={index === tasks!.length - 1}
                     onClick={() => moveTask(index, 1)}
-                    className="rounded p-1 text-muted/60 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                    className="rounded-lg p-2 text-muted/60 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <ArrowDown className="h-3.5 w-3.5" />
                   </button>
@@ -277,11 +277,11 @@ export default function TasksCard({ projectId }: TasksCardProps) {
                     type="button"
                     aria-label="Atribuir responsável"
                     onClick={() => setEditingAssigneeId(task.id)}
-                    className="rounded p-1 text-muted/60 hover:bg-white/5 hover:text-ink"
+                    className="rounded-lg p-2 text-muted/60 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <UserRound className="h-3.5 w-3.5" />
                   </button>
-                  <label className="relative rounded p-1 text-muted/60 hover:bg-white/5 hover:text-ink">
+                  <label className="relative rounded-lg p-2 text-muted/60 hover:bg-white/5 hover:text-ink focus-within:outline focus-within:outline-2 focus-within:outline-accent">
                     <Calendar className="h-3.5 w-3.5" />
                     <input
                       type="date"
@@ -300,7 +300,7 @@ export default function TasksCard({ projectId }: TasksCardProps) {
                     type="button"
                     aria-label={`Excluir tarefa ${task.titulo}`}
                     onClick={() => deleteMutation.mutate(task.id)}
-                    className="rounded p-1 text-muted/60 hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-lg p-2 text-muted/60 hover:bg-red-500/10 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

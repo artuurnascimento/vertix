@@ -33,7 +33,7 @@ const EMPTY_VALUES: ReceivableFormValues = {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-2.5 text-sm text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25'
+  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 sm:py-2.5 sm:text-sm'
 
 const labelClass = 'text-xs font-medium uppercase tracking-widest text-muted'
 
@@ -128,6 +128,11 @@ export default function ReceivableFormModal({
         if (!fieldErrors[key]) fieldErrors[key] = issue.message
       }
       setErrors(fieldErrors)
+      const firstInvalidField = Object.keys(fieldErrors)[0]
+      if (firstInvalidField) {
+        const el = event.currentTarget.elements.namedItem(firstInvalidField)
+        if (el instanceof HTMLElement) el.focus()
+      }
       return
     }
     setErrors({})
@@ -172,7 +177,7 @@ export default function ReceivableFormModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -183,6 +188,7 @@ export default function ReceivableFormModal({
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>Cliente *</span>
                   <select
+                    name="client_id"
                     value={values.client_id}
                     onChange={(e) => setClient(e.target.value)}
                     className={`${inputClass} appearance-none`}
@@ -206,6 +212,7 @@ export default function ReceivableFormModal({
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>Projeto *</span>
                   <select
+                    name="project_id"
                     value={values.project_id}
                     onChange={(e) => setField('project_id', e.target.value)}
                     disabled={!hasClient}
@@ -232,6 +239,7 @@ export default function ReceivableFormModal({
                 <span className={labelClass}>Descrição *</span>
                 <input
                   type="text"
+                  name="descricao"
                   value={values.descricao}
                   onChange={(e) => setField('descricao', e.target.value)}
                   placeholder="Entrada — 50% do projeto"
@@ -249,6 +257,7 @@ export default function ReceivableFormModal({
                   <span className={labelClass}>Valor (R$) *</span>
                   <input
                     type="number"
+                    name="valor"
                     inputMode="decimal"
                     min="0"
                     step="0.01"
@@ -266,6 +275,7 @@ export default function ReceivableFormModal({
                   <span className={labelClass}>Vencimento *</span>
                   <input
                     type="date"
+                    name="vencimento"
                     value={values.vencimento}
                     onChange={(e) => setField('vencimento', e.target.value)}
                     className={`${inputClass} [color-scheme:dark]`}
@@ -307,7 +317,7 @@ export default function ReceivableFormModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                  className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 >
                   Cancelar
                 </button>

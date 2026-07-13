@@ -117,7 +117,7 @@ export default function Clientes() {
       )}
 
       {/* Conteúdo */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-white/5 bg-surface-1">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-white/5 bg-surface-1">
         {isLoading && (
           <div className="divide-y divide-white/5" aria-label="Carregando clientes">
             {Array.from({ length: SKELETON_ROWS }, (_, i) => (
@@ -233,16 +233,16 @@ export default function Clientes() {
                       )}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="font-medium text-ink">
+                      <span className="font-medium tabular-nums text-ink">
                         {client.projects.length}
                       </span>
                       {activeCount > 0 && (
-                        <span className="ml-1.5 text-xs text-accent">
+                        <span className="ml-1.5 text-xs tabular-nums text-accent">
                           · {activeCount} ativo{activeCount > 1 ? 's' : ''}
                         </span>
                       )}
                     </td>
-                    <td className="hidden px-4 py-4 text-muted sm:table-cell">
+                    <td className="hidden px-4 py-4 tabular-nums text-muted sm:table-cell">
                       {activity ? formatRelativeTime(activity) : '—'}
                     </td>
                     <td className="px-4 py-4 text-right">

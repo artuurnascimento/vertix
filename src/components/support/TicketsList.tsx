@@ -162,7 +162,7 @@ export default function TicketsList() {
               ].join(' ')}
             >
               {label}
-              <span className={ativo ? 'text-accent' : 'text-muted/70'}>
+              <span className={`tabular-nums ${ativo ? 'text-accent' : 'text-muted/70'}`}>
                 {total}
               </span>
             </button>
@@ -199,7 +199,7 @@ export default function TicketsList() {
                       type="button"
                       onClick={() => setAbertoId(aberto ? null : ticket.id)}
                       aria-expanded={aberto}
-                      className="text-left text-sm font-medium text-ink transition-colors duration-200 hover:text-accent"
+                      className="text-left text-sm font-medium text-ink transition-colors duration-200 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                     >
                       {ticket.titulo}
                     </button>
@@ -207,7 +207,7 @@ export default function TicketsList() {
                       {projeto ? (
                         <Link
                           to={`/admin/projetos/${projeto.id}`}
-                          className="hover:text-accent"
+                          className="hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                         >
                           {projeto.nome}
                         </Link>
@@ -229,7 +229,7 @@ export default function TicketsList() {
                     {statusBadge.label}
                   </span>
 
-                  <span className="text-xs font-light text-muted">
+                  <span className="text-xs font-light tabular-nums text-muted">
                     aberto {formatRelativeTime(ticket.created_at)}
                   </span>
 
@@ -240,7 +240,7 @@ export default function TicketsList() {
                     }
                     aria-label={`Alterar status do chamado ${ticket.titulo}`}
                     disabled={updateStatus.isPending}
-                    className="rounded-lg border border-white/10 bg-surface-2 px-3 py-1.5 text-xs font-medium text-ink outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 disabled:opacity-50"
+                    className="rounded-lg border border-white/10 bg-surface-2 px-3 py-1.5 text-xs font-medium text-ink outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
                   >
                     <option value="aberto">Aberto</option>
                     <option value="em_andamento">Em andamento</option>

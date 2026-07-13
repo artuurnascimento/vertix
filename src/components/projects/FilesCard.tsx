@@ -223,7 +223,7 @@ export default function FilesCard({ projectId }: FilesCardProps) {
               <File className="h-4 w-4 shrink-0 text-muted/60" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ink">{file.nome}</p>
-                <p className="text-xs font-light text-muted">
+                <p className="text-xs font-light tabular-nums text-muted">
                   {formatFileSize(file.tamanho)}
                 </p>
               </div>
@@ -237,7 +237,7 @@ export default function FilesCard({ projectId }: FilesCardProps) {
                     ? 'Visível ao cliente'
                     : 'Oculto do cliente'
                 }
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors duration-150 ${
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
                   file.visivel_cliente
                     ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
                     : 'border-white/10 bg-white/5 text-muted'
@@ -251,12 +251,12 @@ export default function FilesCard({ projectId }: FilesCardProps) {
                 Visível ao cliente
               </button>
 
-              <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+              <div className="flex items-center gap-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
                 <button
                   type="button"
                   aria-label={`Baixar ${file.nome}`}
                   onClick={() => void handleDownload(file)}
-                  className="rounded p-1 text-muted/60 hover:bg-white/5 hover:text-ink"
+                  className="rounded-lg p-2 text-muted/60 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 >
                   <Download className="h-3.5 w-3.5" />
                 </button>
@@ -265,7 +265,7 @@ export default function FilesCard({ projectId }: FilesCardProps) {
                   aria-label={`Excluir ${file.nome}`}
                   onClick={() => handleDeleteClick(file)}
                   onBlur={() => setPendingDeleteId(null)}
-                  className={`rounded p-1 transition-colors duration-150 ${
+                  className={`rounded-lg p-2 transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400 ${
                     pendingDeleteId === file.id
                       ? 'bg-red-500/20 text-red-300'
                       : 'text-muted/60 hover:bg-red-500/10 hover:text-red-400'

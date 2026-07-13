@@ -39,12 +39,12 @@ interface MarkPaidInput {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-2.5 text-sm text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25'
+  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 sm:py-2.5 sm:text-sm'
 
 const labelClass = 'text-xs font-medium uppercase tracking-widest text-muted'
 
 const secondaryButtonClass =
-  'rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink'
+  'rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent'
 
 export default function MarkPaidModal({
   open,
@@ -223,7 +223,7 @@ export default function MarkPaidModal({
                       </h2>
                       <p className="mt-0.5 text-xs font-light text-muted">
                         {receivable.descricao} ·{' '}
-                        <span className="font-medium text-ink/80">
+                        <span className="font-medium tabular-nums text-ink/80">
                           {formatBRL(receivable.valor)}
                         </span>
                       </p>
@@ -233,7 +233,7 @@ export default function MarkPaidModal({
                     type="button"
                     onClick={onClose}
                     aria-label="Fechar"
-                    className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                    className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -292,7 +292,7 @@ export default function MarkPaidModal({
                         setRootError(null)
                         setView('confirmar-cancelamento')
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted/70 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-400"
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted/70 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400"
                     >
                       <Ban className="h-3.5 w-3.5" />
                       Cancelar cobrança
@@ -362,7 +362,7 @@ export default function MarkPaidModal({
                     type="button"
                     onClick={() => cancelCharge.mutate()}
                     disabled={cancelCharge.isPending}
-                    className="rounded-lg bg-red-500/90 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-lg bg-red-500/90 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                   >
                     {cancelCharge.isPending
                       ? 'Cancelando…'
@@ -418,7 +418,7 @@ export default function MarkPaidModal({
                     type="button"
                     onClick={() => undoPayment.mutate()}
                     disabled={undoPayment.isPending}
-                    className="rounded-lg border border-amber-400/30 bg-amber-400/15 px-4 py-2.5 text-sm font-semibold text-amber-300 transition-colors duration-200 hover:bg-amber-400/25 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-lg border border-amber-400/30 bg-amber-400/15 px-4 py-2.5 text-sm font-semibold text-amber-300 transition-colors duration-200 hover:bg-amber-400/25 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                   >
                     {undoPayment.isPending
                       ? 'Desfazendo…'

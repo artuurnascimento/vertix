@@ -197,7 +197,7 @@ export default function ContractSection({
   return (
     <div className="flex flex-col items-end gap-2">
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium tabular-nums ${
           isSigned
             ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
             : 'border-sky-400/20 bg-sky-400/10 text-sky-300'

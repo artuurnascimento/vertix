@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FileSignature, LinkIcon, ShieldCheck } from 'lucide-react'
+import { FileSignature, LinkIcon, RotateCw, ShieldCheck } from 'lucide-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import LogoMark from '../../components/ui/LogoMark'
@@ -25,12 +25,13 @@ const INVALID_UUID_CODE = '22P02'
 const EASE_OUT = [0.25, 0.1, 0.25, 1] as const
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-sm text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
+  'w-full min-h-11 rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
 
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg px-4 py-10 font-kanit sm:px-6 sm:py-16">
-      <div className="mx-auto w-full max-w-[720px]">
+      <div aria-hidden className="app-ambient pointer-events-none fixed inset-0" />
+      <div className="relative mx-auto w-full max-w-[720px]">
         <header className="flex items-center gap-2.5">
           <LogoMark className="h-7 w-7" />
           <span className="text-sm font-semibold tracking-[0.35em] text-ink">
@@ -47,10 +48,16 @@ function StatusScreen({
   icon,
   title,
   message,
+  onRetry,
+  alert,
 }: {
   icon: ReactNode
   title: string
   message: string
+  /** Quando presente, exibe botão "Recarregar" (erro de carregamento). */
+  onRetry?: () => void
+  /** Anuncia a tela via aria-live para leitores de tela (erro/status). */
+  alert?: boolean
 }) {
   return (
     <Shell>
@@ -58,6 +65,7 @@ function StatusScreen({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: EASE_OUT }}
+        role={alert ? 'alert' : undefined}
         className="mt-14 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-16 text-center sm:mt-20"
       >
         {icon}
@@ -67,6 +75,15 @@ function StatusScreen({
         <p className="mt-3 max-w-sm text-sm font-light leading-relaxed text-muted">
           {message}
         </p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-6 touch-manipulation rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Recarregar
+          </button>
+        )}
       </motion.div>
     </Shell>
   )
@@ -101,6 +118,22 @@ function InvalidLinkScreen() {
       }
       title="Link inválido ou expirado"
       message="Este link de contrato não é válido. Peça um novo link para a equipe Vertix."
+    />
+  )
+}
+
+function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+  return (
+    <StatusScreen
+      alert
+      icon={
+        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+          <RotateCw className="h-6 w-6 text-muted" />
+        </span>
+      }
+      title="Não foi possível carregar o contrato"
+      message="Houve um problema de conexão. Tente novamente."
+      onRetry={onRetry}
     />
   )
 }
@@ -218,6 +251,7 @@ function SignForm({ token, onSigned }: SignFormProps) {
         </span>
         <input
           type="text"
+          autoComplete="name"
           value={nome}
           onChange={(e) => {
             setNome(e.target.value)
@@ -227,13 +261,19 @@ function SignForm({ token, onSigned }: SignFormProps) {
           aria-invalid={Boolean(nomeError)}
           className={inputClass}
         />
-        {nomeError && <span className="text-xs text-red-400">{nomeError}</span>}
+        {nomeError && (
+          <span role="alert" className="text-xs text-red-400">
+            {nomeError}
+          </span>
+        )}
       </label>
 
       <label className="mt-4 flex flex-col gap-2">
         <span className="text-sm font-medium text-ink">CPF/CNPJ</span>
         <input
           type="text"
+          inputMode="text"
+          autoComplete="off"
           value={documento}
           onChange={(e) => setDocumento(e.target.value)}
           placeholder="Opcional"
@@ -241,12 +281,12 @@ function SignForm({ token, onSigned }: SignFormProps) {
         />
       </label>
 
-      <label className="mt-5 flex cursor-pointer items-start gap-3">
+      <label className="mt-5 flex min-h-11 cursor-pointer items-start gap-3 py-1">
         <input
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-surface-2 text-accent accent-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="mt-0.5 h-5 w-5 shrink-0 rounded border-white/20 bg-surface-2 text-accent accent-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         />
         <span className="text-sm font-light leading-relaxed text-ink/85">
           Li e concordo com os termos deste contrato.
@@ -268,7 +308,7 @@ function SignForm({ token, onSigned }: SignFormProps) {
         whileHover={canSubmit ? { scale: 1.02, y: -1 } : undefined}
         whileTap={canSubmit ? { scale: 0.98 } : undefined}
         transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        className="mt-6 inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         <FileSignature aria-hidden className="h-4 w-4" />
         {mutation.isPending ? 'Assinando…' : 'Assinar contrato'}
@@ -284,7 +324,7 @@ export default function ContractSign() {
     signedAt: string
   } | null>(null)
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['contract', token],
     enabled: Boolean(token),
     retry: false,
@@ -322,7 +362,8 @@ export default function ContractSign() {
     )
   }
 
-  if (isError || !data) return <InvalidLinkScreen />
+  if (isError) return <LoadErrorScreen onRetry={() => refetch()} />
+  if (!data) return <InvalidLinkScreen />
 
   const jaAssinado = data.status === 'assinado'
 
@@ -337,7 +378,7 @@ export default function ContractSign() {
         <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-accent">
           Contrato
         </p>
-        <h1 className="hero-heading mt-2 text-3xl font-bold leading-tight sm:text-4xl">
+        <h1 className="hero-heading mt-2 break-words text-3xl font-bold leading-tight sm:text-4xl">
           Contrato — {data.projeto_nome}
         </h1>
         <p className="mt-3 text-sm font-light leading-relaxed text-muted">

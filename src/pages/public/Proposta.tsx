@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CircleSlash, LinkIcon } from 'lucide-react'
+import { CircleSlash, LinkIcon, RotateCw } from 'lucide-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import LogoMark from '../../components/ui/LogoMark'
@@ -22,12 +22,13 @@ const INVALID_UUID_CODE = '22P02'
 type Choice = 'aceitar' | 'recusar'
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-sm text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
+  'w-full min-h-11 rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-muted/40 outline-none transition-all duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 hover:border-white/10'
 
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg px-4 py-10 font-kanit sm:px-6 sm:py-16">
-      <div className="mx-auto w-full max-w-2xl">
+      <div aria-hidden className="app-ambient pointer-events-none fixed inset-0" />
+      <div className="relative mx-auto w-full max-w-2xl">
         <header className="flex items-center gap-2.5">
           <LogoMark className="h-7 w-7" />
           <span className="text-sm font-semibold tracking-[0.35em] text-ink">
@@ -102,6 +103,37 @@ function InvalidLinkScreen() {
   )
 }
 
+function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Shell>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+        role="alert"
+        className="mt-14 flex flex-col items-center rounded-2xl border border-white/5 bg-surface-1 px-6 py-16 text-center sm:mt-20"
+      >
+        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5">
+          <RotateCw className="h-6 w-6 text-muted" />
+        </span>
+        <h1 className="hero-heading mt-6 text-2xl font-bold sm:text-3xl">
+          Não foi possível carregar a proposta
+        </h1>
+        <p className="mt-3 max-w-sm text-sm font-light leading-relaxed text-muted">
+          Houve um problema de conexão. Tente novamente.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-6 touch-manipulation rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Recarregar
+        </button>
+      </motion.div>
+    </Shell>
+  )
+}
+
 function AcceptedScreen() {
   return (
     <StatusScreen
@@ -171,7 +203,7 @@ export default function Proposta() {
   const [pendingChoice, setPendingChoice] = useState<Choice | null>(null)
   const [responded, setResponded] = useState<Choice | null>(null)
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['proposal-public', token],
     enabled: Boolean(token),
     retry: false,
@@ -227,7 +259,8 @@ export default function Proposta() {
     )
   }
 
-  if (isError || !data) return <InvalidLinkScreen />
+  if (isError) return <LoadErrorScreen onRetry={() => refetch()} />
+  if (!data) return <InvalidLinkScreen />
 
   const { proposta, projeto_nome: projetoNome, cliente } = data
   const canRespond = proposta.status === 'enviada'
@@ -253,7 +286,7 @@ export default function Proposta() {
         <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-accent">
           Proposta comercial
         </p>
-        <h1 className="hero-heading mt-2 text-3xl font-bold leading-tight sm:text-4xl">
+        <h1 className="hero-heading mt-2 break-words text-3xl font-bold leading-tight sm:text-4xl">
           {proposta.titulo}
         </h1>
         <p className="mt-3 text-sm font-light leading-relaxed text-muted">
@@ -268,7 +301,7 @@ export default function Proposta() {
           <div className="overflow-x-auto rounded-xl border border-white/5">
             <table className="w-full min-w-[26rem] text-left text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-surface-2/50 text-[11px] uppercase tracking-widest text-muted/70">
+                <tr className="border-b border-white/5 bg-surface-2/50 text-[11px] uppercase tracking-widest text-muted">
                   <th className="px-4 py-3 font-medium">Item</th>
                   <th className="px-3 py-3 text-center font-medium">Qtd</th>
                   <th className="px-3 py-3 text-right font-medium">Unitário</th>
@@ -315,7 +348,7 @@ export default function Proposta() {
 
           {proposta.condicoes && (
             <div className="mt-6 border-t border-white/5 pt-5">
-              <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted/70">
+              <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted">
                 Condições
               </h2>
               <p className="mt-2 whitespace-pre-line text-sm font-light leading-relaxed text-ink/85">
@@ -326,7 +359,7 @@ export default function Proposta() {
 
           {proposta.parcelas && proposta.parcelas.length > 0 && (
             <div className="mt-6 border-t border-white/5 pt-5">
-              <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted/70">
+              <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted">
                 Parcelas
               </h2>
               <div className="mt-2 overflow-hidden rounded-xl border border-white/5">
@@ -384,6 +417,7 @@ export default function Proposta() {
               </span>
               <input
                 type="text"
+                autoComplete="name"
                 value={nome}
                 onChange={(e) => {
                   setNome(e.target.value)
@@ -394,7 +428,9 @@ export default function Proposta() {
                 className={inputClass}
               />
               {nomeError && (
-                <span className="text-xs text-red-400">{nomeError}</span>
+                <span role="alert" className="text-xs text-red-400">
+                  {nomeError}
+                </span>
               )}
             </label>
 
@@ -420,14 +456,14 @@ export default function Proposta() {
                   <button
                     type="button"
                     onClick={() => startChoice('aceitar')}
-                    className="flex-1 rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    className="flex-1 touch-manipulation rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     Aceitar proposta
                   </button>
                   <button
                     type="button"
                     onClick={() => startChoice('recusar')}
-                    className="flex-1 rounded-lg border border-white/10 px-5 py-3.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                    className="flex-1 touch-manipulation rounded-lg border border-white/10 px-5 py-3.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     Recusar
                   </button>
@@ -451,7 +487,7 @@ export default function Proposta() {
                       type="button"
                       disabled={mutation.isPending}
                       onClick={() => mutation.mutate(pendingChoice)}
-                      className={`flex-1 rounded-lg px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+                      className={`flex-1 touch-manipulation rounded-lg px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 ${
                         pendingChoice === 'aceitar'
                           ? 'bg-accent hover:bg-accent-2'
                           : 'bg-red-500/90 hover:bg-red-500'
@@ -467,7 +503,7 @@ export default function Proposta() {
                       type="button"
                       disabled={mutation.isPending}
                       onClick={() => setPendingChoice(null)}
-                      className="flex-1 rounded-lg border border-white/10 px-5 py-3 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex-1 touch-manipulation rounded-lg border border-white/10 px-5 py-3 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Voltar
                     </button>

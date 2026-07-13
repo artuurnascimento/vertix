@@ -57,7 +57,7 @@ export default function DeleteClientModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
                 Cancelar
               </button>
@@ -65,7 +65,7 @@ export default function DeleteClientModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isDeleting}
-                className="rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
               >
                 {isDeleting ? 'Excluindo…' : 'Excluir'}
               </button>

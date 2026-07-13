@@ -56,7 +56,7 @@ function LabelHeading({
     </>
   )
   const className =
-    'block text-2xl font-semibold leading-snug text-ink sm:text-3xl'
+    'block break-words text-2xl font-semibold leading-snug text-ink sm:text-3xl'
   if (as === 'legend') {
     return (
       <legend data-testid="wizard-question-label" className={className}>
@@ -87,7 +87,7 @@ function Ajuda({ texto }: { texto?: string }) {
 /** Dica discreta de atalho, mostrada abaixo dos campos de texto/número. */
 function DicaEnter() {
   return (
-    <p className="mt-2 text-[11px] font-light text-muted/60">
+    <p className="mt-2 text-[11px] font-light text-muted">
       Enter para continuar
     </p>
   )
@@ -185,7 +185,7 @@ export default function QuestionField({
                   whileTap={reducedMotion ? undefined : { scale: 0.99 }}
                   transition={SPRING_SNAPPY}
                   className={clsx(
-                    'flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors duration-150',
+                    'flex min-h-11 touch-manipulation cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors duration-150',
                     'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/60',
                     selected
                       ? 'border-accent bg-accent/10'
@@ -246,7 +246,7 @@ export default function QuestionField({
                   whileTap={reducedMotion ? undefined : { scale: 0.97 }}
                   transition={SPRING_SNAPPY}
                   className={clsx(
-                    'relative flex cursor-pointer flex-col rounded-xl border p-3 transition-colors duration-150',
+                    'relative flex touch-manipulation cursor-pointer flex-col rounded-xl border p-3 transition-colors duration-150',
                     'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/60',
                     selected
                       ? 'border-accent/60 bg-accent/10 ring-2 ring-accent'
@@ -344,7 +344,7 @@ export default function QuestionField({
               focusGlowClass
             )}
           />
-          <p className="mt-2 text-[11px] font-light text-muted/60">
+          <p className="mt-2 text-[11px] font-light text-muted">
             Enter avança · Shift+Enter quebra linha
           </p>
         </>

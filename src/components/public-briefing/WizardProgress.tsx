@@ -54,7 +54,7 @@ export default function WizardProgress({
         <span className="font-medium tracking-wide text-muted">
           {isReview ? 'Revisão final' : `Pergunta ${current + 1} de ${total}`}
         </span>
-        <span aria-hidden className="relative inline-flex text-muted/60">
+        <span aria-hidden className="relative inline-flex text-muted">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={percent}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Eye, Info, Pencil, Plus, RotateCcw, Save } from 'lucide-react'
+import { ClipboardList, Eye, Info, Pencil, Plus, RotateCcw, Save } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../lib/database.types'
@@ -192,10 +192,13 @@ export default function TemplateEditor({
           </ul>
 
           {perguntas.length === 0 && (
-            <p className="mt-5 rounded-xl border border-white/5 bg-surface-1 px-6 py-8 text-center text-sm font-light text-muted">
-              Nenhuma pergunta neste template. Adicione pelo menos uma antes de
-              salvar.
-            </p>
+            <div className="mt-5 flex flex-col items-center rounded-xl border border-white/5 bg-surface-1 px-6 py-8 text-center">
+              <ClipboardList className="h-6 w-6 text-muted/50" />
+              <p className="mt-3 text-sm font-light text-muted">
+                Nenhuma pergunta neste template. Adicione pelo menos uma antes
+                de salvar.
+              </p>
+            </div>
           )}
 
           <motion.div layout transition={{ duration: 0.2 }} className="mt-4">

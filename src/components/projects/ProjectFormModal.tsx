@@ -38,7 +38,7 @@ interface FormState {
 type FieldErrors = Partial<Record<keyof FormState, string>>
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-2.5 text-sm text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25'
+  'w-full rounded-lg border border-white/5 bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 sm:py-2.5 sm:text-sm'
 
 const labelClass = 'text-xs font-medium uppercase tracking-widest text-muted'
 
@@ -143,6 +143,11 @@ export default function ProjectFormModal({
         if (!fieldErrors[key]) fieldErrors[key] = issue.message
       }
       setErrors(fieldErrors)
+      const firstInvalidField = Object.keys(fieldErrors)[0]
+      if (firstInvalidField) {
+        const el = event.currentTarget.elements.namedItem(firstInvalidField)
+        if (el instanceof HTMLElement) el.focus()
+      }
       return
     }
     setErrors({})
@@ -183,7 +188,7 @@ export default function ProjectFormModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -194,6 +199,7 @@ export default function ProjectFormModal({
                 <span className={labelClass}>Nome do projeto *</span>
                 <input
                   type="text"
+                  name="nome"
                   value={values.nome}
                   onChange={(e) => setField('nome', e.target.value)}
                   placeholder="Loja Virtual Acme"
@@ -207,6 +213,7 @@ export default function ProjectFormModal({
               <label className="flex flex-col gap-1.5">
                 <span className={labelClass}>Tipo de serviço *</span>
                 <select
+                  name="tipo_servico"
                   value={values.tipo_servico}
                   onChange={(e) => setField('tipo_servico', e.target.value)}
                   className={`${inputClass} appearance-none`}
@@ -241,6 +248,7 @@ export default function ProjectFormModal({
                   </div>
                 ) : (
                   <select
+                    name="client_id"
                     value={values.client_id}
                     onChange={(e) => setField('client_id', e.target.value)}
                     className={`${inputClass} appearance-none`}
@@ -273,7 +281,7 @@ export default function ProjectFormModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                  className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 >
                   Cancelar
                 </button>

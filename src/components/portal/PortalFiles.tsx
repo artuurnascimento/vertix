@@ -75,7 +75,7 @@ function FileRow({ file }: { file: PortalFile }) {
           </p>
         )}
         {status === 'error' && (
-          <p className="mt-0.5 text-xs text-red-400">
+          <p role="alert" className="mt-0.5 text-xs text-red-400">
             Não foi possível baixar. Tente novamente.
           </p>
         )}
@@ -85,7 +85,7 @@ function FileRow({ file }: { file: PortalFile }) {
         onClick={handleDownload}
         disabled={status === 'loading'}
         aria-label={`Baixar ${file.nome}`}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-white/10 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {status === 'loading' ? (
           <Loader2 aria-hidden className="h-4 w-4 animate-spin" />

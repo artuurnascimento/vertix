@@ -47,7 +47,7 @@ interface ProjectOption {
 const PARCELAS_TOLERANCE = 0.009
 
 const inputClass =
-  'w-full rounded-lg border border-white/5 bg-surface-2 px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25'
+  'w-full rounded-lg border border-white/5 bg-surface-2 px-3.5 py-2.5 text-base text-ink placeholder:text-muted/50 outline-none transition-colors duration-200 focus:border-accent/60 focus:ring-2 focus:ring-accent/25 sm:text-sm'
 
 const labelClass = 'text-xs font-medium uppercase tracking-widest text-muted'
 
@@ -245,6 +245,13 @@ export default function ProposalFormModal({
         if (!fieldErrors[key]) fieldErrors[key] = issue.message
       }
       setErrors(fieldErrors)
+      const firstTopLevelField = ['project_id', 'titulo'].find(
+        (field) => fieldErrors[field]
+      )
+      if (firstTopLevelField) {
+        const el = event.currentTarget.elements.namedItem(firstTopLevelField)
+        if (el instanceof HTMLElement) el.focus()
+      }
       return
     }
     setErrors({})
@@ -297,7 +304,7 @@ export default function ProposalFormModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                className="rounded-lg p-1.5 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -308,6 +315,7 @@ export default function ProposalFormModal({
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>Projeto *</span>
                   <select
+                    name="project_id"
                     value={projectId}
                     onChange={(e) => setProjectId(e.target.value)}
                     disabled={Boolean(lockedProjectId) || isEdit}
@@ -332,6 +340,7 @@ export default function ProposalFormModal({
                   <span className={labelClass}>Título *</span>
                   <input
                     type="text"
+                    name="titulo"
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
                     placeholder="Loja virtual — fase 1"
@@ -608,7 +617,7 @@ export default function ProposalFormModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink"
+                  className="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
                 >
                   Cancelar
                 </button>

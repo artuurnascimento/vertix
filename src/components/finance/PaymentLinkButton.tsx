@@ -83,7 +83,7 @@ export default function PaymentLinkButton({
       type="button"
       onClick={() => generateLink.mutate()}
       disabled={generateLink.isPending}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
     >
       <Link2 className="h-3.5 w-3.5" />
       {generateLink.isPending ? 'Gerando…' : 'Gerar link'}

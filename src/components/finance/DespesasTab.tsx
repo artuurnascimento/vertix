@@ -69,7 +69,7 @@ export default function DespesasTab() {
         </button>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/5 bg-surface-1">
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-white/5 bg-surface-1">
         {isLoading && (
           <div className="divide-y divide-white/5" aria-label="Carregando despesas">
             {Array.from({ length: SKELETON_ROWS }, (_, i) => (
@@ -170,10 +170,10 @@ export default function DespesasTab() {
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-4 py-4 font-medium text-ink">
+                    <td className="px-4 py-4 font-medium tabular-nums text-ink">
                       {formatBRL(expense.valor)}
                     </td>
-                    <td className="hidden px-4 py-4 text-ink/90 sm:table-cell">
+                    <td className="hidden px-4 py-4 tabular-nums text-ink/90 sm:table-cell">
                       {formatDateBR(expense.data)}
                     </td>
                     <td className="hidden px-4 py-4 lg:table-cell">
