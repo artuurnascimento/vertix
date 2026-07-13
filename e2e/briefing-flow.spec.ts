@@ -179,25 +179,18 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
     ).toBeVisible()
 
     // Perguntas do template ecommerce visíveis (obrigatórias e opcionais).
-    await expect(
-      page.getByLabel('Quantos produtos terá o catálogo da loja?')
-    ).toBeVisible()
-    await expect(
-      page.getByLabel('Precisa de integrações com ERP ou cálculo de frete?')
-    ).toBeVisible()
+    // Labels por regex parcial: os templates são editáveis pelo admin.
+    await expect(page.getByLabel(/Quantos produtos/)).toBeVisible()
+    await expect(page.getByLabel(/integrações com ERP/)).toBeVisible()
 
     // Preenche apenas as obrigatórias: numero, selects e prazo.
+    await page.getByLabel(/Quantos produtos/).fill(RESPOSTA_CATALOGO)
     await page
-      .getByLabel('Quantos produtos terá o catálogo da loja?')
-      .fill(RESPOSTA_CATALOGO)
-    await page
-      .getByLabel('Qual meio de pagamento você deseja utilizar?')
+      .getByLabel(/meio de pagamento/)
       .selectOption(RESPOSTA_PAGAMENTO)
+    await page.getByLabel(/prazo desejado/).fill(RESPOSTA_PRAZO)
     await page
-      .getByLabel('Qual o prazo desejado para o lançamento?')
-      .fill(RESPOSTA_PRAZO)
-    await page
-      .getByLabel('Qual o orçamento previsto para o projeto?')
+      .getByLabel(/orçamento previsto/)
       .selectOption(RESPOSTA_ORCAMENTO)
 
     await page.getByRole('button', { name: 'Enviar briefing' }).click()
@@ -218,9 +211,7 @@ test.describe.serial('Fluxo completo de briefing (admin + público)', () => {
     await expect(
       page.getByRole('button', { name: 'Enviar briefing' })
     ).toHaveCount(0)
-    await expect(
-      page.getByLabel('Quantos produtos terá o catálogo da loja?')
-    ).toHaveCount(0)
+    await expect(page.getByLabel(/Quantos produtos/)).toHaveCount(0)
 
     await anonContext!.close()
     anonContext = null

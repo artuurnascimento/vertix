@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  ClipboardList,
   FileText,
   KanbanSquare,
   LayoutDashboard,
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true },
   { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
   { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
+  { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
   { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
   { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
 ] as const
@@ -22,6 +24,7 @@ const NAV_ITEMS = [
 const SECTION_TITLES: Record<string, string> = {
   '/admin/clientes': 'Clientes',
   '/admin/projetos': 'Projetos',
+  '/admin/briefings': 'Briefings',
   '/admin/propostas': 'Propostas',
   '/admin/financeiro': 'Financeiro',
 }

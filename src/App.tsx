@@ -8,6 +8,7 @@ import ClientDetail from './pages/ClientDetail'
 import Projetos from './pages/Projetos'
 import ProjectDetail from './pages/ProjectDetail'
 import Propostas from './pages/Propostas'
+import Briefings from './pages/Briefings'
 import Financeiro from './pages/Financeiro'
 import BriefingForm from './pages/public/BriefingForm'
 import Proposta from './pages/public/Proposta'
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="clientes/:id" element={<ClientDetail />} />
           <Route path="projetos" element={<Projetos />} />
           <Route path="projetos/:id" element={<ProjectDetail />} />
+          <Route path="briefings" element={<Briefings />} />
           <Route path="propostas" element={<Propostas />} />
           <Route path="financeiro" element={<Financeiro />} />
         </Route>
