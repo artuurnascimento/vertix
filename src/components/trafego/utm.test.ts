@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   breakdownForCampaign,
+  buildUtmQuery,
   buildUtmUrl,
   groupByCampaign,
   isMetaPlaceholder,
@@ -19,6 +20,26 @@ describe('isMetaPlaceholder', () => {
     expect(isMetaPlaceholder('facebook')).toBe(false)
     expect(isMetaPlaceholder('{{campaign.id}} extra')).toBe(false)
     expect(isMetaPlaceholder('')).toBe(false)
+  })
+})
+
+describe('buildUtmQuery', () => {
+  test('gera query no formato do campo "Parâmetros de URL" da Meta', () => {
+    expect(buildUtmQuery(UTM_META_DEFAULTS)).toBe(
+      'utm_source=facebook&utm_medium={{adset.id}}&utm_campaign={{campaign.id}}&utm_content={{ad.id}}'
+    )
+  })
+
+  test('tudo vazio retorna vazio', () => {
+    expect(
+      buildUtmQuery({
+        utm_source: '',
+        utm_medium: '',
+        utm_campaign: '',
+        utm_content: '',
+        utm_term: '',
+      })
+    ).toBe('')
   })
 })
 

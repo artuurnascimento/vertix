@@ -7,6 +7,7 @@ import { formatBRL } from '../../lib/commercial'
 import ConfirmDeleteButton from '../finance/ConfirmDeleteButton'
 import {
   breakdownForCampaign,
+  buildUtmQuery,
   buildUtmUrl,
   groupByCampaign,
   makeSnippet,
@@ -70,6 +71,7 @@ export default function UtmSection() {
   const [abertaCampanha, setAbertaCampanha] = useState<string | null>(null)
 
   const urlFinal = buildUtmUrl(destino, params)
+  const queryMeta = buildUtmQuery(params)
   const snippet = makeSnippet(
     import.meta.env.VITE_SUPABASE_URL as string,
     import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -245,12 +247,34 @@ export default function UtmSection() {
             ))}
           </div>
 
-          {urlFinal !== '' && (
-            <div className="mt-3 flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate rounded-lg bg-black/30 px-3 py-2 font-mono text-[11px] text-ink/75">
-                {urlFinal}
+          {queryMeta !== '' && (
+            <div className="mt-3">
+              <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                Parâmetros de URL (campo da Meta)
               </p>
-              <CopyButton texto={urlFinal} label="Copiar URL rastreada" />
+              <div className="mt-1 flex items-center gap-2">
+                <p className="min-w-0 flex-1 truncate rounded-lg bg-black/30 px-3 py-2 font-mono text-[11px] text-ink/75">
+                  {queryMeta}
+                </p>
+                <CopyButton
+                  texto={queryMeta}
+                  label="Copiar parâmetros para a Meta"
+                />
+              </div>
+            </div>
+          )}
+
+          {urlFinal !== '' && (
+            <div className="mt-3">
+              <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                URL completa
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="min-w-0 flex-1 truncate rounded-lg bg-black/30 px-3 py-2 font-mono text-[11px] text-ink/75">
+                  {urlFinal}
+                </p>
+                <CopyButton texto={urlFinal} label="Copiar URL rastreada" />
+              </div>
             </div>
           )}
 

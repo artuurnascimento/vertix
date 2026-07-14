@@ -26,12 +26,12 @@ export function isMetaPlaceholder(value: string): boolean {
   return META_PLACEHOLDER_RE.test(value)
 }
 
-/** Monta a URL final. Valores vazios são omitidos; placeholders ficam crus. */
-export function buildUtmUrl(destino: string, params: UtmParams): string {
-  const base = destino.trim()
-  if (base === '') return ''
-
-  const pares = (Object.entries(params) as Array<[keyof UtmParams, string]>)
+/**
+ * Query string dos UTMs (sem destino) — formato do campo "Parâmetros de URL"
+ * do Gerenciador de Anúncios da Meta. Vazios omitidos; placeholders crus.
+ */
+export function buildUtmQuery(params: UtmParams): string {
+  return (Object.entries(params) as Array<[keyof UtmParams, string]>)
     .map(([chave, valor]) => [chave, valor.trim()] as const)
     .filter(([, valor]) => valor !== '')
     .map(([chave, valor]) =>
@@ -39,10 +39,18 @@ export function buildUtmUrl(destino: string, params: UtmParams): string {
         ? `${chave}=${valor}`
         : `${chave}=${encodeURIComponent(valor)}`
     )
+    .join('&')
+}
 
-  if (pares.length === 0) return base
+/** Monta a URL final. Valores vazios são omitidos; placeholders ficam crus. */
+export function buildUtmUrl(destino: string, params: UtmParams): string {
+  const base = destino.trim()
+  if (base === '') return ''
+
+  const query = buildUtmQuery(params)
+  if (query === '') return base
   const separador = base.includes('?') ? '&' : '?'
-  return `${base}${separador}${pares.join('&')}`
+  return `${base}${separador}${query}`
 }
 
 /**
