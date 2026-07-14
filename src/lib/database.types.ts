@@ -351,6 +351,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          lida: boolean
+          link: string | null
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          lida?: boolean
+          link?: string | null
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          lida?: boolean
+          link?: string | null
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -540,6 +570,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      proposal_templates: {
+        Row: {
+          condicoes: string | null
+          id: string
+          itens: Json
+          tipo_servico: string
+          titulo: string
+        }
+        Insert: {
+          condicoes?: string | null
+          id?: string
+          itens?: Json
+          tipo_servico: string
+          titulo: string
+        }
+        Update: {
+          condicoes?: string | null
+          id?: string
+          itens?: Json
+          tipo_servico?: string
+          titulo?: string
+        }
+        Relationships: []
       }
       proposals: {
         Row: {
@@ -783,6 +837,27 @@ export type Database = {
           },
         ]
       }
+      task_templates: {
+        Row: {
+          id: string
+          ordem: number
+          tipo_servico: string
+          titulo: string
+        }
+        Insert: {
+          id?: string
+          ordem: number
+          tipo_servico: string
+          titulo: string
+        }
+        Update: {
+          id?: string
+          ordem?: number
+          tipo_servico?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       time_entries: {
         Row: {
           created_at: string
@@ -859,6 +934,15 @@ export type Database = {
       is_visible_client_file: {
         Args: { p_storage_path: string }
         Returns: boolean
+      }
+      push_notification: {
+        Args: {
+          p_descricao: string
+          p_link: string
+          p_tipo: string
+          p_titulo: string
+        }
+        Returns: undefined
       }
       respond_proposal: {
         Args: { p_aceite: boolean; p_nome: string; t: string }
