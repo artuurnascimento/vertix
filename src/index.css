@@ -18,6 +18,12 @@ body,
   background: #0c0c0c;
 }
 
+/* Nunca expor scroll horizontal de página — conteúdo excedente é clipado. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   font-family: 'Kanit', sans-serif;
 }

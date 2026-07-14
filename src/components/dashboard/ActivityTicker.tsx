@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react'
-import { useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   ArrowRightLeft,
@@ -28,7 +26,7 @@ const ACTIVITY_VISUALS: Record<string, ActivityVisual> = {
 }
 
 const DEFAULT_VISUAL: ActivityVisual = ACTIVITY_VISUALS.nota
-const STATIC_LIST_LIMIT = 6
+const LIST_LIMIT = 8
 
 function getActivityVisual(tipo: string): ActivityVisual {
   return ACTIVITY_VISUALS[tipo] ?? DEFAULT_VISUAL
@@ -39,18 +37,11 @@ function getAuthorLabel(entry: DashboardActivityEntry): string {
   return entry.profiles?.nome ?? 'Equipe'
 }
 
-function TickerItem({
-  entry,
-  tabbable = true,
-}: {
-  entry: DashboardActivityEntry
-  tabbable?: boolean
-}) {
+function TickerItem({ entry }: { entry: DashboardActivityEntry }) {
   const visual = getActivityVisual(entry.tipo)
   return (
     <Link
       to={`/admin/projetos/${entry.project_id}`}
-      tabIndex={tabbable ? undefined : -1}
       className="group inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap px-5 text-sm transition-colors duration-150 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
@@ -71,61 +62,24 @@ function TickerItem({
 }
 
 /**
- * Ticker horizontal de atividades recentes — substitui o AtividadesCard.
- * Marquee contínuo (CSS var --duration/--gap do tailwind.config), pausa no
- * hover, e vira lista estática truncada quando prefers-reduced-motion.
+ * Faixa estática de atividades recentes — SEM marquee, a pedido do usuário
+ * ("quero fixo"). Excedente acessível por scroll horizontal manual.
  */
 export default function ActivityTicker() {
   const { data: entries, isLoading, isError } = useDashboardActivity()
-  const prefersReducedMotion = useReducedMotion()
 
   if (isLoading || isError || !entries || entries.length === 0) {
     return null
   }
 
-  if (prefersReducedMotion) {
-    return (
-      <div className="flex items-center gap-1 overflow-x-auto border-y border-white/5 py-2.5">
-        {entries.slice(0, STATIC_LIST_LIMIT).map((entry) => (
-          <TickerItem key={entry.id} entry={entry} />
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div
-      className="group/ticker relative overflow-hidden border-y border-white/5 py-2.5"
-      style={
-        {
-          '--duration': '32s',
-          '--gap': '0px',
-          maskImage:
-            'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)',
-          WebkitMaskImage:
-            'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)',
-        } as CSSProperties
-      }
-      role="marquee"
-      aria-label="Atividades recentes em rolagem contínua"
+      aria-label="Atividades recentes"
+      className="flex items-center gap-1 overflow-x-auto border-y border-white/5 py-2.5"
     >
-      {/* Cada cópia anima -100% do próprio comprimento — loop contínuo sem
-          salto. Animar o trilho inteiro (2 cópias) causava o vai-e-vem. */}
-      <div className="flex w-max">
-        <div className="flex shrink-0 animate-marquee group-hover/ticker:[animation-play-state:paused]">
-          {entries.map((entry) => (
-            <TickerItem key={entry.id} entry={entry} />
-          ))}
-        </div>
-        <div
-          className="flex shrink-0 animate-marquee group-hover/ticker:[animation-play-state:paused]"
-          aria-hidden="true"
-        >
-          {entries.map((entry) => (
-            <TickerItem key={`dup-${entry.id}`} entry={entry} tabbable={false} />
-          ))}
-        </div>
-      </div>
+      {entries.slice(0, LIST_LIMIT).map((entry) => (
+        <TickerItem key={entry.id} entry={entry} />
+      ))}
     </div>
   )
 }
