@@ -76,6 +76,98 @@ export type Database = {
           },
         ]
       }
+      ad_accounts: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          last_sync_error: string | null
+          meta_account_id: string
+          nome: string
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          meta_account_id: string
+          nome: string
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          meta_account_id?: string
+          nome?: string
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_accounts_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_metrics_daily: {
+        Row: {
+          ad_account_id: string
+          cliques: number | null
+          conversoes: number | null
+          data: string
+          gasto: number
+          id: string
+          impressoes: number | null
+          receita: number | null
+        }
+        Insert: {
+          ad_account_id: string
+          cliques?: number | null
+          conversoes?: number | null
+          data: string
+          gasto?: number
+          id?: string
+          impressoes?: number | null
+          receita?: number | null
+        }
+        Update: {
+          ad_account_id?: string
+          cliques?: number | null
+          conversoes?: number | null
+          data?: string
+          gasto?: number
+          id?: string
+          impressoes?: number | null
+          receita?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_metrics_daily_ad_account_id_fkey"
+            columns: ["ad_account_id"]
+            isOneToOne: false
+            referencedRelation: "ad_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agenda_events: {
         Row: {
           cor: string
@@ -926,6 +1018,7 @@ export type Database = {
       generate_subscription_receivables: { Args: never; Returns: number }
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
       get_contract_by_token: { Args: { p_token: string }; Returns: Json }
+      get_portal_ads: { Args: { p_token: string }; Returns: Json }
       get_portal_by_token: { Args: { t: string }; Returns: Json }
       get_portal_files: { Args: { p_token: string }; Returns: Json }
       get_proposal_by_token: { Args: { t: string }; Returns: Json }
