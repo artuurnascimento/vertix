@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
+  CalendarDays,
   ChevronRight,
   ClipboardList,
   FileSignature,
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true },
   { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
   { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
+  { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays, end: false },
   { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
   { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
   { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
@@ -33,6 +35,7 @@ const NAV_ITEMS = [
 const SECTION_TITLES: Record<string, string> = {
   '/admin/clientes': 'Clientes',
   '/admin/projetos': 'Projetos',
+  '/admin/agenda': 'Agenda',
   '/admin/briefings': 'Briefings',
   '/admin/propostas': 'Propostas',
   '/admin/contratos': 'Contratos',
