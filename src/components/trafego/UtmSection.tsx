@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, Link2, Plus, Radar } from 'lucide-react'
+import { Check, ChevronDown, Copy, Link2, Plus, Radar } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../lib/database.types'
 import { formatBRL } from '../../lib/commercial'
 import ConfirmDeleteButton from '../finance/ConfirmDeleteButton'
 import {
+  breakdownForCampaign,
   buildUtmUrl,
   groupByCampaign,
   makeSnippet,
@@ -66,6 +67,7 @@ export default function UtmSection() {
   const [destino, setDestino] = useState('')
   const [params, setParams] = useState<UtmParams>(UTM_META_DEFAULTS)
   const [erro, setErro] = useState<string | null>(null)
+  const [abertaCampanha, setAbertaCampanha] = useState<string | null>(null)
 
   const urlFinal = buildUtmUrl(destino, params)
   const snippet = makeSnippet(
@@ -91,7 +93,7 @@ export default function UtmSection() {
     queryFn: async (): Promise<SessionRow[]> => {
       const { data, error } = await supabase
         .from('utm_sessions')
-        .select('utm_campaign, utm_conversions(tipo, valor)')
+        .select('utm_campaign, utm_medium, utm_content, utm_conversions(tipo, valor)')
         .gte('created_at', `${monthStartISO()}T00:00:00`)
       if (error) throw new Error(error.message)
       return data as SessionRow[]
@@ -330,26 +332,87 @@ export default function UtmSection() {
               <tbody className="divide-y divide-white/5">
                 {atribuicao.map((linha) => {
                   const meta = metaPorCampanha.get(linha.campanha)
+                  const aberta = abertaCampanha === linha.campanha
                   return (
-                    <tr
-                      key={linha.campanha}
-                      className="tabular-nums text-ink/85"
-                    >
-                      <td className="max-w-[220px] truncate py-2 pr-3 text-ink">
-                        {meta?.nome ?? linha.campanha}
-                      </td>
-                      <td className="py-2 pr-3">{linha.sessoes}</td>
-                      <td className="py-2 pr-3">{linha.conversoes}</td>
-                      <td className="py-2 pr-3 font-semibold text-emerald-300">
-                        {formatBRL(linha.receita)}
-                      </td>
-                      <td className="py-2 pr-3">
-                        {meta ? formatBRL(meta.receita) : '—'}
-                      </td>
-                      <td className="py-2">
-                        {meta ? formatBRL(meta.gasto) : '—'}
-                      </td>
-                    </tr>
+                    <Fragment key={linha.campanha}>
+                      <tr className="tabular-nums text-ink/85">
+                        <td className="max-w-[220px] py-2 pr-3">
+                          <button
+                            type="button"
+                            aria-expanded={aberta}
+                            aria-label={`Breakdown de ${meta?.nome ?? linha.campanha}`}
+                            onClick={() =>
+                              setAbertaCampanha(aberta ? null : linha.campanha)
+                            }
+                            className="inline-flex max-w-full items-center gap-1.5 truncate text-left text-ink transition-colors duration-150 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                          >
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${aberta ? 'rotate-180' : ''}`}
+                            />
+                            <span className="truncate">
+                              {meta?.nome ?? linha.campanha}
+                            </span>
+                          </button>
+                        </td>
+                        <td className="py-2 pr-3">{linha.sessoes}</td>
+                        <td className="py-2 pr-3">{linha.conversoes}</td>
+                        <td className="py-2 pr-3 font-semibold text-emerald-300">
+                          {formatBRL(linha.receita)}
+                        </td>
+                        <td className="py-2 pr-3">
+                          {meta ? formatBRL(meta.receita) : '—'}
+                        </td>
+                        <td className="py-2">
+                          {meta ? formatBRL(meta.gasto) : '—'}
+                        </td>
+                      </tr>
+                      {aberta && (
+                        <tr>
+                          <td colSpan={6} className="pb-4 pt-1">
+                            <div className="grid gap-4 rounded-xl border border-white/5 bg-surface-2/60 p-4 sm:grid-cols-2">
+                              {(
+                                [
+                                  ['utm_medium', 'Por conjunto (utm_medium)'],
+                                  ['utm_content', 'Por anúncio (utm_content)'],
+                                ] as const
+                              ).map(([dimensao, titulo]) => {
+                                const grupos = breakdownForCampaign(
+                                  sessoes ?? [],
+                                  linha.campanha,
+                                  dimensao
+                                )
+                                return (
+                                  <div key={dimensao}>
+                                    <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                                      {titulo}
+                                    </p>
+                                    <ul className="mt-2 flex list-none flex-col gap-1 p-0">
+                                      {grupos.map((grupo) => (
+                                        <li
+                                          key={grupo.campanha}
+                                          className="flex items-baseline justify-between gap-3 text-xs tabular-nums text-ink/80"
+                                        >
+                                          <span className="min-w-0 truncate font-mono">
+                                            {grupo.campanha}
+                                          </span>
+                                          <span className="shrink-0 text-muted">
+                                            {grupo.sessoes} sess ·{' '}
+                                            {grupo.conversoes} conv ·{' '}
+                                            <span className="font-semibold text-emerald-300">
+                                              {formatBRL(grupo.receita)}
+                                            </span>
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   )
                 })}
               </tbody>

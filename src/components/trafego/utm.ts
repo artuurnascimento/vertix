@@ -69,6 +69,8 @@ window.vtx={convert:function(o){o=o||{};post('track_utm_conversion',{p_session_k
 
 export interface SessionRow {
   utm_campaign: string | null
+  utm_medium?: string | null
+  utm_content?: string | null
   utm_conversions: Array<{ tipo: string; valor: number }>
 }
 
@@ -79,11 +81,13 @@ export interface CampaignAttribution {
   receita: number
 }
 
-/** Agrupa sessões por utm_campaign (null/vazio → 'direto'). */
-export function groupByCampaign(rows: SessionRow[]): CampaignAttribution[] {
+function groupByKey(
+  rows: SessionRow[],
+  getKey: (row: SessionRow) => string
+): CampaignAttribution[] {
   const mapa = new Map<string, CampaignAttribution>()
   for (const row of rows) {
-    const chave = row.utm_campaign?.trim() || 'direto'
+    const chave = getKey(row)
     const atual = mapa.get(chave) ?? {
       campanha: chave,
       sessoes: 0,
@@ -103,5 +107,28 @@ export function groupByCampaign(rows: SessionRow[]): CampaignAttribution[] {
   }
   return [...mapa.values()].sort(
     (a, b) => b.receita - a.receita || b.sessoes - a.sessoes
+  )
+}
+
+/** Agrupa sessões por utm_campaign (null/vazio → 'direto'). */
+export function groupByCampaign(rows: SessionRow[]): CampaignAttribution[] {
+  return groupByKey(rows, (row) => row.utm_campaign?.trim() || 'direto')
+}
+
+/**
+ * Breakdown de uma campanha por conjunto (utm_medium) ou anúncio
+ * (utm_content). 'direto' agrupa sessões sem utm_campaign.
+ */
+export function breakdownForCampaign(
+  rows: SessionRow[],
+  campanha: string,
+  dimensao: 'utm_medium' | 'utm_content'
+): CampaignAttribution[] {
+  const daCampanha = rows.filter(
+    (row) => (row.utm_campaign?.trim() || 'direto') === campanha
+  )
+  return groupByKey(
+    daCampanha,
+    (row) => row[dimensao]?.trim() || 'não informado'
   )
 }

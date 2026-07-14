@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  breakdownForCampaign,
   buildUtmUrl,
   groupByCampaign,
   isMetaPlaceholder,
@@ -100,5 +101,61 @@ describe('groupByCampaign', () => {
       },
     ])
     expect(grupos.map((g) => g.campanha)).toEqual(['com_receita', 'sem_receita'])
+  })
+})
+
+describe('breakdownForCampaign', () => {
+  const rows = [
+    {
+      utm_campaign: 'camp_a',
+      utm_medium: 'adset_1',
+      utm_content: 'ad_1',
+      utm_conversions: [{ tipo: 'purchase', valor: 100 }],
+    },
+    {
+      utm_campaign: 'camp_a',
+      utm_medium: 'adset_1',
+      utm_content: 'ad_2',
+      utm_conversions: [],
+    },
+    {
+      utm_campaign: 'camp_a',
+      utm_medium: null,
+      utm_content: null,
+      utm_conversions: [],
+    },
+    {
+      utm_campaign: 'camp_b',
+      utm_medium: 'adset_9',
+      utm_content: 'ad_9',
+      utm_conversions: [{ tipo: 'purchase', valor: 999 }],
+    },
+  ]
+
+  test('agrupa por conjunto (utm_medium) só da campanha pedida', () => {
+    const grupos = breakdownForCampaign(rows, 'camp_a', 'utm_medium')
+    expect(grupos).toEqual([
+      { campanha: 'adset_1', sessoes: 2, conversoes: 1, receita: 100 },
+      { campanha: 'não informado', sessoes: 1, conversoes: 0, receita: 0 },
+    ])
+  })
+
+  test('agrupa por anúncio (utm_content)', () => {
+    const grupos = breakdownForCampaign(rows, 'camp_a', 'utm_content')
+    expect(grupos.map((g) => g.campanha)).toEqual([
+      'ad_1',
+      'ad_2',
+      'não informado',
+    ])
+  })
+
+  test('campanha "direto" agrupa sessões sem utm_campaign', () => {
+    const grupos = breakdownForCampaign(
+      [{ utm_campaign: null, utm_medium: 'x', utm_conversions: [] }],
+      'direto',
+      'utm_medium'
+    )
+    expect(grupos).toHaveLength(1)
+    expect(grupos[0].sessoes).toBe(1)
   })
 })
