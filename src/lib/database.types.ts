@@ -127,6 +127,85 @@ export type Database = {
           },
         ]
       }
+      ad_campaign_metrics_daily: {
+        Row: {
+          campaign_id: string
+          cliques: number | null
+          conversoes: number | null
+          data: string
+          gasto: number
+          id: string
+          impressoes: number | null
+          receita: number | null
+        }
+        Insert: {
+          campaign_id: string
+          cliques?: number | null
+          conversoes?: number | null
+          data: string
+          gasto?: number
+          id?: string
+          impressoes?: number | null
+          receita?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          cliques?: number | null
+          conversoes?: number | null
+          data?: string
+          gasto?: number
+          id?: string
+          impressoes?: number | null
+          receita?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_campaign_metrics_daily_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_campaigns: {
+        Row: {
+          ad_account_id: string
+          created_at: string
+          id: string
+          meta_campaign_id: string
+          nome: string
+          objetivo: string | null
+          status: string | null
+        }
+        Insert: {
+          ad_account_id: string
+          created_at?: string
+          id?: string
+          meta_campaign_id: string
+          nome: string
+          objetivo?: string | null
+          status?: string | null
+        }
+        Update: {
+          ad_account_id?: string
+          created_at?: string
+          id?: string
+          meta_campaign_id?: string
+          nome?: string
+          objetivo?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_campaigns_ad_account_id_fkey"
+            columns: ["ad_account_id"]
+            isOneToOne: false
+            referencedRelation: "ad_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_metrics_daily: {
         Row: {
           ad_account_id: string

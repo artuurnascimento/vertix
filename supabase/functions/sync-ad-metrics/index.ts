@@ -86,6 +86,124 @@ function friendlyGraphError(message: string | undefined): string {
   return `Falha ao consultar a Meta Graph API: ${message}`
 }
 
+interface CampaignMetaRow {
+  id?: string
+  name?: string
+  objective?: string
+  status?: string
+}
+
+interface CampaignInsightRow extends InsightRow {
+  campaign_id?: string
+  campaign_name?: string
+}
+
+/**
+ * Etapa de campanhas (tracking avançado): upsert de ad_campaigns (metadados)
+ * e da série diária ad_campaign_metrics_daily (last_7d, level=campaign).
+ * Lança erro amigável — o chamador decide como registrar sem derrubar a conta.
+ */
+async function syncCampaignsForAccount(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  metaAdsToken: string,
+  accountUuid: string,
+  metaAccountId: string
+): Promise<void> {
+  const svcHeaders = {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    'Content-Type': 'application/json',
+  }
+
+  // 1. Metadados das campanhas (nome/objetivo/status).
+  const campaignsRes = await fetch(
+    `https://graph.facebook.com/v21.0/${metaAccountId}/campaigns` +
+      `?fields=name,objective,status&limit=200&access_token=${metaAdsToken}`
+  )
+  const campaignsBody = (await campaignsRes.json()) as {
+    data?: CampaignMetaRow[]
+    error?: { message?: string }
+  }
+  if (!campaignsRes.ok || campaignsBody.error) {
+    throw new Error(friendlyGraphError(campaignsBody.error?.message))
+  }
+
+  for (const c of campaignsBody.data ?? []) {
+    if (!c.id) continue
+    const upsertRes = await fetch(
+      `${supabaseUrl}/rest/v1/ad_campaigns?on_conflict=meta_campaign_id`,
+      {
+        method: 'POST',
+        headers: { ...svcHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          ad_account_id: accountUuid,
+          meta_campaign_id: c.id,
+          nome: c.name ?? c.id,
+          objetivo: c.objective ?? null,
+          status: c.status ?? null,
+        }),
+      }
+    )
+    if (!upsertRes.ok) throw new Error('Falha ao gravar campanhas.')
+  }
+
+  // 2. Mapa meta_campaign_id → uuid local.
+  const mapRes = await fetch(
+    `${supabaseUrl}/rest/v1/ad_campaigns?ad_account_id=eq.${accountUuid}&select=id,meta_campaign_id`,
+    { headers: svcHeaders }
+  )
+  if (!mapRes.ok) throw new Error('Falha ao mapear campanhas.')
+  const mapRows = (await mapRes.json()) as Array<{
+    id: string
+    meta_campaign_id: string
+  }>
+  const idPorMeta = new Map(mapRows.map((r) => [r.meta_campaign_id, r.id]))
+
+  // 3. Série diária por campanha (last_7d).
+  const insightsRes = await fetch(
+    `https://graph.facebook.com/v21.0/${metaAccountId}/insights` +
+      `?level=campaign&time_increment=1&date_preset=last_7d` +
+      `&fields=campaign_id,campaign_name,spend,impressions,clicks,actions,action_values` +
+      `&access_token=${metaAdsToken}`
+  )
+  const insightsBody = (await insightsRes.json()) as {
+    data?: CampaignInsightRow[]
+    error?: { message?: string }
+  }
+  if (!insightsRes.ok || insightsBody.error) {
+    throw new Error(friendlyGraphError(insightsBody.error?.message))
+  }
+
+  for (const row of insightsBody.data ?? []) {
+    if (!row.date_start || !row.campaign_id) continue
+    const campaignUuid = idPorMeta.get(row.campaign_id)
+    if (!campaignUuid) continue
+
+    const gasto = row.spend ? Number(row.spend) : 0
+    const impressoes = row.impressions ? Number(row.impressions) : 0
+    const cliques = row.clicks ? Number(row.clicks) : 0
+
+    const upsertRes = await fetch(
+      `${supabaseUrl}/rest/v1/ad_campaign_metrics_daily?on_conflict=campaign_id,data`,
+      {
+        method: 'POST',
+        headers: { ...svcHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          campaign_id: campaignUuid,
+          data: row.date_start,
+          gasto: Number.isFinite(gasto) ? gasto : 0,
+          impressoes: Number.isFinite(impressoes) ? impressoes : 0,
+          cliques: Number.isFinite(cliques) ? cliques : 0,
+          conversoes: parseConversoes(row.actions),
+          receita: pickActionValue(row.action_values, 'purchase'),
+        }),
+      }
+    )
+    if (!upsertRes.ok) throw new Error('Falha ao gravar métricas de campanha.')
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
@@ -257,6 +375,35 @@ Deno.serve(async (req) => {
           '[sync-ad-metrics] Falha ao atualizar last_sync_at:',
           successUpdateRes.status
         )
+      }
+
+      // Etapa de campanhas: falha aqui NÃO derruba a conta (métricas de
+      // conta já gravadas) — registra em last_sync_error com prefixo.
+      try {
+        await syncCampaignsForAccount(
+          supabaseUrl,
+          serviceRoleKey,
+          metaAdsToken,
+          account.id,
+          account.meta_account_id
+        )
+      } catch (campErr) {
+        const msg =
+          campErr instanceof Error ? campErr.message : 'falha desconhecida'
+        console.error(
+          `[sync-ad-metrics] Campanhas da conta ${account.id}:`,
+          msg
+        )
+        await fetch(`${supabaseUrl}/rest/v1/ad_accounts?id=eq.${account.id}`, {
+          method: 'PATCH',
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ last_sync_error: `campanhas: ${msg}` }),
+        })
       }
 
       sincronizadas += 1

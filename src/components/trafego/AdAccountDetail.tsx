@@ -10,6 +10,7 @@ import {
   roas,
 } from './adMetrics'
 import type { DailyMetric } from './adMetrics'
+import CampaignsSection from './CampaignsSection'
 
 /**
  * Detalhe expandido de uma conta de anúncio: cartões do mês, gráfico de
@@ -215,6 +216,8 @@ export default function AdAccountDetail({ accountId }: { accountId: string }) {
           </tbody>
         </table>
       </div>
+
+      <CampaignsSection accountId={accountId} />
     </div>
   )
 }
