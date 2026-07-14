@@ -113,6 +113,7 @@ export default function ResumoFinanceiro() {
       title="Resumo financeiro"
       subtitle="Consolidado de propostas e recebíveis"
       action={{ label: 'ver financeiro', to: '/admin/financeiro' }}
+      variant="shallow"
     >
       {isLoading && <CardSkeleton rows={3} rowClassName="h-14" />}
 

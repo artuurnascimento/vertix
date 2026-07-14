@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import DashboardCard from './DashboardCard'
 import { CardErrorState, CardSkeleton } from './CardStates'
 import AgendaEventModal from './AgendaEventModal'
 import {
@@ -16,9 +15,9 @@ import {
 } from './useAgenda'
 import type { AgendaEvent, AgendaCor } from './useAgenda'
 
-const ROW_STAGGER_S = 0.05
+const ROW_STAGGER_S = 0.06
 
-/** Blocos de cor do evento — bg/10, borda esquerda 3px, texto claro. */
+/** Blocos de cor do evento — dot na linha do tempo + fundo do cartão pendurado. */
 const EVENT_COLOR_CLASSES: Record<
   AgendaCor,
   { border: string; bg: string; text: string; dot: string }
@@ -53,6 +52,16 @@ function colorMeta(cor: string) {
   return EVENT_COLOR_CLASSES[cor as AgendaCor] ?? EVENT_COLOR_CLASSES.accent
 }
 
+/** Hora (0-23) do início do evento, no fuso local. */
+function eventHour(isoDate: string): number {
+  return new Date(isoDate).getHours()
+}
+
+/**
+ * Agenda re-skinada como timeline vertical do dia selecionado — linha vertical
+ * com dots de hora, eventos pendurados à direita. Mantém toda a funcionalidade
+ * original: navegação de semana, seleção de dia, criação/edição via modal.
+ */
 export default function AgendaCard() {
   const today = useMemo(() => new Date(), [])
   const prefersReducedMotion = useReducedMotion()
@@ -78,7 +87,14 @@ export default function AgendaCard() {
   }, [events])
 
   const selectedKey = dayKey(selectedDate)
-  const dayEvents = eventsByDay.get(selectedKey) ?? []
+  const dayEvents = useMemo(
+    () =>
+      (eventsByDay.get(selectedKey) ?? [])
+        .slice()
+        .sort((a, b) => a.inicio.localeCompare(b.inicio)),
+    [eventsByDay, selectedKey]
+  )
+  const isToday = isSameDay(selectedDate, today)
 
   const goToWeek = (direction: -1 | 1) => {
     setWeekStart((prev) => addDays(prev, direction * 7))
@@ -100,10 +116,21 @@ export default function AgendaCard() {
   }
 
   return (
-    <DashboardCard title="Agenda" subtitle="Compromissos da semana">
-      {/* Header: navegação de semana + ações */}
-      <div className="relative -mt-1 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+    <section
+      className={`relative flex h-full flex-col overflow-hidden rounded-3xl border p-6 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] ${
+        isToday
+          ? 'border-accent/20 bg-gradient-to-b from-surface-1 to-[#101018] shadow-[0_0_40px_-18px_rgba(108,91,242,0.5)]'
+          : 'border-white/5 bg-surface-1'
+      }`}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-kanit text-base font-semibold text-ink">Agenda</h2>
+          <p className="mt-0.5 text-xs font-light text-muted">
+            {formatWeekRange(weekStart)}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
           <button
             type="button"
             aria-label="Semana anterior"
@@ -112,9 +139,6 @@ export default function AgendaCard() {
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="min-w-[6.5rem] text-center text-sm font-medium text-ink">
-            {formatWeekRange(weekStart)}
-          </span>
           <button
             type="button"
             aria-label="Próxima semana"
@@ -124,31 +148,13 @@ export default function AgendaCard() {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={goToToday}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink"
-          >
-            Hoje
-          </button>
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Evento
-          </button>
-        </div>
-      </div>
+      </header>
 
       {/* Faixa de dias */}
-      <div className="relative mt-5 grid grid-cols-7 gap-1.5">
+      <div className="relative mt-5 grid grid-cols-7 gap-1">
         {days.map(({ date, label }) => {
           const key = dayKey(date)
-          const isToday = isSameDay(date, today)
+          const isDayToday = isSameDay(date, today)
           const isSelected = isSameDay(date, selectedDate)
           const hasEvents = (eventsByDay.get(key) ?? []).length > 0
 
@@ -157,17 +163,17 @@ export default function AgendaCard() {
               key={key}
               type="button"
               onClick={() => setSelectedDate(date)}
-              aria-current={isToday ? 'date' : undefined}
+              aria-current={isDayToday ? 'date' : undefined}
               aria-pressed={isSelected}
-              className={`relative flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 transition-all duration-200 ${
-                isToday
+              className={`relative flex flex-col items-center gap-1 rounded-xl px-1 py-2 transition-all duration-200 ${
+                isDayToday
                   ? 'bg-gradient-to-r from-accent to-accent-2 text-white shadow-[0_4px_24px_rgba(108,91,242,0.4)]'
                   : isSelected
                     ? 'border border-accent/50 bg-accent/5 text-ink'
                     : 'border border-transparent text-muted hover:bg-white/5 hover:text-ink'
               }`}
             >
-              <span className="text-[10px] font-medium uppercase tracking-widest opacity-80">
+              <span className="text-[9px] font-medium uppercase tracking-widest opacity-80">
                 {label}
               </span>
               <span className="text-sm font-semibold">{date.getDate()}</span>
@@ -175,7 +181,7 @@ export default function AgendaCard() {
                 aria-hidden
                 className={`h-1 w-1 rounded-full transition-opacity duration-200 ${
                   hasEvents
-                    ? isToday
+                    ? isDayToday
                       ? 'bg-white/90 opacity-100'
                       : 'bg-accent opacity-100'
                     : 'opacity-0'
@@ -186,8 +192,26 @@ export default function AgendaCard() {
         })}
       </div>
 
-      {/* Lista do dia selecionado */}
-      <div className="relative mt-5">
+      <div className="mt-2 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={goToToday}
+          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink"
+        >
+          Hoje
+        </button>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Evento
+        </button>
+      </div>
+
+      {/* Timeline vertical do dia selecionado */}
+      <div className="relative mt-5 flex-1 overflow-y-auto pr-1">
         {isLoading && <CardSkeleton rows={3} rowClassName="h-14" />}
 
         {isError && <CardErrorState />}
@@ -196,17 +220,13 @@ export default function AgendaCard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={selectedKey}
-              initial={
-                prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 6 }
-              }
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={
-                prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }
-              }
+              exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
             >
               {dayEvents.length === 0 && (
-                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <div className="flex flex-col items-center gap-3 py-10 text-center">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5">
                     <CalendarDays className="h-4 w-4 text-muted" />
                   </span>
@@ -225,35 +245,44 @@ export default function AgendaCard() {
               )}
 
               {dayEvents.length > 0 && (
-                <ul className="flex flex-col gap-2">
+                <ol className="relative flex flex-col gap-5 pl-5">
+                  {/* Linha vertical contínua da timeline */}
+                  <span
+                    aria-hidden
+                    className="absolute bottom-2 left-[3px] top-2 w-px bg-white/10"
+                  />
                   {dayEvents.map((event, index) => {
                     const colors = colorMeta(event.cor)
+                    const hour = eventHour(event.inicio)
+                    const isCurrentHour = isToday && hour === today.getHours()
                     return (
                       <motion.li
                         key={event.id}
                         initial={
-                          prefersReducedMotion
-                            ? { opacity: 1 }
-                            : { opacity: 0, y: 6 }
+                          prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: -6 }
                         }
-                        animate={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 1, x: 0 }}
                         transition={{
                           duration: 0.22,
-                          delay: prefersReducedMotion
-                            ? 0
-                            : index * ROW_STAGGER_S,
+                          delay: prefersReducedMotion ? 0 : index * ROW_STAGGER_S,
                         }}
+                        className="relative"
                       >
+                        {/* Dot da hora na linha vertical */}
+                        <span
+                          aria-hidden
+                          className={`absolute -left-5 top-1.5 h-[7px] w-[7px] rounded-full ${colors.dot} ${
+                            isCurrentHour ? 'ring-4 ring-accent/20' : ''
+                          }`}
+                          style={{ boxShadow: `0 0 6px currentColor` }}
+                        />
                         <button
                           type="button"
                           onClick={() => openEditModal(event)}
                           className={`w-full rounded-lg border-l-[3px] ${colors.border} ${colors.bg} px-4 py-2.5 text-left transition-colors duration-150 hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
                         >
-                          <span
-                            className={`text-[11px] font-medium tracking-wide ${colors.text}`}
-                          >
-                            {formatEventTime(event.inicio)} –{' '}
-                            {formatEventTime(event.fim)}
+                          <span className={`text-[11px] font-medium tracking-wide ${colors.text}`}>
+                            {formatEventTime(event.inicio)} – {formatEventTime(event.fim)}
                           </span>
                           <p className="mt-0.5 truncate text-sm font-medium text-ink">
                             {event.titulo}
@@ -267,7 +296,7 @@ export default function AgendaCard() {
                       </motion.li>
                     )
                   })}
-                </ul>
+                </ol>
               )}
             </motion.div>
           </AnimatePresence>
@@ -280,6 +309,6 @@ export default function AgendaCard() {
         defaultDate={selectedDate}
         onClose={() => setModalOpen(false)}
       />
-    </DashboardCard>
+    </section>
   )
 }

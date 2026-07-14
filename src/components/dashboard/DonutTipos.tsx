@@ -81,6 +81,7 @@ export default function DonutTipos() {
     <DashboardCard
       title="Por tipo de projeto"
       subtitle="Distribuição do portfólio ativo"
+      variant="shallow"
     >
       {isLoading && <CardSkeleton rows={3} rowClassName="h-8" />}
 

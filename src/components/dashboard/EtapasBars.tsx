@@ -38,6 +38,7 @@ export default function EtapasBars() {
           : 'Distribuição por etapa do kanban'
       }
       action={{ label: 'ver board', to: '/admin/projetos' }}
+      variant="shallow"
     >
       {isLoading && <CardSkeleton rows={6} rowClassName="h-7" />}
 

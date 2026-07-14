@@ -42,7 +42,7 @@ export type DashboardActivityEntry = Tables<'activity_log'> & {
   projects: Pick<Tables<'projects'>, 'nome'> | null
 }
 
-const ACTIVITY_LIMIT = 6
+const ACTIVITY_LIMIT = 14
 
 export function useDashboardProjects() {
   return useQuery({
