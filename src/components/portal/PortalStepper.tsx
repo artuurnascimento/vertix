@@ -1,6 +1,6 @@
-import { Check } from 'lucide-react'
 import { PROJECT_STATUS_ORDER } from '../../lib/format'
 import type { ProjectStatus } from '../../lib/format'
+import StageIcon from './StageIcons'
 
 /**
  * Stepper das 6 etapas do projeto para o cliente final.
@@ -83,18 +83,18 @@ export default function PortalStepper({ status }: PortalStepperProps) {
               {!isLast && (
                 <span
                   aria-hidden
-                  className={`absolute left-4 top-9 h-[calc(100%-2.5rem)] w-px -translate-x-1/2 sm:hidden ${connectorClass}`}
+                  className={`absolute left-5 top-11 h-[calc(100%-3rem)] w-px -translate-x-1/2 sm:hidden ${connectorClass}`}
                 />
               )}
               {/* Conector horizontal (desktop) */}
               {!isLast && (
                 <span
                   aria-hidden
-                  className={`absolute left-[calc(50%+1.375rem)] top-4 hidden h-px w-[calc(100%-2.75rem)] sm:block ${connectorClass}`}
+                  className={`absolute left-[calc(50%+1.625rem)] top-5 hidden h-px w-[calc(100%-3.25rem)] sm:block ${connectorClass}`}
                 />
               )}
 
-              <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+              <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
                 {isCurrent && (
                   <span
                     aria-hidden
@@ -102,20 +102,18 @@ export default function PortalStepper({ status }: PortalStepperProps) {
                   />
                 )}
                 <span
-                  className={`relative flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${getCircleClass(isDone, isCurrent)}`}
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${getCircleClass(isDone, isCurrent)}`}
                 >
-                  {isDone ? (
-                    <Check aria-hidden className="h-3.5 w-3.5 text-accent" />
-                  ) : (
-                    <span
-                      aria-hidden
-                      className={`h-2 w-2 rounded-full ${isCurrent ? 'bg-accent' : 'bg-white/20'}`}
-                    />
-                  )}
+                  <StageIcon
+                    stage={step}
+                    state={
+                      isDone ? 'done' : isCurrent ? 'current' : 'upcoming'
+                    }
+                  />
                 </span>
               </span>
 
-              <div className="min-w-0 pt-1.5 sm:pt-0 sm:text-center">
+              <div className="min-w-0 pt-2 sm:pt-0 sm:text-center">
                 <p className={`text-sm sm:text-xs ${getLabelClass(isDone, isCurrent)}`}>
                   {copy.titulo}
                 </p>
