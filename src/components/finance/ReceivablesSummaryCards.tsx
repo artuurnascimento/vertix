@@ -5,7 +5,7 @@ import type { Tables } from '../../lib/database.types'
 import { formatBRL, isOverdue } from '../../lib/commercial'
 
 export type ReceivableRow = Tables<'receivables'> & {
-  clients: Pick<Tables<'clients'>, 'id' | 'nome' | 'empresa'> | null
+  clients: Pick<Tables<'clients'>, 'id' | 'nome' | 'empresa' | 'telefone'> | null
   projects: Pick<Tables<'projects'>, 'id' | 'nome'> | null
 }
 

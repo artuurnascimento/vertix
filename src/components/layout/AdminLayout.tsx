@@ -11,12 +11,14 @@ import {
   LifeBuoy,
   LogOut,
   Plus,
+  Settings,
   Users,
   Wallet,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import QuickSearch from './QuickSearch'
+import NotificationBell from './NotificationBell'
 import { useAuth } from '../../lib/auth'
 
 const NAV_ITEMS = [
@@ -30,6 +32,7 @@ const NAV_ITEMS = [
   { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
   { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
   { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
+  { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
 ] as const
 
 const SECTION_TITLES: Record<string, string> = {
@@ -42,6 +45,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/admin/financeiro': 'Financeiro',
   '/admin/relatorios': 'Relatórios',
   '/admin/suporte': 'Suporte',
+  '/admin/configuracoes': 'Configurações',
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -184,6 +188,7 @@ export default function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium leading-tight text-ink">
                 {profile?.nome}

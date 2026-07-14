@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HandCoins, Plus, Search, Undo2, Wallet } from 'lucide-react'
+import { HandCoins, MessageCircle, Plus, Search, Undo2, Wallet } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import {
@@ -10,11 +10,25 @@ import {
   isOverdue,
 } from '../../lib/commercial'
 import { formatRelativeTime } from '../../lib/format'
+import { buildWhatsAppLink, firstNameOf } from '../ui/whatsapp'
 import ReceivableFormModal from './ReceivableFormModal'
 import MarkPaidModal from './MarkPaidModal'
 import PaymentLinkButton from './PaymentLinkButton'
 import ReceivablesSummaryCards from './ReceivablesSummaryCards'
 import type { ReceivableRow } from './ReceivablesSummaryCards'
+
+/** Mensagem de lembrete de cobrança pronta para o WhatsApp do cliente. */
+function buildReminderMessage(row: ReceivableRow): string {
+  const nome = firstNameOf(row.clients?.nome) ?? 'tudo bem'
+  const linkLine = row.payment_link
+    ? ` Link para pagamento: ${row.payment_link}`
+    : ''
+  return (
+    `Olá ${nome}! Passando para lembrar da parcela ${row.descricao} de ` +
+    `${formatBRL(row.valor)} com vencimento em ${formatDateBR(row.vencimento)}.` +
+    `${linkLine} Qualquer dúvida estou à disposição! — Equipe Vertix`
+  )
+}
 
 const SKELETON_ROWS = 4
 const ROW_STAGGER_S = 0.04
@@ -60,7 +74,7 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
     queryFn: async (): Promise<ReceivableRow[]> => {
       const { data, error } = await supabase
         .from('receivables')
-        .select('*, clients(id, nome, empresa), projects(id, nome)')
+        .select('*, clients(id, nome, empresa, telefone), projects(id, nome)')
         .order('vencimento', { ascending: true })
       if (error) throw new Error(error.message)
       return data
@@ -302,6 +316,25 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
                     <td className="px-4 py-4 text-right">
                       {row.status === 'pendente' && (
                         <div className="flex items-center justify-end gap-2">
+                          {(() => {
+                            const whatsappLink = buildWhatsAppLink(
+                              row.clients?.telefone,
+                              buildReminderMessage(row)
+                            )
+                            if (!whatsappLink) return null
+                            return (
+                              <a
+                                href={whatsappLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Lembrar ${row.clients?.nome ?? 'cliente'} no WhatsApp sobre ${row.descricao}`}
+                                title="Lembrar no WhatsApp"
+                                className="rounded-lg p-2 text-emerald-400 transition-colors duration-150 hover:bg-emerald-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                              </a>
+                            )
+                          })()}
                           <PaymentLinkButton
                             receivableId={row.id}
                             paymentLink={row.payment_link}

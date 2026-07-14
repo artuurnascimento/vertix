@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   FolderKanban,
   Mail,
+  MessageCircle,
   Pencil,
   Phone,
   Plus,
@@ -19,6 +20,7 @@ import {
   getProjectStatusMeta,
   getTipoServicoMeta,
 } from '../lib/format'
+import { buildWhatsAppLink, firstNameOf } from '../components/ui/whatsapp'
 import ClientFormModal from '../components/clients/ClientFormModal'
 import ProjectFormModal from '../components/projects/ProjectFormModal'
 
@@ -109,6 +111,12 @@ export default function ClientDetail() {
     b.updated_at.localeCompare(a.updated_at)
   )
 
+  const clientFirstName = firstNameOf(client.nome) ?? client.nome
+  const whatsappLink = buildWhatsAppLink(
+    client.telefone,
+    `Olá ${clientFirstName}! Aqui é da Vertix. Tudo bem?`
+  )
+
   return (
     <div>
       {/* Voltar */}
@@ -128,14 +136,27 @@ export default function ClientDetail() {
           </h1>
           <p className="mt-2 text-sm font-light text-muted">{metaLine}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-surface-1 px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:border-accent/40 hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          <Pencil className="h-4 w-4 text-accent" />
-          Editar
-        </button>
+        <div className="flex items-center gap-3">
+          {whatsappLink && (
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-4 py-2.5 text-sm font-medium text-emerald-300 transition-colors duration-200 hover:bg-emerald-400/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-surface-1 px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:border-accent/40 hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <Pencil className="h-4 w-4 text-accent" />
+            Editar
+          </button>
+        </div>
       </div>
 
       {/* Cards de contato */}

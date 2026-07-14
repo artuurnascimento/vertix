@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, Plus, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Plus, Sparkles, Trash2, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { calcProposalTotal, formatBRL } from '../../lib/commercial'
+import { getTipoServicoMeta } from '../../lib/format'
 import {
   EMPTY_ITEM_DRAFT,
   EMPTY_PARCELA_DRAFT,
@@ -28,6 +29,17 @@ import {
 } from './proposalData'
 import type { Proposal } from './proposalData'
 
+/** staleTime alto — templates mudam raramente, evita refetch a cada abertura. */
+const TEMPLATES_STALE_TIME_MS = 5 * 60 * 1000
+
+interface ProposalTemplate {
+  id: string
+  tipo_servico: string
+  titulo: string
+  itens: ItemDraft[]
+  condicoes: string
+}
+
 interface ProposalFormModalProps {
   open: boolean
   /** Proposta em edição (somente rascunho) — null/undefined = criação. */
@@ -40,7 +52,13 @@ interface ProposalFormModalProps {
 interface ProjectOption {
   id: string
   nome: string
+  tipo_servico: string
   clients: { nome: string } | null
+}
+
+/** Algum item já preenchido pelo usuário (descrição não vazia)? */
+function hasFilledItems(itens: ItemDraft[]): boolean {
+  return itens.some((item) => item.descricao.trim() !== '')
 }
 
 /** Diferença tolerada entre soma das parcelas e total (centavos). */
@@ -96,6 +114,8 @@ export default function ProposalFormModal({
   const [parcelas, setParcelas] = useState<ParcelaDraft[]>([])
   const [errors, setErrors] = useState<FieldErrors>({})
   const [rootError, setRootError] = useState<string | null>(null)
+  const [confirmingTemplate, setConfirmingTemplate] = useState(false)
+  const [templateDismissed, setTemplateDismissed] = useState(false)
 
   const isEdit = Boolean(proposal)
 
@@ -123,6 +143,8 @@ export default function ProposalFormModal({
     }
     setErrors({})
     setRootError(null)
+    setConfirmingTemplate(false)
+    setTemplateDismissed(false)
   }, [open, proposal, lockedProjectId])
 
   useEffect(() => {
@@ -140,12 +162,58 @@ export default function ProposalFormModal({
     queryFn: async (): Promise<ProjectOption[]> => {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, nome, clients(nome)')
+        .select('id, nome, tipo_servico, clients(nome)')
         .order('nome')
       if (error) throw new Error(error.message)
       return data
     },
   })
+
+  const { data: templates } = useQuery({
+    queryKey: ['proposal-templates'],
+    enabled: open,
+    staleTime: TEMPLATES_STALE_TIME_MS,
+    queryFn: async (): Promise<ProposalTemplate[]> => {
+      const { data, error } = await supabase
+        .from('proposal_templates')
+        .select('id, tipo_servico, titulo, itens, condicoes')
+      if (error) throw new Error(error.message)
+      return data.map((row) => ({
+        id: row.id,
+        tipo_servico: row.tipo_servico,
+        titulo: row.titulo,
+        itens: parseProposalItems(row.itens).map(draftFromItem),
+        condicoes: row.condicoes ?? '',
+      }))
+    },
+  })
+
+  const selectedProject = (projectOptions ?? []).find(
+    (option) => option.id === projectId
+  )
+  const matchingTemplate = selectedProject
+    ? (templates ?? []).find(
+        (template) => template.tipo_servico === selectedProject.tipo_servico
+      )
+    : undefined
+  const showTemplateBlock = Boolean(
+    !isEdit && projectId && matchingTemplate && !templateDismissed
+  )
+
+  const applyTemplate = (template: ProposalTemplate) => {
+    if (titulo.trim() === '') setTitulo(template.titulo)
+    setItens(template.itens.map((item) => ({ ...item })))
+    setCondicoes(template.condicoes)
+    setConfirmingTemplate(false)
+  }
+
+  const handleUseTemplate = (template: ProposalTemplate) => {
+    if (hasFilledItems(itens)) {
+      setConfirmingTemplate(true)
+      return
+    }
+    applyTemplate(template)
+  }
 
   const mutation = useMutation({
     mutationFn: async (values: ProposalFormValues) => {
@@ -317,7 +385,11 @@ export default function ProposalFormModal({
                   <select
                     name="project_id"
                     value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
+                    onChange={(e) => {
+                      setProjectId(e.target.value)
+                      setTemplateDismissed(false)
+                      setConfirmingTemplate(false)
+                    }}
                     disabled={Boolean(lockedProjectId) || isEdit}
                     className={`${inputClass} appearance-none disabled:cursor-not-allowed disabled:opacity-60`}
                   >
@@ -351,6 +423,71 @@ export default function ProposalFormModal({
                   )}
                 </label>
               </div>
+
+              {/* Modelo de proposta (só na criação, quando há template do tipo do projeto) */}
+              {showTemplateBlock && matchingTemplate && (
+                <div className="flex flex-col gap-2.5 rounded-xl border border-accent/25 bg-accent/5 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                      <div>
+                        <p className="text-sm font-medium text-ink">
+                          Começar de um modelo
+                        </p>
+                        <p className="mt-0.5 text-xs font-light text-muted">
+                          {getTipoServicoMeta(selectedProject?.tipo_servico ?? '')
+                            .label}{' '}
+                          — {matchingTemplate.titulo}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTemplateDismissed(true)
+                        setConfirmingTemplate(false)
+                      }}
+                      aria-label="Ignorar sugestão de modelo"
+                      className="rounded-lg p-1.5 text-muted/60 transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {confirmingTemplate ? (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2.5">
+                      <span className="text-xs leading-relaxed text-amber-300">
+                        Substituir itens atuais?
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingTemplate(false)}
+                          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTemplate(matchingTemplate)}
+                          className="rounded-lg bg-amber-400/90 px-3 py-1.5 text-xs font-semibold text-bg transition-colors duration-150 hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                        >
+                          Substituir itens
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleUseTemplate(matchingTemplate)}
+                      className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/15 px-3.5 py-1.5 text-xs font-semibold text-accent transition-colors duration-150 hover:bg-accent/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Usar modelo "{matchingTemplate.titulo}"
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Itens */}
               <fieldset className="rounded-xl border border-white/5 bg-surface-2/40 p-4">

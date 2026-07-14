@@ -4,7 +4,6 @@ import AgendaEventBlock from './AgendaEventBlock'
 import type { AgendaEvent } from '../dashboard/useAgenda'
 
 const COLUMN_MIN_HEIGHT_CLASS = 'min-h-[360px]'
-const COLUMN_STAGGER_S = 0.05
 
 interface AgendaDayColumnProps {
   date: Date
