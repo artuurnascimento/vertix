@@ -1074,6 +1074,116 @@ export type Database = {
           },
         ]
       }
+      utm_conversions: {
+        Row: {
+          created_at: string
+          id: string
+          pedido_ref: string | null
+          session_id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pedido_ref?: string | null
+          session_id: string
+          tipo: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pedido_ref?: string | null
+          session_id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utm_conversions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "utm_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      utm_links: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          url_destino: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string
+          utm_term: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          url_destino: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string
+          utm_term?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          url_destino?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
+      utm_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          landing_url: string | null
+          referrer: string | null
+          session_key: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          landing_url?: string | null
+          referrer?: string | null
+          session_key: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          landing_url?: string | null
+          referrer?: string | null
+          session_key?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1129,6 +1239,28 @@ export type Database = {
         Returns: Json
       }
       submit_briefing: { Args: { p_respostas: Json; t: string }; Returns: Json }
+      track_utm_conversion: {
+        Args: {
+          p_pedido_ref?: string
+          p_session_key: string
+          p_tipo: string
+          p_valor?: number
+        }
+        Returns: Json
+      }
+      track_utm_visit: {
+        Args: {
+          p_campaign?: string
+          p_content?: string
+          p_landing_url?: string
+          p_medium?: string
+          p_referrer?: string
+          p_session_key: string
+          p_source?: string
+          p_term?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

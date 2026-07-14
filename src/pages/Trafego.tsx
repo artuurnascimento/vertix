@@ -16,6 +16,7 @@ import { formatBRL } from '../lib/commercial'
 import { formatRelativeTime } from '../lib/format'
 import AdAccountModal from '../components/trafego/AdAccountModal'
 import AdAccountDetail from '../components/trafego/AdAccountDetail'
+import UtmSection from '../components/trafego/UtmSection'
 import ConfirmDeleteButton from '../components/finance/ConfirmDeleteButton'
 import { formatDerived, roas } from '../components/trafego/adMetrics'
 
@@ -349,6 +350,8 @@ export default function Trafego() {
           })}
         </ul>
       )}
+
+      <UtmSection />
 
       <AdAccountModal
         open={modalOpen}
