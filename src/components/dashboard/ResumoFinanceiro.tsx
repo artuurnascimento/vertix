@@ -120,19 +120,16 @@ export default function ResumoFinanceiro() {
       {isError && <CardErrorState />}
 
       {!isLoading && !isError && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 divide-white/5 sm:grid-cols-3 lg:grid-cols-5 lg:divide-x">
           {rows.map((row) => (
-            <div
-              key={row.key}
-              className="rounded-xl border border-white/5 bg-surface-2 px-4 py-4"
-            >
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted">
+            <div key={row.key} className="px-4 py-1 first:pl-0 sm:px-5">
+              <p className="truncate text-[11px] font-medium uppercase tracking-widest text-muted">
                 {row.label}
               </p>
               <AnimatedNumber
                 value={row.value}
                 format={formatBRL}
-                className={`mt-2 block font-kanit text-xl font-bold leading-none tabular-nums sm:text-2xl ${row.valueClass}`}
+                className={`mt-1.5 block font-kanit text-xl font-bold leading-none tabular-nums sm:text-2xl ${row.valueClass}`}
               />
             </div>
           ))}

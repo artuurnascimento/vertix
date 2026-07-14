@@ -208,7 +208,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10 md:px-10 md:py-14">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10 md:px-10 md:py-14">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}

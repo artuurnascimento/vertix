@@ -89,19 +89,20 @@ export default function ActivityTicker() {
   return (
     <div
       className="group/ticker relative overflow-hidden border-y border-white/5 py-2.5"
-      style={{ '--duration': '32s', '--gap': '0px' } as CSSProperties}
+      style={
+        {
+          '--duration': '32s',
+          '--gap': '0px',
+          maskImage:
+            'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)',
+          WebkitMaskImage:
+            'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)',
+        } as CSSProperties
+      }
       role="marquee"
       aria-label="Atividades recentes em rolagem contínua"
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-bg to-transparent"
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-bg to-transparent"
-      />
-      <div className="flex w-max animate-marquee group-hover/ticker:[animation-play-state:paused]">
+      <div className="flex w-max max-w-full animate-marquee group-hover/ticker:[animation-play-state:paused]">
         <div className="flex shrink-0">
           {entries.map((entry) => (
             <TickerItem key={entry.id} entry={entry} />

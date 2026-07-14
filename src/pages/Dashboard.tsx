@@ -42,9 +42,13 @@ function BentoBlock({
  * Home executiva do painel — rota index de /admin.
  *
  * Composição "Command Deck Editorial": saudação viva + ticker de atividade +
- * bento assimétrico de 12 colunas (herói de receita, KPIs compactos, agenda
- * em timeline vertical, ações pendentes, linha inferior de análises rasas).
- * Em <1024px colapsa em coluna única, ordem: herói → KPIs → ações → agenda → resto.
+ * grid de 12 colunas em 4 linhas de altura por conteúdo (sem row-span):
+ *   1. Herói de receita (8) + KPIs compactos (4), esticados na mesma altura
+ *   2. Ações pendentes (7) + Agenda (5)
+ *   3. Resumo financeiro — faixa horizontal full-width (12)
+ *   4. Etapas do pipeline (7) + Distribuição por tipo (5)
+ * Em <1024px colapsa em coluna única, ordem: herói → KPIs → ações → agenda →
+ * resumo → etapas → donut.
  */
 export default function Dashboard() {
   return (
@@ -55,53 +59,35 @@ export default function Dashboard() {
         <ActivityTicker />
       </div>
 
-      {/* Bento assimétrico — 12 colunas, posições explícitas (linha/coluna) para
-          evitar colisão do auto-flow com o row-span-2 da Agenda. */}
-      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto] lg:gap-5">
-        {/* Card herói — receita do mês + gráfico integrado */}
-        <BentoBlock
-          index={0}
-          className="order-1 lg:order-none lg:col-start-1 lg:col-span-7 lg:row-start-1 xl:col-span-8"
-        >
+      <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-stretch">
+        {/* Linha 1 — herói de receita + KPIs compactos, mesma altura */}
+        <BentoBlock index={0} className="h-full lg:col-span-8">
           <RevenueHero />
         </BentoBlock>
-
-        {/* Coluna de KPIs compactos */}
-        <BentoBlock
-          index={1}
-          className="order-2 lg:order-none lg:col-start-8 lg:col-span-5 lg:row-start-1 xl:col-start-9 xl:col-span-4"
-        >
+        <BentoBlock index={1} className="h-full lg:col-span-4">
           <CompactKpiList />
         </BentoBlock>
 
-        {/* Ações pendentes — vem antes da agenda na ordem de prioridade mobile */}
-        <BentoBlock
-          index={2}
-          className="order-3 lg:order-none lg:col-start-1 lg:col-span-7 lg:row-start-2 xl:col-span-8"
-        >
+        {/* Linha 2 — ações pendentes + agenda */}
+        <BentoBlock index={2} className="h-full lg:col-span-7">
           <AcoesPendentes />
         </BentoBlock>
-
-        {/* Agenda — timeline vertical, card alto, ocupa 2 linhas na coluna direita */}
-        <BentoBlock
-          index={3}
-          className="order-4 lg:order-none lg:col-start-8 lg:col-span-5 lg:row-start-2 lg:row-span-2 xl:col-start-9 xl:col-span-4"
-        >
+        <BentoBlock index={3} className="h-full lg:col-span-5">
           <AgendaCard />
         </BentoBlock>
 
-        {/* Linha inferior — largura total (col 1-7/8), proporções internas diferentes (5/3/4) */}
-        <div className="order-5 grid grid-cols-1 gap-4 sm:grid-cols-12 lg:col-start-1 lg:col-span-7 lg:row-start-3 lg:gap-5 xl:col-span-8">
-          <BentoBlock index={4} className="sm:col-span-5">
-            <EtapasBars />
-          </BentoBlock>
-          <BentoBlock index={5} className="sm:col-span-3">
-            <DonutTipos />
-          </BentoBlock>
-          <BentoBlock index={6} className="sm:col-span-4">
-            <ResumoFinanceiro />
-          </BentoBlock>
-        </div>
+        {/* Linha 3 — resumo financeiro, faixa horizontal full-width */}
+        <BentoBlock index={4} className="col-span-12">
+          <ResumoFinanceiro />
+        </BentoBlock>
+
+        {/* Linha 4 — etapas do pipeline + distribuição por tipo */}
+        <BentoBlock index={5} className="h-full lg:col-span-7">
+          <EtapasBars />
+        </BentoBlock>
+        <BentoBlock index={6} className="h-full lg:col-span-5">
+          <DonutTipos />
+        </BentoBlock>
       </div>
     </div>
   )

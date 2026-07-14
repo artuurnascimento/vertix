@@ -136,7 +136,7 @@ export default function RevenueHero() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       aria-labelledby="revenue-hero-heading"
-      className="hero-card relative flex h-full min-h-[22rem] flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#17141F] to-[#0C0C10] p-7 shadow-[0_0_60px_-15px_rgba(108,91,242,0.35),0_1px_0_0_rgba(255,255,255,0.08)_inset] sm:p-9"
+      className="hero-card relative flex h-full min-h-[24rem] flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#17141F] to-[#0C0C10] p-7 shadow-[0_0_60px_-15px_rgba(108,91,242,0.35),0_1px_0_0_rgba(255,255,255,0.08)_inset] sm:p-9"
     >
       {/* Borda com glow gradiente sutil — pseudo-camada via box-shadow interno acima + esta linha de topo */}
       <span
@@ -188,11 +188,11 @@ export default function RevenueHero() {
 
       {!isLoading && !isError && (
         <>
-          <div className="relative z-10 mt-3">
+          <div className="relative z-10 mt-4">
             <AnimatedNumber
               value={revenueThisMonth}
               format={formatBRL}
-              className="hero-heading block font-kanit text-6xl font-bold leading-none tabular-nums sm:text-7xl lg:text-8xl"
+              className="hero-heading block font-kanit text-5xl font-bold leading-none tabular-nums sm:text-6xl lg:text-7xl xl:text-8xl"
             />
             <div className="mt-4 flex items-center gap-3">
               {revenueDelta !== null ? (

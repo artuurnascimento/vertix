@@ -130,7 +130,7 @@ export default function CompactKpiList() {
   }
 
   return (
-    <div className="flex h-full flex-col justify-center rounded-3xl border border-white/5 bg-gradient-to-b from-surface-1 to-[#101018] px-6 py-2 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset]">
+    <div className="flex h-full flex-col rounded-3xl border border-white/5 bg-gradient-to-b from-surface-1 to-[#101018] px-6 shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset]">
       {rows.map((row, index) => {
         const Icon = row.icon
         return (
@@ -143,7 +143,7 @@ export default function CompactKpiList() {
               delay: index * ROW_STAGGER_S,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className={`flex items-center gap-4 py-4 ${
+            className={`flex flex-1 items-center gap-4 ${
               index !== rows.length - 1 ? 'border-b border-white/5' : ''
             }`}
           >

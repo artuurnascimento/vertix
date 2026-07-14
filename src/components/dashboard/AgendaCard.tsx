@@ -210,8 +210,8 @@ export default function AgendaCard() {
         </button>
       </div>
 
-      {/* Timeline vertical do dia selecionado */}
-      <div className="relative mt-5 flex-1 overflow-y-auto pr-1">
+      {/* Timeline vertical do dia selecionado — altura interna limitada, rola quando exceder */}
+      <div className="relative mt-5 max-h-[380px] overflow-y-auto pr-1">
         {isLoading && <CardSkeleton rows={3} rowClassName="h-14" />}
 
         {isError && <CardErrorState />}
