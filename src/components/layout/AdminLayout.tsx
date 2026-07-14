@@ -177,7 +177,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Conteúdo */}
-      <div className="flex min-h-screen flex-1 flex-col pl-16 md:pl-60">
+      <div className="flex min-h-screen flex-1 flex-col overflow-x-clip pl-16 md:pl-60">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-bg/80 px-6 py-4 backdrop-blur md:px-10">
           <h2 className="shrink-0 text-base font-semibold text-ink">
             {sectionTitle}

@@ -39,11 +39,18 @@ function getAuthorLabel(entry: DashboardActivityEntry): string {
   return entry.profiles?.nome ?? 'Equipe'
 }
 
-function TickerItem({ entry }: { entry: DashboardActivityEntry }) {
+function TickerItem({
+  entry,
+  tabbable = true,
+}: {
+  entry: DashboardActivityEntry
+  tabbable?: boolean
+}) {
   const visual = getActivityVisual(entry.tipo)
   return (
     <Link
       to={`/admin/projetos/${entry.project_id}`}
+      tabIndex={tabbable ? undefined : -1}
       className="group inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap px-5 text-sm transition-colors duration-150 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
@@ -102,16 +109,20 @@ export default function ActivityTicker() {
       role="marquee"
       aria-label="Atividades recentes em rolagem contínua"
     >
-      <div className="flex w-max max-w-full animate-marquee group-hover/ticker:[animation-play-state:paused]">
-        <div className="flex shrink-0">
+      {/* Cada cópia anima -100% do próprio comprimento — loop contínuo sem
+          salto. Animar o trilho inteiro (2 cópias) causava o vai-e-vem. */}
+      <div className="flex w-max">
+        <div className="flex shrink-0 animate-marquee group-hover/ticker:[animation-play-state:paused]">
           {entries.map((entry) => (
             <TickerItem key={entry.id} entry={entry} />
           ))}
         </div>
-        {/* Cópia duplicada — mesmo conteúdo, aria-hidden — fecha o loop do marquee sem salto. */}
-        <div className="flex shrink-0" aria-hidden="true">
+        <div
+          className="flex shrink-0 animate-marquee group-hover/ticker:[animation-play-state:paused]"
+          aria-hidden="true"
+        >
           {entries.map((entry) => (
-            <TickerItem key={`dup-${entry.id}`} entry={entry} />
+            <TickerItem key={`dup-${entry.id}`} entry={entry} tabbable={false} />
           ))}
         </div>
       </div>
