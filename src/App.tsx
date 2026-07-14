@@ -15,6 +15,7 @@ import Relatorios from './pages/Relatorios'
 import Contratos from './pages/Contratos'
 import Suporte from './pages/Suporte'
 import Configuracoes from './pages/Configuracoes'
+import Trafego from './pages/Trafego'
 import BriefingForm from './pages/public/BriefingForm'
 import Proposta from './pages/public/Proposta'
 import Portal from './pages/public/Portal'
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="contratos" element={<Contratos />} />
           <Route path="suporte" element={<Suporte />} />
           <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="trafego" element={<Trafego />} />
         </Route>
       </Route>
 

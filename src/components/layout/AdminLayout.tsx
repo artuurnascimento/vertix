@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   LogOut,
+  Megaphone,
   Plus,
   Settings,
   Users,
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
   { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
   { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
+  { to: '/admin/trafego', label: 'Tráfego', icon: Megaphone, end: false },
   { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
   { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
@@ -43,6 +45,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/admin/propostas': 'Propostas',
   '/admin/contratos': 'Contratos',
   '/admin/financeiro': 'Financeiro',
+  '/admin/trafego': 'Tráfego',
   '/admin/relatorios': 'Relatórios',
   '/admin/suporte': 'Suporte',
   '/admin/configuracoes': 'Configurações',
@@ -177,7 +180,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Conteúdo */}
-      <div className="flex min-h-screen flex-1 flex-col overflow-x-clip pl-16 md:pl-60">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-clip pl-16 md:pl-60">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-bg/80 px-6 py-4 backdrop-blur md:px-10">
           <h2 className="shrink-0 text-base font-semibold text-ink">
             {sectionTitle}

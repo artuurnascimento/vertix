@@ -22,6 +22,8 @@ import {
   parsePortalByToken,
   parsePortalFiles,
 } from '../../components/portal/portalData'
+import { parsePortalAds } from '../../components/portal/adsData'
+import PortalAds from '../../components/portal/PortalAds'
 import type {
   PortalData,
   PortalProposta,
@@ -288,6 +290,24 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
   })
   const showFilesCard = Boolean(files && files.length > 0)
 
+  // Tráfego pago: seção só aparece quando o cliente tem métricas — erro da
+  // RPC nunca derruba o portal (parse devolve null e a seção some).
+  const { data: ads } = useQuery({
+    queryKey: ['portal-ads', token],
+    enabled: Boolean(token),
+    retry: false,
+    queryFn: async () => {
+      const { data: payload, error } = await supabase.rpc('get_portal_ads', {
+        p_token: token,
+      })
+      if (error) return null
+      return parsePortalAds(payload)
+    },
+  })
+  const showAdsCard = Boolean(
+    ads && (ads.serie_30d.length > 0 || ads.mes_atual.gasto > 0)
+  )
+
   let cardIndex = 0
 
   return (
@@ -359,6 +379,12 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
                 <ProposalRow key={proposta.token} proposta={proposta} />
               ))}
             </ul>
+          </PortalCard>
+        )}
+
+        {showAdsCard && ads && (
+          <PortalCard index={cardIndex++} title="Seus anúncios">
+            <PortalAds ads={ads} />
           </PortalCard>
         )}
 
