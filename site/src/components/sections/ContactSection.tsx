@@ -27,9 +27,19 @@ export default function ContactSection() {
   const [mensagem, setMensagem] = useState('')
   const [status, setStatus] = useState<SubmitStatus>('idle')
   const [feedback, setFeedback] = useState('')
+  // Honeypot: invisível para gente, irresistível para bot que preenche tudo.
+  const [website, setWebsite] = useState('')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    // Campo oculto preenchido = bot. Finge sucesso e não envia nada, para não
+    // dar ao script o retorno que ele usaria para calibrar a próxima tentativa.
+    if (website !== '') {
+      setStatus('success')
+      setFeedback('Recebemos seu contato! Retornaremos em breve.')
+      return
+    }
 
     if (!nome.trim() || !email.trim()) {
       setStatus('error')
@@ -95,6 +105,22 @@ export default function ContactSection() {
 
       <FadeIn delay={0.3} y={20} className="w-full max-w-[560px]">
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4 text-left" noValidate>
+          {/*
+            Honeypot. Fica fora da tela em vez de display:none porque bots mais
+            espertos ignoram campos ocultos por CSS. aria-hidden + tabIndex=-1
+            mantêm o campo invisível para leitores de tela e para o Tab.
+          */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            className="absolute h-px w-px overflow-hidden opacity-0"
+            style={{ left: '-9999px' }}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input
               type="text"
