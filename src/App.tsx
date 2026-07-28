@@ -25,7 +25,8 @@ import NpsSurvey from './pages/public/NpsSurvey'
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      {/* /login antigo redireciona para a raiz (o login mora em "/"). */}
+      <Route path="/login" element={<Navigate to="/" replace />} />
 
       {/* Páginas públicas tokenizadas — sem autenticação. */}
       <Route path="/briefing/:token" element={<BriefingForm />} />
@@ -53,7 +54,8 @@ export default function App() {
         </Route>
       </Route>
 
-      <Route path="/" element={<Navigate to="/admin" replace />} />
+      {/* Raiz = login (autenticado é redirecionado para /admin pelo próprio Login). */}
+      <Route path="/" element={<Login />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
   )

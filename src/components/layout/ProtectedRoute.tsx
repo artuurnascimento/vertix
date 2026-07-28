@@ -14,7 +14,7 @@ export default function ProtectedRoute() {
   }
 
   if (!user || !profile) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />
