@@ -235,6 +235,47 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: false, error: 'env_supabase_ausente' }, 500)
   }
 
+  // Exige membro do time autenticado (mesmo padrão do create-payment-link):
+  // sem isso, qualquer portador da anon key queimaria créditos de IA e leria
+  // o resumo de qualquer briefing cujo id conhecesse.
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return jsonResponse({ ok: false, error: 'nao_autenticado' }, 401)
+  }
+  const jwt = authHeader.slice('Bearer '.length)
+
+  const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${jwt}`,
+    },
+  })
+  if (!userRes.ok) {
+    return jsonResponse({ ok: false, error: 'nao_autenticado' }, 401)
+  }
+  const user = (await userRes.json()) as { id?: string }
+  if (!user.id) {
+    return jsonResponse({ ok: false, error: 'nao_autenticado' }, 401)
+  }
+
+  const profileRes = await fetch(
+    `${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=id`,
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+    }
+  )
+  if (!profileRes.ok) {
+    console.error('[summarize-briefing] Falha ao checar profile:', profileRes.status)
+    return jsonResponse({ ok: false, error: 'falha_ao_validar_permissao' }, 502)
+  }
+  const profiles = (await profileRes.json()) as Array<{ id: string }>
+  if (profiles.length === 0) {
+    return jsonResponse({ ok: false, error: 'acesso_negado' }, 403)
+  }
+
   let briefingId: string | undefined
   try {
     const body = (await req.json()) as { briefing_id?: string }

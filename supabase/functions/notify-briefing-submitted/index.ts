@@ -36,6 +36,16 @@ const TIPO_SERVICO_LABELS: Record<string, string> = {
   site: 'Site',
 }
 
+/** Comparação em tempo constante — não vaza o segredo por timing. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -77,6 +87,17 @@ function buildEmailHtml(
 }
 
 Deno.serve(async (req) => {
+  // Só o webhook interno do banco pode chamar: exige o segredo compartilhado.
+  // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
+  const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
+  if (!edgeSecret) {
+    console.error('[notify-briefing-submitted] EDGE_SHARED_SECRET não configurado.')
+    return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
+  }
+  if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
+    return jsonResponse({ ok: false, reason: 'nao_autorizado' }, 401)
+  }
+
   let payload: WebhookPayload
   try {
     payload = await req.json()
@@ -84,9 +105,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: false, reason: 'payload_invalido' }, 400)
   }
 
-  const record = payload.record
-  if (!record || record.status !== 'preenchido') {
-    return jsonResponse({ ok: true, skipped: 'status_nao_preenchido' })
+  const briefingId = payload.record?.id
+  if (!briefingId) {
+    return jsonResponse({ ok: true, skipped: 'sem_record' })
   }
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
@@ -104,6 +125,28 @@ Deno.serve(async (req) => {
   if (!supabaseUrl || !serviceRoleKey) {
     console.error('[notify-briefing-submitted] Env do Supabase ausente.')
     return jsonResponse({ ok: false, reason: 'env_supabase_ausente' }, 500)
+  }
+
+  // Nunca confia no payload: re-busca o briefing pelo id e confere o status
+  // no banco antes de notificar.
+  const briefingRes = await fetch(
+    `${supabaseUrl}/rest/v1/briefings?id=eq.${briefingId}` +
+      '&select=id,project_id,status',
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+    }
+  )
+  if (!briefingRes.ok) {
+    console.error('[notify-briefing-submitted] Falha ao buscar briefing:', briefingRes.status)
+    return jsonResponse({ ok: false, reason: 'falha_ao_buscar_briefing' }, 502)
+  }
+  const briefings = (await briefingRes.json()) as BriefingRecord[]
+  const record = briefings[0]
+  if (!record || record.status !== 'preenchido') {
+    return jsonResponse({ ok: true, skipped: 'status_nao_preenchido' })
   }
 
   // Projeto + cliente via PostgREST com service role (bypassa RLS).

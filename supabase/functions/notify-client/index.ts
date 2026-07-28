@@ -58,6 +58,16 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
+/** Comparação em tempo constante — não vaza o segredo por timing. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -90,9 +100,32 @@ function emailShell(title: string, bodyHtml: string): string {
   </div>`
 }
 
+/**
+ * Só deixa passar URL http(s) absoluta. Qualquer outra coisa (javascript:,
+ * data:, aspas que escapariam do atributo href) vira null e o botão não é
+ * renderizado. Vale mesmo com os dados vindo do banco: um payment_link
+ * corrompido não pode virar vetor de injeção dentro do e-mail.
+ */
+function safeUrl(raw: string | null): string | null {
+  if (!raw) return null
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
+  return parsed.toString()
+}
+
 function ctaButton(href: string, label: string): string {
+  const safe = safeUrl(href)
+  if (!safe) {
+    console.warn('[notify-client] URL de CTA rejeitada.')
+    return ''
+  }
   return `
-      <a href="${href}"
+      <a href="${escapeHtml(safe)}"
          style="display:inline-block;margin-top:24px;background:#6c5bf2;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:8px;">
         ${escapeHtml(label)}
       </a>`
@@ -206,6 +239,52 @@ async function fetchProject(
   return projects[0] ?? null
 }
 
+async function fetchProposal(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  proposalId: string
+): Promise<ProposalRecord | null> {
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/proposals?id=eq.${proposalId}` +
+      '&select=id,project_id,titulo,token',
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+    }
+  )
+  if (!res.ok) {
+    console.error('[notify-client] Falha ao buscar proposta:', res.status)
+    return null
+  }
+  const proposals = (await res.json()) as ProposalRecord[]
+  return proposals[0] ?? null
+}
+
+async function fetchReceivable(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  receivableId: string
+): Promise<ReceivableRecord | null> {
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/receivables?id=eq.${receivableId}` +
+      '&select=id,project_id,client_id,descricao,valor,vencimento,payment_link',
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+    }
+  )
+  if (!res.ok) {
+    console.error('[notify-client] Falha ao buscar parcela:', res.status)
+    return null
+  }
+  const receivables = (await res.json()) as ReceivableRecord[]
+  return receivables[0] ?? null
+}
+
 async function sendEmail(
   resendApiKey: string,
   to: string,
@@ -240,6 +319,17 @@ async function sendEmail(
 }
 
 Deno.serve(async (req) => {
+  // Só triggers internos do banco podem chamar: exige o segredo compartilhado.
+  // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
+  const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
+  if (!edgeSecret) {
+    console.error('[notify-client] EDGE_SHARED_SECRET não configurado.')
+    return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
+  }
+  if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
+    return jsonResponse({ ok: false, reason: 'nao_autorizado' }, 401)
+  }
+
   let payload: WebhookPayload
   try {
     payload = await req.json()
@@ -268,7 +358,16 @@ Deno.serve(async (req) => {
   }
 
   if (event === 'proposta_enviada') {
-    const proposal = record as ProposalRecord
+    // Nunca confia no payload: o token da proposta (que dá acesso à página
+    // pública) tem de vir do banco, não da requisição.
+    const proposal = await fetchProposal(
+      supabaseUrl,
+      serviceRoleKey,
+      (record as ProposalRecord).id
+    )
+    if (!proposal) {
+      return jsonResponse({ ok: false, reason: 'proposta_nao_encontrada' }, 404)
+    }
     const project = await fetchProject(supabaseUrl, serviceRoleKey, proposal.project_id)
     if (!project) {
       return jsonResponse({ ok: false, reason: 'projeto_nao_encontrado' }, 404)
@@ -287,18 +386,24 @@ Deno.serve(async (req) => {
   }
 
   if (event === 'projeto_entregue') {
-    const project = record as ProjectRecord
+    // Nunca confia no payload: nome do projeto e portal_token vêm do banco.
+    const project = await fetchProject(
+      supabaseUrl,
+      serviceRoleKey,
+      (record as ProjectRecord).id
+    )
+    if (!project) {
+      return jsonResponse({ ok: false, reason: 'projeto_nao_encontrado' }, 404)
+    }
     const client = await fetchClient(supabaseUrl, serviceRoleKey, project.client_id)
     if (!client?.email) {
       console.info(`[notify-client] Cliente sem email — evento=${event}`)
       return jsonResponse({ ok: true, skipped: 'cliente_sem_email', event })
     }
 
-    const projectFull = await fetchProject(supabaseUrl, serviceRoleKey, project.id)
-    const portalToken = projectFull?.portal_token
     const clienteNome = client.empresa ?? client.nome
-    const portalUrl = portalToken
-      ? `${adminAppUrl}/portal/${portalToken}`
+    const portalUrl = project.portal_token
+      ? `${adminAppUrl}/portal/${project.portal_token}`
       : adminAppUrl
     const { subject, html } = buildProjetoEntregueEmail(clienteNome, project.nome, portalUrl)
     const sent = await sendEmail(resendApiKey, client.email, subject, html)
@@ -306,7 +411,16 @@ Deno.serve(async (req) => {
   }
 
   if (event === 'parcela_criada') {
-    const receivable = record as ReceivableRecord
+    // Nunca confia no payload: re-busca a parcela no banco pelo id, para que
+    // descrição/valor/payment_link do e-mail venham sempre do banco.
+    const receivable = await fetchReceivable(
+      supabaseUrl,
+      serviceRoleKey,
+      (record as ReceivableRecord).id
+    )
+    if (!receivable) {
+      return jsonResponse({ ok: false, reason: 'parcela_nao_encontrada' }, 404)
+    }
     const client = await fetchClient(supabaseUrl, serviceRoleKey, receivable.client_id)
     if (!client?.email) {
       console.info(`[notify-client] Cliente sem email — evento=${event}`)

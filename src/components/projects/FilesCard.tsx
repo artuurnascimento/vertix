@@ -23,6 +23,25 @@ const BUCKET = 'project-files'
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 const SIGNED_URL_TTL_S = 60
 
+/**
+ * Allowlist de extensões. SVG e HTML ficam de fora de propósito: ambos podem
+ * carregar script e, servidos do mesmo domínio de storage, viram XSS
+ * armazenado. Quem precisa mandar logo em vetor manda PDF ou zipa o arquivo.
+ */
+const EXTENSOES_PERMITIDAS = [
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'ico',
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'md',
+  'zip', 'rar', '7z',
+  'mp4', 'mov', 'webm', 'mp3', 'wav',
+  'psd', 'ai', 'fig', 'sketch', 'eps',
+  'ttf', 'otf', 'woff', 'woff2',
+]
+
+function extensaoDe(nome: string): string {
+  const partes = nome.toLowerCase().split('.')
+  return partes.length > 1 ? partes[partes.length - 1] : ''
+}
+
 function formatFileSize(bytes: number | null): string {
   if (bytes == null) return '—'
   if (bytes < 1024) return `${bytes} B`
@@ -61,6 +80,13 @@ export default function FilesCard({ projectId }: FilesCardProps) {
     mutationFn: async (file: File) => {
       if (file.size > MAX_FILE_BYTES) {
         throw new Error(`"${file.name}" excede o limite de 10MB.`)
+      }
+      const ext = extensaoDe(file.name)
+      if (!EXTENSOES_PERMITIDAS.includes(ext)) {
+        throw new Error(
+          `Tipo de arquivo não permitido (.${ext || '?'}). ` +
+            'Envie imagem, PDF, documento, mídia ou arquivo compactado.'
+        )
       }
       const storagePath = `${projectId}/${crypto.randomUUID()}-${file.name}`
       const { error: uploadErr } = await supabase.storage

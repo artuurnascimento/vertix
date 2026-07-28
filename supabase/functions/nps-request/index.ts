@@ -22,6 +22,16 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
+/** Comparação em tempo constante — não vaza o segredo por timing. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -54,6 +64,17 @@ function buildEmailHtml(
 }
 
 Deno.serve(async (req) => {
+  // Só o trigger interno do banco pode chamar: exige o segredo compartilhado.
+  // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
+  const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
+  if (!edgeSecret) {
+    console.error('[nps-request] EDGE_SHARED_SECRET não configurado.')
+    return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
+  }
+  if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
+    return jsonResponse({ ok: false, reason: 'nao_autorizado' }, 401)
+  }
+
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')

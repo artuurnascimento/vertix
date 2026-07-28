@@ -385,3 +385,23 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.shopify-order-webhook]
 verify_jwt = false
+
+# Webhook do Mercado Pago (MP não envia JWT): o gate real é o ?token= validado
+# contra WEBHOOK_SECRET dentro da function.
+[functions.payment-webhook]
+verify_jwt = false
+
+# Functions internas (triggers/cron do banco): o gate real é o header
+# x-edge-secret validado contra EDGE_SHARED_SECRET dentro de cada function.
+# A anon key deixou de ser aceita como credencial (é pública).
+[functions.notify-client]
+verify_jwt = false
+
+[functions.notify-briefing-submitted]
+verify_jwt = false
+
+[functions.nps-request]
+verify_jwt = false
+
+[functions.payment-reminders]
+verify_jwt = false

@@ -18,6 +18,16 @@ interface ReceivableWithClient {
   clients: { nome: string; email: string | null } | null
 }
 
+/** Comparação em tempo constante — não vaza o segredo por timing. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -33,6 +43,19 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;')
 }
 
+/** Só URL http(s) absoluta vira botão; o resto é descartado. */
+function safeUrl(raw: string | null): string | null {
+  if (!raw) return null
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
+  return parsed.toString()
+}
+
 function formatMoney(valor: number): string {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
@@ -44,8 +67,9 @@ function buildEmailHtml(
   vencimentoFormatado: string,
   paymentLink: string | null
 ): string {
-  const botao = paymentLink
-    ? `<a href="${paymentLink}"
+  const linkSeguro = safeUrl(paymentLink)
+  const botao = linkSeguro
+    ? `<a href="${escapeHtml(linkSeguro)}"
          style="display:inline-block;margin-top:24px;background:#6c5bf2;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:8px;">
         Pagar agora
       </a>`
@@ -67,7 +91,18 @@ function buildEmailHtml(
   </div>`
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  // Só o cron interno do banco pode chamar: exige o segredo compartilhado.
+  // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
+  const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
+  if (!edgeSecret) {
+    console.error('[payment-reminders] EDGE_SHARED_SECRET não configurado.')
+    return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
+  }
+  if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
+    return jsonResponse({ ok: false, reason: 'nao_autorizado' }, 401)
+  }
+
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   if (!resendApiKey) {
     console.info('[payment-reminders] RESEND_API_KEY ausente — no-op.')
