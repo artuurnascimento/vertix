@@ -219,7 +219,7 @@ async function sendEmail(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Vertix <onboarding@resend.dev>',
+      from: 'Vertix <nao-responda@vertix.studio>',
       to: [to],
       subject,
       html,

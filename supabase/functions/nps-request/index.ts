@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Vertix <onboarding@resend.dev>',
+      from: 'Vertix <nao-responda@vertix.studio>',
       to: [email],
       subject: `Como foi a entrega de ${projetoNome}?`,
       html: buildEmailHtml(clienteNome, projetoNome, link),
