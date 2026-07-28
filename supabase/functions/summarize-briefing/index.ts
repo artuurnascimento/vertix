@@ -166,9 +166,69 @@ async function resumoIA(
   }
 }
 
+async function resumoGroq(
+  apiKey: string,
+  projetoNome: string,
+  p: { label: string; valor: string }[]
+): Promise<ResumoMeta | null> {
+  const respostasTexto = p
+    .map((item) => `- ${item.label}\n  ${item.valor}`)
+    .join('\n')
+
+  const prompt =
+    `Você é um gestor de projetos de uma agência de software/e-commerce. ` +
+    `Abaixo estão as respostas do briefing do projeto "${projetoNome}". ` +
+    `Produza um resumo executivo curto e acionável para a equipe interna.\n\n` +
+    `Respostas do briefing:\n${respostasTexto}\n\n` +
+    `Responda APENAS com um objeto JSON válido com exatamente estas chaves ` +
+    `(valores em português, cada um com 1-2 frases): ` +
+    `objetivo, escopo, publico, riscos, proximos_passos.`
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 800,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  })
+
+  if (!res.ok) {
+    console.error('[summarize-briefing] Groq falhou:', res.status)
+    return null
+  }
+
+  const data = (await res.json()) as {
+    choices?: { message?: { content?: string } }[]
+  }
+  const texto = data.choices?.[0]?.message?.content ?? ''
+  const match = texto.match(/\{[\s\S]*\}/)
+  if (!match) return null
+
+  try {
+    const parsed = JSON.parse(match[0]) as Partial<ResumoMeta>
+    return {
+      objetivo: parsed.objetivo ?? '',
+      escopo: parsed.escopo ?? '',
+      publico: parsed.publico ?? '',
+      riscos: parsed.riscos ?? '',
+      proximos_passos: parsed.proximos_passos ?? '',
+      fonte: 'ia',
+    }
+  } catch {
+    return null
+  }
+}
+
 Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const groqKey = Deno.env.get('GROQ_API_KEY')
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
 
   if (!supabaseUrl || !serviceRoleKey) {
@@ -214,7 +274,10 @@ Deno.serve(async (req) => {
   const p = pares(briefing.respostas, perguntas)
 
   let meta: ResumoMeta | null = null
-  if (anthropicKey) {
+  if (groqKey) {
+    meta = await resumoGroq(groqKey, projetoNome, p)
+  }
+  if (!meta && anthropicKey) {
     meta = await resumoIA(anthropicKey, projetoNome, p)
   }
   if (!meta) {
