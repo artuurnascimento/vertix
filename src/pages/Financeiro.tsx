@@ -3,6 +3,7 @@ import AReceberTab from '../components/finance/AReceberTab'
 import DespesasTab from '../components/finance/DespesasTab'
 import AssinaturasTab from '../components/finance/AssinaturasTab'
 import FinanceToast from '../components/finance/FinanceToast'
+import SchedulerCard from '../components/finance/SchedulerCard'
 
 const TABS = [
   { key: 'a-receber', label: 'A receber' },
@@ -33,6 +34,10 @@ export default function Financeiro() {
         <p className="mt-2 text-sm font-light text-muted">
           Recebíveis, pagamentos e fluxo de caixa da Vertix.
         </p>
+      </div>
+
+      <div className="mt-6">
+        <SchedulerCard />
       </div>
 
       {/* Abas A receber | Despesas | Assinaturas */}

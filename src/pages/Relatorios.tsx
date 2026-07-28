@@ -3,6 +3,7 @@ import ReceitaPorTipo from '../components/reports/ReceitaPorTipo'
 import TempoMedioEtapas from '../components/reports/TempoMedioEtapas'
 import TopClientes from '../components/reports/TopClientes'
 import ResultadoMensal from '../components/reports/ResultadoMensal'
+import NpsCard from '../components/reports/NpsCard'
 
 export default function Relatorios() {
   return (
@@ -22,6 +23,9 @@ export default function Relatorios() {
         <ReceitaPorTipo />
         <TempoMedioEtapas />
         <TopClientes />
+        <div className="lg:col-span-2">
+          <NpsCard />
+        </div>
         <div className="lg:col-span-2">
           <ResultadoMensal />
         </div>

@@ -7,8 +7,10 @@ import CompactKpiList from '../components/dashboard/CompactKpiList'
 import DonutTipos from '../components/dashboard/DonutTipos'
 import EtapasBars from '../components/dashboard/EtapasBars'
 import GreetingHeader from '../components/dashboard/GreetingHeader'
+import NudgesPanel from '../components/dashboard/NudgesPanel'
 import ResumoFinanceiro from '../components/dashboard/ResumoFinanceiro'
 import RevenueHero from '../components/dashboard/RevenueHero'
+import ClientHealthCard from '../components/clients/ClientHealthCard'
 
 const STAGGER_STEP_S = 0.08
 
@@ -81,11 +83,19 @@ export default function Dashboard() {
           <ResumoFinanceiro />
         </BentoBlock>
 
-        {/* Linha 4 — etapas do pipeline + distribuição por tipo */}
+        {/* Linha 4 — nudges (o que precisa de empurrão) + saúde da carteira */}
         <BentoBlock index={5} className="h-full lg:col-span-7">
-          <EtapasBars />
+          <NudgesPanel />
         </BentoBlock>
         <BentoBlock index={6} className="h-full lg:col-span-5">
+          <ClientHealthCard onlyAtRisk />
+        </BentoBlock>
+
+        {/* Linha 5 — etapas do pipeline + distribuição por tipo */}
+        <BentoBlock index={7} className="h-full lg:col-span-7">
+          <EtapasBars />
+        </BentoBlock>
+        <BentoBlock index={8} className="h-full lg:col-span-5">
           <DonutTipos />
         </BentoBlock>
       </div>

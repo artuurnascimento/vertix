@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vertix — Modelo de Proposta Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0c0c0c;
+    --ink: #f4f4f0;
+    --muted: #8a8a82;
+    --accent: #6c5bf2;
+    --accent-2: #5546e0;
+    --surface-1: #151515;
+    --surface-2: #1c1c1c;
+    --line: rgba(255, 255, 255, 0.05);
+    --line-strong: rgba(255, 255, 255, 0.1);
+    --ok: #34d399;
+    --text-hero: clamp(2.6rem, 1.2rem + 5.4vw, 5.4rem);
+    --space-section: clamp(4.5rem, 3rem + 5vw, 8.5rem);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  html, body { background: var(--bg); overflow-x: clip; }
+  body { font-family: 'Kanit', sans-serif; color: var(--ink); font-weight: 300; line-height: 1.6; }
+  ::selection { background: rgba(108, 91, 242, 0.4); color: var(--ink); }
+
+  .chrome {
+    background: linear-gradient(180deg, #f7f7f5 0%, #dddedb 28%, #9a9c99 48%, #6e706d 54%, #c9cbc8 68%, #f4f4f0 100%);
+    background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .ambient {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(640px circle at 12% -4%, rgba(108, 91, 242, 0.09), transparent 62%),
+      radial-gradient(880px circle at 88% 104%, rgba(85, 70, 224, 0.06), transparent 62%);
+  }
+  .ambient::after {
+    content: ''; position: absolute; inset: 0; opacity: 0.022;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 46rem; margin: 0 auto; padding: 0 1.25rem 6rem; }
+  .eyebrow { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.28em; color: var(--accent); }
+  .label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--line); border-radius: 1.25rem;
+    padding: clamp(1.4rem, 4vw, 2.2rem);
+  }
+  .glow { box-shadow: 0 24px 80px -40px rgba(108, 91, 242, 0.3); }
+  .num {
+    font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+  }
+  section { margin-top: var(--space-section); }
+  section h2 { font-size: clamp(1.5rem, 1rem + 2vw, 2.1rem); font-weight: 700; line-height: 1.15; margin-top: 0.5rem; }
+  .lede { margin-top: 0.9rem; color: var(--muted); font-size: 0.95rem; max-width: 38rem; }
+  .divider { display: flex; align-items: baseline; gap: 0.9rem; border-top: 1px solid var(--line); padding-top: 1.1rem; }
+
+  /* ---------- Header / capa ---------- */
+  header.top { display: flex; align-items: center; justify-content: space-between; padding: 2rem 0 0; }
+  .brand { display: flex; align-items: center; gap: 0.65rem; }
+  .brand svg { height: 1.7rem; width: auto; }
+  .brand span { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.35em; }
+  .ref { font-size: 11px; color: var(--muted); letter-spacing: 0.14em; font-variant-numeric: tabular-nums; }
+
+  .hero { padding-top: clamp(3.5rem, 8vw, 6.5rem); }
+  .hero h1 { font-size: var(--text-hero); font-weight: 800; line-height: 1.02; letter-spacing: -0.01em; max-width: 14ch; }
+  .hero .sub { margin-top: 1.4rem; font-size: 1rem; color: var(--muted); }
+  .hero .sub strong { color: var(--ink); font-weight: 500; }
+  .meta-grid {
+    margin-top: 2.6rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .meta-grid > div { padding: 1.1rem 1rem 1.1rem 0; }
+  .meta-grid > div + div { border-left: 1px solid var(--line); padding-left: 1.2rem; }
+  .meta-grid p { margin-top: 0.3rem; font-size: 0.95rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Sumário ---------- */
+  .toc { margin-top: 3.2rem; display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .toc a {
+    display: flex; align-items: baseline; gap: 1rem; padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none;
+    font-weight: 400; font-size: 0.95rem; transition: background 0.2s, padding-left 0.25s var(--ease);
+  }
+  .toc a:hover { background: rgba(255, 255, 255, 0.03); padding-left: 0.7rem; }
+  .toc a .num { min-width: 1.8rem; }
+  .toc a small { margin-left: auto; color: var(--muted); font-size: 0.78rem; font-weight: 300; }
+
+  /* ---------- Escopo ---------- */
+  .scope { margin-top: 1.8rem; display: grid; gap: 0.8rem; }
+  .scope-item { display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.9rem; padding: 1.2rem 1.3rem; }
+  .scope-item .tick {
+    height: 1.9rem; width: 1.9rem; border-radius: 0.6rem; display: grid; place-items: center;
+    background: rgba(108, 91, 242, 0.12); border: 1px solid rgba(108, 91, 242, 0.25); color: var(--accent);
+    font-size: 0.8rem; font-weight: 600;
+  }
+  .scope-item h3 { font-size: 1rem; font-weight: 500; }
+  .scope-item p { margin-top: 0.25rem; font-size: 0.88rem; color: var(--muted); }
+
+  /* ---------- Timeline ---------- */
+  .timeline { margin-top: 2rem; position: relative; padding-left: 1.6rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0.45rem; top: 0.5rem; bottom: 0.5rem; width: 1px;
+    background: linear-gradient(180deg, var(--accent) 0%, rgba(108, 91, 242, 0.12) 100%);
+  }
+  .phase { position: relative; padding: 0 0 1.9rem 0.9rem; }
+  .phase:last-child { padding-bottom: 0.2rem; }
+  .phase::before {
+    content: ''; position: absolute; left: -1.6rem; top: 0.42rem; height: 0.85rem; width: 0.85rem;
+    margin-left: 0.05rem; border-radius: 50%; background: var(--bg);
+    border: 2px solid var(--accent); box-shadow: 0 0 12px rgba(108, 91, 242, 0.5);
+  }
+  .phase .when { font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+  .phase h3 { font-size: 1.05rem; font-weight: 500; margin-top: 0.15rem; }
+  .phase p { font-size: 0.88rem; color: var(--muted); margin-top: 0.2rem; max-width: 34rem; }
+
+  /* ---------- Investimento ---------- */
+  .inv-table { margin-top: 1.8rem; overflow-x: auto; border: 1px solid var(--line); border-radius: 0.9rem; }
+  table { width: 100%; min-width: 25rem; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+  thead tr { background: rgba(28, 28, 28, 0.5); }
+  th { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); padding: 0.85rem 1.1rem; }
+  td { padding: 0.85rem 1.1rem; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+  td.desc { color: rgba(244, 244, 240, 0.9); }
+  td.n, th.n { text-align: right; color: var(--muted); }
+  td.sub { text-align: right; font-weight: 500; color: var(--ink); }
+  .totals { margin-top: 1.4rem; display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
+  .totals .disc { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .totals .t-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-top: 0.4rem; }
+  .totals .t-value { font-size: 2.3rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .totals .t-note { font-size: 0.78rem; color: var(--muted); }
+
+  .conditions { margin-top: 1.6rem; display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+  .cond { background: var(--surface-2); border: 1px solid var(--line); border-radius: 0.9rem; padding: 1.1rem 1.2rem; }
+  .cond h4 { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em; color: var(--accent); }
+  .cond p { margin-top: 0.4rem; font-size: 0.87rem; color: rgba(244, 244, 240, 0.85); }
+
+  /* ---------- Aceite ---------- */
+  .accept input[type="text"] {
+    width: 100%; min-height: 2.9rem; margin-top: 0.5rem; border-radius: 0.6rem;
+    border: 1px solid var(--line); background: var(--surface-2); padding: 0.75rem 1rem;
+    font: inherit; font-size: 1rem; color: var(--ink); outline: none; transition: border 0.2s, box-shadow 0.2s;
+  }
+  .accept input::placeholder { color: rgba(138, 138, 130, 0.4); }
+  .accept input:hover { border-color: var(--line-strong); }
+  .accept input:focus { border-color: rgba(108, 91, 242, 0.6); box-shadow: 0 0 0 3px rgba(108, 91, 242, 0.25); }
+  .err { display: none; margin-top: 0.45rem; font-size: 0.8rem; color: #f87171; }
+  .btn-row { margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .btn {
+    flex: 1; min-width: 11rem; cursor: pointer; border: none; border-radius: 0.6rem;
+    padding: 0.95rem 1.4rem; font: inherit; font-size: 0.9rem; font-weight: 600;
+    transition: transform 0.2s var(--ease), box-shadow 0.25s, background 0.2s, color 0.2s;
+  }
+  .btn:active { transform: scale(0.985); }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 8px 24px -8px rgba(108, 91, 242, 0.6);
+  }
+  .btn-primary:hover { background: var(--accent-2); box-shadow: 0 12px 30px -8px rgba(85, 70, 224, 0.75); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line-strong); font-weight: 400; }
+  .btn-ghost:hover { background: rgba(255, 255, 255, 0.05); color: var(--ink); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Pós-aprovação ---------- */
+  #approved { display: none; }
+  body.is-approved #proposal-state { display: none; }
+  body.is-approved #approved { display: block; }
+  .hero-ok { padding-top: clamp(3rem, 7vw, 5.5rem); text-align: left; }
+  .check-badge {
+    height: 4rem; width: 4rem; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.25);
+  }
+  .check-badge svg { height: 1.8rem; width: 1.8rem; }
+  .check-badge path { stroke: var(--ok); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none;
+    stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw 0.6s 0.3s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .ok-banner {
+    margin-top: 1.6rem; border: 1px solid rgba(52, 211, 153, 0.25); background: rgba(52, 211, 153, 0.08);
+    border-radius: 0.9rem; padding: 1rem 1.3rem; font-size: 0.9rem; color: #6ee7b7;
+  }
+  .pay-item {
+    display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+    padding: 1.15rem 1.3rem; border-top: 1px solid var(--line);
+  }
+  .pay-item:first-child { border-top: none; }
+  .pay-item .idx {
+    height: 2.1rem; width: 2.1rem; flex: none; border-radius: 0.6rem; display: grid; place-items: center;
+    font-size: 0.85rem; font-weight: 600; background: rgba(108, 91, 242, 0.12);
+    border: 1px solid rgba(108, 91, 242, 0.3); color: var(--accent); font-variant-numeric: tabular-nums;
+  }
+  .pay-item .info { flex: 1; min-width: 10rem; }
+  .pay-item .info h4 { font-size: 0.95rem; font-weight: 500; }
+  .pay-item .info p { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pay-item .val { font-size: 1.05rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chip { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 99px; padding: 0.3rem 0.7rem; }
+  .chip.due { background: rgba(108, 91, 242, 0.14); color: #a99ef7; border: 1px solid rgba(108, 91, 242, 0.3); }
+  .chip.later { background: rgba(255, 255, 255, 0.05); color: var(--muted); border: 1px solid var(--line); }
+  .pay-cta { margin-top: 1.4rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .steps { margin-top: 1.8rem; display: grid; gap: 0.7rem; counter-reset: step; }
+  .step { display: flex; gap: 1rem; align-items: flex-start; padding: 1.05rem 1.2rem; counter-increment: step; }
+  .step::before {
+    content: counter(step, decimal-leading-zero); font-size: 0.8rem; font-weight: 600; color: var(--accent);
+    border-bottom: 2px solid rgba(108, 91, 242, 0.4); padding-bottom: 0.15rem; margin-top: 0.1rem;
+  }
+  .step h4 { font-size: 0.95rem; font-weight: 500; }
+  .step p { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
+
+  footer { margin-top: var(--space-section); border-top: 1px solid var(--line); padding-top: 2rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  footer .fine { font-size: 0.75rem; color: var(--muted); max-width: 26rem; }
+
+  /* ---------- Reveal on scroll ---------- */
+  [data-reveal] { opacity: 0; transform: translateY(18px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+  [data-reveal].in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    [data-reveal] { opacity: 1; transform: none; transition: none; }
+    .check-badge path { animation: none; stroke-dashoffset: 0; }
+  }
+
+  /* ---------- Barra de demonstração (não faz parte do template) ---------- */
+  .demo-bar {
+    position: fixed; z-index: 50; bottom: 1rem; right: 1rem; display: flex; gap: 0.4rem; align-items: center;
+    background: rgba(21, 21, 21, 0.92); border: 1px dashed rgba(138, 138, 130, 0.4);
+    border-radius: 99px; padding: 0.4rem 0.6rem 0.4rem 1rem; backdrop-filter: blur(8px);
+  }
+  .demo-bar span { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .demo-bar button {
+    cursor: pointer; font: inherit; font-size: 11px; font-weight: 500; color: var(--muted);
+    background: transparent; border: 1px solid var(--line-strong); border-radius: 99px; padding: 0.35rem 0.8rem;
+    transition: color 0.15s, border 0.15s;
+  }
+  .demo-bar button:hover { color: var(--ink); }
+  .demo-bar button.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+  @media print { .demo-bar, .ambient { display: none; } body { background: #0c0c0c; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 132 162" fill="none" aria-hidden="true">
+        <path d="M6 132 L66 14 L126 132" stroke="#6C5BF2" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M34 150 L66 88 L98 150" stroke="#F4F4F0" stroke-width="20" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+      </svg>
+      <span>VERTIX</span>
+    </div>
+    <p class="ref">VTX-2026-014</p>
+  </header>
+
+  <!-- ================= ESTADO 1 — PROPOSTA ================= -->
+  <main id="proposal-state">
+    <div class="hero">
+      <p class="eyebrow" data-reveal>Proposta comercial</p>
+      <h1 class="chrome" data-reveal>Loja virtual completa</h1>
+      <p class="sub" data-reveal>Preparada para <strong>Ana Ribeiro</strong> — Flor &amp; Fio Studio</p>
+      <div class="meta-grid" data-reveal>
+        <div><p class="label">Emitida em</p><p>27 jul 2026</p></div>
+        <div><p class="label">Válida até</p><p>10 ago 2026</p></div>
+        <div><p class="label">Prazo estimado</p><p>30 dias úteis</p></div>
+        <div><p class="label">Investimento</p><p>R$ 15.000,00</p></div>
+      </div>
+
+      <nav class="toc" aria-label="Sumário" data-reveal>
+        <a href="#entendimento"><span class="num">01</span> O que entendemos do projeto <small>contexto</small></a>
+        <a href="#escopo"><span class="num">02</span> Escopo e entregáveis <small>o que está incluso</small></a>
+        <a href="#cronograma"><span class="num">03</span> Cronograma <small>fases e prazos</small></a>
+        <a href="#investimento"><span class="num">04</span> Investimento <small>valores</small></a>
+        <a href="#condicoes"><span class="num">05</span> Condições <small>pagamento e regras</small></a>
+        <a href="#aceite"><span class="num">06</span> Aprovação <small>próximo passo</small></a>
+      </nav>
+    </div>
+
+    <section id="entendimento" data-reveal>
+      <div class="divider"><span class="num">01</span><p class="label">Contexto</p></div>
+      <h2>O que entendemos do projeto</h2>
+      <p class="lede">
+        A Flor &amp; Fio vende hoje pelo WhatsApp e Instagram, e chegou no limite desse formato:
+        catálogo difícil de manter, pedidos manuais e nenhuma vitrine própria. O objetivo desta
+        proposta é colocar no ar uma loja virtual completa — com identidade exclusiva, checkout
+        com Pix, cartão e boleto, e estrutura pronta para campanhas de tráfego pago.
+      </p>
+      <p class="lede">
+        Ao final do projeto, a marca terá um canal de vendas próprio, mensurável e escalável,
+        sem depender de plataformas de terceiros para fechar cada pedido.
+      </p>
+    </section>
+
+    <section id="escopo" data-reveal>
+      <div class="divider"><span class="num">02</span><p class="label">Escopo</p></div>
+      <h2>Escopo e entregáveis</h2>
+      <p class="lede">Tudo que está incluso no projeto, do primeiro acesso ao lançamento.</p>
+      <div class="scope">
+        <div class="scope-item card"><span class="tick">✓</span><div>
+          <h3>Setup e configuração da loja</h3>
+          <p>Estrutura completa: catálogo, categorias, regras de frete, meios de envio e checkout configurados e testados.</p>
+        </div></div>
+        <div class="scope-item card"><span class="tick">✓</span><div>
+          <h3>Design de tema exclusivo mobile-first</h3>
+          <p>Layout desenhado para a identidade da marca — não é template pronto. Prioridade total para a experiência no celular, onde está a maior parte do tráfego.</p>
+        </div></div>
+        <div class="scope-item card"><span class="tick">✓</span><div>
+          <h3>Integração de meios de pagamento</h3>
+          <p>Pix, cartão de crédito e boleto ativos e homologados, com antifraude e confirmação automática de pedidos.</p>
+        </div></div>
+        <div class="scope-item card"><span class="tick">✓</span><div>
+          <h3>Cadastro e otimização de produtos</h3>
+          <p>Até 50 produtos cadastrados com títulos, descrições persuasivas e fotos tratadas para conversão.</p>
+        </div></div>
+        <div class="scope-item card"><span class="tick">✓</span><div>
+          <h3>SEO técnico + Google Merchant Center</h3>
+          <p>Loja indexável desde o dia um: estrutura de SEO, sitemap, dados estruturados e catálogo conectado ao Google Shopping.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section id="cronograma" data-reveal>
+      <div class="divider"><span class="num">03</span><p class="label">Cronograma</p></div>
+      <h2>Como o projeto acontece</h2>
+      <div class="timeline">
+        <div class="phase">
+          <p class="when">Semana 1</p>
+          <h3>Briefing e setup</h3>
+          <p>Reunião de kickoff, coleta de materiais da marca e configuração da base da loja.</p>
+        </div>
+        <div class="phase">
+          <p class="when">Semanas 2–3</p>
+          <h3>Design do tema</h3>
+          <p>Criação do layout exclusivo, rodada de ajustes com você e aprovação do visual.</p>
+        </div>
+        <div class="phase">
+          <p class="when">Semanas 4–5</p>
+          <h3>Desenvolvimento e integrações</h3>
+          <p>Implementação do tema, pagamentos, frete e cadastro dos produtos.</p>
+        </div>
+        <div class="phase">
+          <p class="when">Semana 6</p>
+          <h3>Revisão e lançamento</h3>
+          <p>Testes de compra reais, ajustes finais, SEO e virada de chave com a loja no ar.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="investimento" data-reveal>
+      <div class="divider"><span class="num">04</span><p class="label">Investimento</p></div>
+      <h2>Quanto custa</h2>
+      <div class="inv-table">
+        <table>
+          <thead><tr><th>Item</th><th class="n">Qtd</th><th class="n">Unitário</th><th class="n">Subtotal</th></tr></thead>
+          <tbody>
+            <tr><td class="desc">Setup e configuração da loja (catálogo, frete e checkout)</td><td class="n">1</td><td class="n">R$ 6.800,00</td><td class="sub">R$ 6.800,00</td></tr>
+            <tr><td class="desc">Design de tema exclusivo mobile-first</td><td class="n">1</td><td class="n">R$ 4.200,00</td><td class="sub">R$ 4.200,00</td></tr>
+            <tr><td class="desc">Integração de meios de pagamento (Pix, cartão e boleto)</td><td class="n">1</td><td class="n">R$ 1.800,00</td><td class="sub">R$ 1.800,00</td></tr>
+            <tr><td class="desc">Cadastro e otimização de produtos (até 50 itens)</td><td class="n">1</td><td class="n">R$ 1.500,00</td><td class="sub">R$ 1.500,00</td></tr>
+            <tr><td class="desc">SEO técnico + Google Merchant Center</td><td class="n">1</td><td class="n">R$ 1.400,00</td><td class="sub">R$ 1.400,00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="totals">
+        <p class="disc">Subtotal: R$ 15.700,00 · Desconto de fechamento: −R$ 700,00</p>
+        <p class="t-label">Investimento total</p>
+        <p class="t-value">R$ 15.000,00</p>
+        <p class="t-note">O plano de pagamento detalhado é liberado após a aprovação.</p>
+      </div>
+    </section>
+
+    <section id="condicoes" data-reveal>
+      <div class="divider"><span class="num">05</span><p class="label">Condições</p></div>
+      <h2>Condições e garantias</h2>
+      <div class="conditions">
+        <div class="cond"><h4>Pagamento</h4><p>50% na aprovação da proposta e 50% na entrega final. Pix, cartão ou boleto.</p></div>
+        <div class="cond"><h4>Prazo</h4><p>30 dias úteis a partir da aprovação do briefing e entrega dos materiais.</p></div>
+        <div class="cond"><h4>Escopo</h4><p>Alterações fora do escopo descrito são orçadas à parte, sempre com aprovação prévia.</p></div>
+        <div class="cond"><h4>Suporte</h4><p>30 dias de suporte pós-lançamento inclusos para ajustes e correções.</p></div>
+      </div>
+    </section>
+
+    <section id="aceite" data-reveal>
+      <div class="divider"><span class="num">06</span><p class="label">Aprovação</p></div>
+      <h2>Vamos começar?</h2>
+      <p class="lede">
+        Ao aprovar, você garante o valor e as condições desta proposta. Em seguida liberamos o
+        orçamento com o plano de pagamento e os próximos passos do projeto.
+      </p>
+      <div class="card glow accept" style="margin-top: 1.8rem;">
+        <label for="nome" style="font-size: 0.9rem; font-weight: 500;">Seu nome completo <span style="color: var(--accent);">*</span></label>
+        <input id="nome" type="text" autocomplete="name" placeholder="Maria da Silva" />
+        <p class="err" id="nome-err" role="alert">Informe seu nome completo para aprovar.</p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btn-accept">Aprovar proposta</button>
+          <button type="button" class="btn btn-ghost">Quero conversar antes</button>
+        </div>
+        <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--muted);">
+          A aprovação registra nome, data e hora e vale como aceite comercial desta proposta.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= ESTADO 2 — ORÇAMENTO APÓS APROVAÇÃO ================= -->
+  <main id="approved">
+    <div class="hero-ok">
+      <div class="check-badge" data-reveal>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
+      <p class="eyebrow" style="margin-top: 1.5rem;">Proposta aprovada</p>
+      <h1 class="chrome" style="font-size: clamp(2.2rem, 1rem + 4.5vw, 4.2rem); font-weight: 800; line-height: 1.05; margin-top: 0.4rem;">
+        Orçamento liberado
+      </h1>
+      <div class="ok-banner">
+        Proposta <strong>Loja virtual completa</strong> aprovada por <strong id="ok-nome">—</strong> em <span id="ok-data">—</span>.
+        Este orçamento confirma os valores e libera o início do projeto.
+      </div>
+    </div>
+
+    <section>
+      <div class="divider"><span class="num">01</span><p class="label">Orçamento aprovado</p></div>
+      <h2>Plano de pagamento</h2>
+      <p class="lede">Investimento total de <strong style="color: var(--accent); font-weight: 600;">R$ 15.000,00</strong>, dividido conforme as condições aprovadas.</p>
+      <div class="card glow" style="margin-top: 1.8rem; padding: 0.4rem 0;">
+        <div class="pay-item">
+          <span class="idx">1ª</span>
+          <div class="info"><h4>Entrada — início do projeto</h4><p>Vencimento: 30 jul 2026 · Pix, cartão ou boleto</p></div>
+          <span class="chip due">Aguardando pagamento</span>
+          <span class="val">R$ 7.500,00</span>
+        </div>
+        <div class="pay-item">
+          <span class="idx">2ª</span>
+          <div class="info"><h4>Parcela final — na entrega</h4><p>Vencimento: 10 set 2026 · liberada junto com a loja no ar</p></div>
+          <span class="chip later">Programada</span>
+          <span class="val">R$ 7.500,00</span>
+        </div>
+      </div>
+      <div class="pay-cta">
+        <button type="button" class="btn btn-primary" style="flex: none;">Pagar entrada via Pix</button>
+        <button type="button" class="btn btn-ghost" style="flex: none;">Receber link de pagamento</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="divider"><span class="num">02</span><p class="label">Próximos passos</p></div>
+      <h2>O que acontece agora</h2>
+      <div class="steps">
+        <div class="step card"><div>
+          <h4>Pagamento da entrada</h4><p>Assim que a 1ª parcela for confirmada, o projeto entra oficialmente na fila de produção.</p>
+        </div></div>
+        <div class="step card"><div>
+          <h4>Briefing detalhado</h4><p>Você recebe um link para responder o briefing — é ele que guia o design e o conteúdo da loja.</p>
+        </div></div>
+        <div class="step card"><div>
+          <h4>Reunião de kickoff</h4><p>Alinhamos expectativas, prazos e canais de comunicação com a equipe que vai executar o projeto.</p>
+        </div></div>
+        <div class="step card"><div>
+          <h4>Acessos e materiais</h4><p>Enviaremos a lista de acessos necessários: domínio, logo em alta e fotos dos produtos.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="divider"><span class="num">03</span><p class="label">Contato</p></div>
+      <h2>Ficou alguma dúvida?</h2>
+      <p class="lede">A equipe Vertix acompanha você em cada etapa. Fale com a gente a qualquer momento.</p>
+      <div class="btn-row" style="margin-top: 1.4rem;">
+        <button type="button" class="btn btn-primary" style="flex: none;">Falar no WhatsApp</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand" style="opacity: 0.7;">
+      <svg viewBox="0 0 132 162" fill="none" aria-hidden="true" style="height: 1.2rem; width: auto;">
+        <path d="M6 132 L66 14 L126 132" stroke="#6C5BF2" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M34 150 L66 88 L98 150" stroke="#F4F4F0" stroke-width="20" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+      </svg>
+      <span style="font-size: 0.7rem;">VERTIX</span>
+    </div>
+    <p class="fine">Proposta VTX-2026-014 · Documento confidencial, preparado exclusivamente para Flor &amp; Fio Studio. Valores válidos até 10 ago 2026.</p>
+  </footer>
+</div>
+
+<!-- Controle de demonstração do modelo (não faz parte do template final) -->
+<div class="demo-bar" role="group" aria-label="Controles do modelo">
+  <span>Modelo</span>
+  <button type="button" id="demo-proposta" class="on">Proposta</button>
+  <button type="button" id="demo-aprovada">Aprovada</button>
+</div>
+
+<script>
+  (function () {
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var revealEls = document.querySelectorAll('[data-reveal]');
+
+    function observeReveals() {
+      if (reduced || !('IntersectionObserver' in window)) {
+        revealEls.forEach(function (el) { el.classList.add('in'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+        });
+      }, { threshold: 0.12 });
+      revealEls.forEach(function (el) { io.observe(el); });
+    }
+    observeReveals();
+
+    var body = document.body;
+    var nomeInput = document.getElementById('nome');
+    var nomeErr = document.getElementById('nome-err');
+    var okNome = document.getElementById('ok-nome');
+    var okData = document.getElementById('ok-data');
+    var btnProposta = document.getElementById('demo-proposta');
+    var btnAprovada = document.getElementById('demo-aprovada');
+
+    function setState(approved, nome) {
+      body.classList.toggle('is-approved', approved);
+      btnProposta.classList.toggle('on', !approved);
+      btnAprovada.classList.toggle('on', approved);
+      if (approved) {
+        okNome.textContent = nome || 'Ana Ribeiro';
+        okData.textContent = new Date().toLocaleDateString('pt-BR', {
+          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        // Estado pós-aprovação entra já visível (sem depender de novo scroll)
+        document.querySelectorAll('#approved [data-reveal]').forEach(function (el) { el.classList.add('in'); });
+      }
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    }
+
+    document.getElementById('btn-accept').addEventListener('click', function () {
+      var nome = nomeInput.value.trim();
+      if (nome === '') {
+        nomeErr.style.display = 'block';
+        nomeInput.focus();
+        return;
+      }
+      nomeErr.style.display = 'none';
+      setState(true, nome);
+    });
+    nomeInput.addEventListener('input', function () { nomeErr.style.display = 'none'; });
+
+    btnProposta.addEventListener('click', function () { setState(false); });
+    btnAprovada.addEventListener('click', function () { setState(true, nomeInput.value.trim()); });
+  })();
+</script>
+</body>
+</html>

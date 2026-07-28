@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vertix — Proposta Sistema Despachante Veicular</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0c0c0c; --ink: #f4f4f0; --muted: #8a8a82;
+    --accent: #6c5bf2; --accent-2: #5546e0;
+    --surface-1: #151515; --surface-2: #1c1c1c;
+    --line-d: rgba(255,255,255,0.07); --line-l: rgba(12,12,12,0.12);
+    --ok: #34d399; --ease: cubic-bezier(0.16,1,0.3,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  html, body { background: var(--bg); overflow-x: clip; }
+  body { font-family: 'Kanit', sans-serif; color: var(--ink); font-weight: 300; line-height: 1.55; }
+  ::selection { background: rgba(108,91,242,0.4); color: #fff; }
+
+  /* ---------- Slides ---------- */
+  .slide { position: relative; padding: clamp(3rem,6vw,5.5rem) clamp(1.25rem,6vw,5rem) clamp(4.5rem,7vw,6.5rem); overflow: clip; }
+  .slide-inner { max-width: 68rem; margin: 0 auto; position: relative; }
+  .s-violet { background: var(--accent); color: #0c0c0c; }
+  .s-dark { background: var(--bg); color: var(--ink); }
+  .s-light { background: var(--ink); color: #0c0c0c; }
+  .grain { position:absolute; inset:0; opacity:0.03; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .s-dark::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(640px circle at 12% -4%, rgba(108,91,242,0.08), transparent 62%); }
+
+  /* barra meta topo/rodapé do slide (como na referência) */
+  .s-top, .s-foot { display:flex; justify-content:space-between; align-items:center; gap:1rem;
+    font-size:11px; font-weight:500; letter-spacing:0.12em; }
+  .s-top { margin-bottom: clamp(2.5rem,5vw,4.5rem); }
+  .s-foot { margin-top: clamp(2.8rem,5vw,4.5rem); padding-top:1rem; }
+  .s-violet .s-foot { border-top:1px solid rgba(12,12,12,0.25); }
+  .s-dark .s-foot { border-top:1px solid var(--line-d); color: var(--muted); }
+  .s-light .s-foot { border-top:1px solid var(--line-l); color:#55554f; }
+  .s-foot span:nth-child(2) { flex:1; text-align:center; }
+
+  .brand { display:flex; align-items:center; gap:0.55rem; }
+  .brand svg { height:1.4rem; width:auto; }
+  .brand b { font-size:0.78rem; font-weight:600; letter-spacing:0.35em; }
+
+  .tag { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.22em; }
+  .s-dark .tag { color: var(--accent); }
+  .s-light .tag { color: var(--accent-2); }
+  .s-violet .tag { color:#0c0c0c; }
+
+  h1.mega { font-size: clamp(2.6rem, 1rem + 6.6vw, 6.4rem); font-weight:800; line-height:1.0; letter-spacing:-0.015em; }
+  h2.big { font-size: clamp(1.9rem, 1rem + 3.4vw, 3.4rem); font-weight:800; line-height:1.05; letter-spacing:-0.01em; margin-top:0.6rem; }
+  .glyph-ast { display:inline-block; font-weight:900; transform:translateY(-0.05em); }
+  .glyph svg { height:0.72em; width:auto; vertical-align:baseline; }
+
+  .arrow-line { display:flex; align-items:center; gap:1.2rem; margin-top: clamp(1.8rem,4vw,3rem); }
+  .arrow-line svg { flex:none; width:clamp(6rem,14vw,11rem); height:auto; }
+  .arrow-line p { font-size:clamp(0.95rem,1.6vw,1.15rem); font-weight:400; max-width:30rem; line-height:1.5; }
+
+  .lede { margin-top:1rem; font-size:0.98rem; max-width:40rem; }
+  .s-dark .lede { color:#c9c9c2; }
+  .s-light .lede { color:#3a3a35; }
+  .s-violet .lede { color:rgba(12,12,12,0.85); }
+
+  /* ---------- Cards com aba de pasta ---------- */
+  .folders { display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fit,minmax(14rem,1fr)); margin-top:clamp(2rem,4vw,3rem); }
+  .folder { position:relative; border-radius:0 1rem 1rem 1rem; padding:1.3rem 1.4rem 1.4rem; margin-top:1rem; }
+  .folder::before { content:''; position:absolute; top:-0.95rem; left:0; width:42%; height:1rem;
+    background:inherit; border-radius:0.7rem 1.1rem 0 0; }
+  .folder .f-glyph { font-size:1.1rem; font-weight:900; line-height:1; }
+  .folder h3 { font-size:0.95rem; font-weight:600; margin-top:0.6rem; }
+  .folder p { font-size:0.84rem; margin-top:0.3rem; opacity:0.82; }
+  .folder .f-big { display:block; font-size:clamp(1.9rem,3.5vw,2.6rem); font-weight:800; margin-top:1rem; letter-spacing:-0.01em; font-variant-numeric:tabular-nums; }
+  .f-ink { background:var(--ink); color:#0c0c0c; }
+  .f-dark { background:#131313; color:var(--ink); border:1px solid var(--line-d); }
+  .f-dark::before { border:1px solid var(--line-d); border-bottom:none; }
+  .f-violet { background:var(--accent); color:#0c0c0c; }
+  .f-white { background:#ffffff; color:#0c0c0c; }
+
+  /* ---------- Stats ---------- */
+  .stat-flow { display:flex; align-items:center; gap:1.4rem; flex-wrap:wrap; margin-top:clamp(1.8rem,4vw,2.6rem); }
+  .stat-flow .sv { font-size:clamp(2.4rem,5vw,3.8rem); font-weight:800; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; line-height:1; }
+  .stat-flow .sl { font-size:0.8rem; max-width:9rem; opacity:0.75; line-height:1.35; }
+  .stat-flow svg { width:clamp(2.6rem,6vw,4rem); height:auto; flex:none; }
+  .mega-stat { margin-top:clamp(2rem,4vw,3rem); }
+  .mega-stat .v { font-size:clamp(3.4rem,8vw,6rem); font-weight:800; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+  .s-dark .mega-stat .v { color:var(--accent); }
+  .mega-stat .l { font-size:0.92rem; max-width:26rem; margin-top:0.6rem; }
+  .s-dark .mega-stat .l { color:#c9c9c2; }
+
+  /* ---------- Gráfico de barras ---------- */
+  .chart { margin-top:clamp(2rem,4vw,3rem); display:grid; gap:1rem; max-width:38rem; }
+  .bar-row { display:grid; grid-template-columns:8.5rem 1fr auto; gap:0.9rem; align-items:center; font-size:0.82rem; }
+  .bar-row .bl { font-weight:500; text-align:right; color:#3a3a35; }
+  .bar-track { height:1.5rem; border-radius:0.4rem; background:rgba(12,12,12,0.07); overflow:hidden; }
+  .bar-fill { height:100%; border-radius:0.4rem; transform-origin:left; transform:scaleX(0); transition:transform 1s var(--ease); }
+  .in .bar-fill { transform:scaleX(1); }
+  .bar-fill.b-dark { background:#0c0c0c; }
+  .bar-fill.b-violet { background:var(--accent); }
+  .bar-row .bv { font-weight:700; font-variant-numeric:tabular-nums; color:#0c0c0c; }
+  .chart-src { font-size:0.72rem; color:#6b6b64; margin-top:0.4rem; }
+
+  /* ---------- Listas / grids ---------- */
+  .mod-grid { display:grid; gap:0 2.5rem; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr)); margin-top:clamp(1.8rem,4vw,2.6rem); border-top:1px solid var(--line-d); }
+  .mod { display:flex; gap:1rem; padding:1.15rem 0; border-bottom:1px solid var(--line-d); align-items:flex-start; }
+  .mod .mn { font-size:0.78rem; font-weight:700; color:var(--accent); min-width:1.7rem; font-variant-numeric:tabular-nums; padding-top:0.15rem; }
+  .mod h3 { font-size:0.98rem; font-weight:600; }
+  .mod p { font-size:0.83rem; color:var(--muted); margin-top:0.15rem; }
+
+  .twocol { display:grid; gap:2.2rem; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr)); margin-top:clamp(1.8rem,4vw,2.6rem); }
+  .twocol h3 { font-size:1rem; font-weight:700; }
+  .plist { margin-top:0.9rem; display:grid; gap:0.55rem; }
+  .plist li { list-style:none; display:flex; gap:0.65rem; font-size:0.88rem; color:#3a3a35; align-items:baseline; }
+  .plist li::before { content:'→'; font-weight:700; color:var(--accent-2); }
+  .callout-l { margin-top:1.6rem; border-left:3px solid var(--accent-2); padding:0.7rem 1.1rem; background:rgba(108,91,242,0.08); border-radius:0 0.6rem 0.6rem 0; font-size:0.88rem; color:#2c2c28; max-width:44rem; }
+
+  /* ---------- Fases ---------- */
+  .phases { margin-top:clamp(2rem,4vw,3rem); display:grid; gap:0.9rem; }
+  .phase { display:grid; grid-template-columns:auto 1fr auto; gap:1.2rem; align-items:center;
+    background:#131313; border:1px solid var(--line-d); border-radius:0.9rem; padding:1.15rem 1.4rem; }
+  .phase .pn { font-size:1.5rem; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .phase h3 { font-size:1rem; font-weight:600; }
+  .phase p { font-size:0.83rem; color:var(--muted); margin-top:0.15rem; }
+  .pill { font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; border-radius:99px; padding:0.32rem 0.75rem; white-space:nowrap; }
+  .pill.now { background:rgba(108,91,242,0.16); color:#a99ef7; border:1px solid rgba(108,91,242,0.35); }
+  .pill.next { background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid var(--line-d); }
+  @media (max-width:560px){ .phase{grid-template-columns:auto 1fr} .phase .pill{grid-column:2; justify-self:start} }
+
+  /* ---------- Tecnologia ---------- */
+  .tech { display:grid; gap:0.8rem; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); margin-top:clamp(1.8rem,4vw,2.6rem); }
+  .tech div { background:rgba(12,12,12,0.05); border:1px solid var(--line-l); border-radius:0.8rem; padding:1rem 1.1rem; }
+  .tech h4 { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--accent-2); }
+  .tech p { font-size:0.85rem; color:#2c2c28; margin-top:0.35rem; }
+
+  /* ---------- Aceite / botões ---------- */
+  .accept-card { margin-top:clamp(2rem,4vw,3rem); background:var(--surface-1); border:1px solid var(--line-d);
+    border-radius:1.1rem; padding:clamp(1.4rem,4vw,2.2rem); max-width:34rem; box-shadow:0 24px 80px -40px rgba(108,91,242,0.35); }
+  .accept-card label { font-size:0.9rem; font-weight:500; }
+  .accept-card input { width:100%; min-height:2.9rem; margin-top:0.5rem; border-radius:0.6rem; border:1px solid var(--line-d);
+    background:var(--surface-2); padding:0.75rem 1rem; font:inherit; font-size:1rem; color:var(--ink); outline:none; transition:border 0.2s, box-shadow 0.2s; }
+  .accept-card input:focus { border-color:rgba(108,91,242,0.6); box-shadow:0 0 0 3px rgba(108,91,242,0.25); }
+  .err { display:none; margin-top:0.45rem; font-size:0.8rem; color:#f87171; }
+  .btn-row { margin-top:1.6rem; display:flex; gap:0.75rem; flex-wrap:wrap; }
+  .btn { cursor:pointer; border:none; border-radius:0.6rem; padding:0.9rem 1.5rem; font:inherit; font-size:0.9rem; font-weight:600;
+    transition:transform 0.2s var(--ease), box-shadow 0.25s, background 0.2s, color 0.2s; }
+  .btn:active { transform:scale(0.985); }
+  .btn-primary { background:var(--accent); color:#fff; box-shadow:0 8px 24px -8px rgba(108,91,242,0.6); }
+  .btn-primary:hover { background:var(--accent-2); }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.14); font-weight:400; }
+  .btn-ghost:hover { color:var(--ink); background:rgba(255,255,255,0.05); }
+  .s-light .btn-ghost { color:#55554f; border-color:var(--line-l); }
+  .s-light .btn-ghost:hover { color:#0c0c0c; background:rgba(12,12,12,0.05); }
+  .btn:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+
+  /* ---------- Estado 2: orçamento ---------- */
+  #approved { display:none; }
+  body.is-approved #proposal-state { display:none; }
+  body.is-approved #approved { display:block; }
+  .ok-banner { margin-top:1.6rem; border:1px solid rgba(12,12,12,0.35); background:rgba(12,12,12,0.12);
+    border-radius:0.9rem; padding:1rem 1.3rem; font-size:0.92rem; max-width:38rem; }
+  .check-badge { height:3.6rem; width:3.6rem; border-radius:50%; display:grid; place-items:center; background:rgba(12,12,12,0.15); }
+  .check-badge svg { height:1.6rem; width:1.6rem; }
+  .check-badge path { stroke:#0c0c0c; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; fill:none;
+    stroke-dasharray:30; stroke-dashoffset:30; animation:draw 0.6s 0.3s var(--ease) forwards; }
+  @keyframes draw { to { stroke-dashoffset:0; } }
+  .inv-total { margin-top:2rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap; }
+  .inv-total .v { font-size:clamp(2.6rem,6vw,4.2rem); font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-0.02em; }
+  .inv-total .l { font-size:0.85rem; color:var(--muted); max-width:18rem; }
+  .pay-list { margin-top:1.6rem; border:1px solid var(--line-d); border-radius:1rem; overflow:hidden; max-width:44rem; }
+  .pay-item { display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap; padding:1.1rem 1.3rem; border-top:1px solid var(--line-d); background:var(--surface-1); }
+  .pay-item:first-child { border-top:none; }
+  .pay-item .idx { height:2rem; width:2.4rem; flex:none; border-radius:0.5rem; display:grid; place-items:center; font-size:0.8rem; font-weight:700;
+    background:rgba(108,91,242,0.14); border:1px solid rgba(108,91,242,0.3); color:#a99ef7; font-variant-numeric:tabular-nums; }
+  .pay-item .info { flex:1; min-width:11rem; }
+  .pay-item .info h4 { font-size:0.93rem; font-weight:500; }
+  .pay-item .info p { font-size:0.78rem; color:var(--muted); }
+  .pay-item .val { font-weight:700; font-variant-numeric:tabular-nums; }
+
+  /* ---------- Reveal ---------- */
+  [data-reveal] { opacity:0; transform:translateY(18px); transition:opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+  [data-reveal].in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce) {
+    html { scroll-behavior:auto; }
+    [data-reveal] { opacity:1; transform:none; transition:none; }
+    .bar-fill { transform:scaleX(1); transition:none; }
+    .check-badge path { animation:none; stroke-dashoffset:0; }
+  }
+
+  /* ---------- Demo bar ---------- */
+  .demo-bar { position:fixed; z-index:50; bottom:1rem; right:1rem; display:flex; gap:0.4rem; align-items:center;
+    background:rgba(21,21,21,0.94); border:1px dashed rgba(138,138,130,0.4); border-radius:99px; padding:0.4rem 0.6rem 0.4rem 1rem; backdrop-filter:blur(8px); color:var(--ink); }
+  .demo-bar span { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+  .demo-bar button { cursor:pointer; font:inherit; font-size:11px; font-weight:500; color:var(--muted); background:transparent;
+    border:1px solid rgba(255,255,255,0.14); border-radius:99px; padding:0.35rem 0.8rem; }
+  .demo-bar button.on { color:#fff; background:var(--accent); border-color:var(--accent); }
+  @media print { .demo-bar { display:none; } body { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
+</style>
+</head>
+<body>
+
+<main id="proposal-state">
+
+  <!-- SLIDE 1 — CAPA (violeta) -->
+  <section class="slide s-violet">
+    <div class="grain"></div>
+    <div class="slide-inner">
+      <div class="s-top">
+        <div class="brand">
+          <svg viewBox="0 0 132 162" fill="none" aria-hidden="true">
+            <path d="M6 132 L66 14 L126 132" stroke="#0C0C0C" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M34 150 L66 88 L98 150" stroke="#F4F4F0" stroke-width="20" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>
+          </svg>
+          <b>VERTIX</b>
+        </div>
+        <span class="tag">@2026</span>
+      </div>
+      <h1 class="mega" data-reveal>
+        Sistema <span class="glyph-ast">✱</span> de Gestão<br />
+        <span class="glyph"><svg viewBox="0 0 52 44" fill="none" aria-hidden="true"><path d="M18 3 A24 24 0 0 0 18 41" stroke="#0C0C0C" stroke-width="11"/><path d="M34 3 A24 24 0 0 1 34 41" stroke="#0C0C0C" stroke-width="11"/></svg></span> Despachante Veicular
+      </h1>
+      <div class="arrow-line" data-reveal>
+        <svg viewBox="0 0 160 24" fill="none" aria-hidden="true"><path d="M2 12 H150 M138 3 L152 12 L138 21" stroke="#0C0C0C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p>Processos, documentos, atendimento, financeiro e cobrança automatizada via WhatsApp — a operação inteira fora da planilha, em uma única plataforma.</p>
+      </div>
+      <div class="s-foot">
+        <span>Preparada para Vinicius</span>
+        <span>VTX-2026-015</span>
+        <span>27 jul 2026</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2 — INTRODUÇÃO (escuro) -->
+  <section class="slide s-dark">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">01 — Introdução</p>
+      <h2 class="big">A operação hoje <span class="glyph-ast" style="color:var(--accent)">✱</span></h2>
+      <p class="lede">
+        Hoje toda a operação vive em uma planilha mensal e em conversas soltas de WhatsApp. O novo sistema
+        atende três usuários — um administrador e dois atendentes — e transforma esse fluxo em uma central
+        operacional: cadastro, etapas, documentos, pendências, tarefas, mensagens e cobranças conectados.
+      </p>
+      <div class="mega-stat">
+        <p class="v">86,1%</p>
+        <p class="l">dos registros aparecem como "concluídos" na planilha — mas sem etapas que expliquem onde os processos travam nem quem precisa agir.</p>
+      </div>
+      <div class="folders">
+        <div class="folder f-violet"><span class="f-glyph">✱</span><h3>3 usuários</h3><p>1 administrador e 2 atendentes, com permissões distintas e log de atividades.</p></div>
+        <div class="folder f-ink"><span class="f-glyph">→</span><h3>WhatsApp</h3><p>Cobrança e comunicação automatizadas, com controle humano e auditoria.</p></div>
+        <div class="folder f-dark"><span class="f-glyph" style="color:var(--accent)">()</span><h3>1 plataforma</h3><p>Operação, financeiro e atendimento no mesmo lugar, no computador e no celular.</p></div>
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Proposta conceitual</span><span>02 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3 — DIAGNÓSTICO (claro) -->
+  <section class="slide s-light">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">02 — Diagnóstico</p>
+      <h2 class="big">O que a planilha revela <span class="glyph"><svg viewBox="0 0 52 44" fill="none" aria-hidden="true"><path d="M18 3 A24 24 0 0 0 18 41" stroke="#0C0C0C" stroke-width="11"/><path d="M34 3 A24 24 0 0 1 34 41" stroke="#6C5BF2" stroke-width="11"/></svg></span></h2>
+      <p class="lede">Analisamos as abas de janeiro a julho do arquivo PROCESSOS 2026.xlsx — cada linha é um registro operacional por placa.</p>
+      <div class="chart">
+        <div class="bar-row"><span class="bl">Processos com placa</span><div class="bar-track"><div class="bar-fill b-dark" style="width:100%"></div></div><span class="bv">3.588</span></div>
+        <div class="bar-row"><span class="bl">Sem atendente</span><div class="bar-track"><div class="bar-fill b-violet" style="width:22%"></div></div><span class="bv">774</span></div>
+        <div class="bar-row"><span class="bl">Parados em "50%"</span><div class="bar-track"><div class="bar-fill b-violet" style="width:14%"></div></div><span class="bv">497</span></div>
+        <div class="bar-row"><span class="bl">Com pendência</span><div class="bar-track"><div class="bar-fill b-dark" style="width:12%"></div></div><span class="bv">417</span></div>
+        <p class="chart-src">Fonte: planilha PROCESSOS 2026.xlsx, abas jan–jul.</p>
+      </div>
+      <div class="stat-flow">
+        <div><p class="sv">965</p><p class="sl">placas aparecem mais de uma vez</p></div>
+        <svg viewBox="0 0 64 24" fill="none" aria-hidden="true"><path d="M2 12 H54 M44 4 L56 12 L44 20" stroke="#6C5BF2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><p class="sv">285</p><p class="sl">descrições diferentes de serviço em texto livre</p></div>
+        <svg viewBox="0 0 64 24" fill="none" aria-hidden="true"><path d="M2 12 H54 M44 4 L56 12 L44 20" stroke="#6C5BF2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><p class="sv">133</p><p class="sl">variações de nome de cliente e loja</p></div>
+      </div>
+      <div class="callout-l">
+        Status "50% / 100%" não explicam o que está acontecendo, cadastros e serviços não são padronizados
+        e o financeiro vive fora da planilha — sem telefone, vencimento, cobrança ou pagamento.
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Diagnóstico da operação</span><span>03 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4 — OBJETIVO (violeta) -->
+  <section class="slide s-violet">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">03 — Objetivo</p>
+      <h2 class="big">O que o sistema resolve <span class="glyph-ast">✱</span></h2>
+      <div class="folders">
+        <div class="folder f-ink">
+          <span class="f-glyph">✱</span><h3>Organização</h3>
+          <p>Cada processo com dono, etapa, prazo, documentos e histórico completo — nada some, nada é esquecido.</p>
+          <span class="f-big">8 etapas</span>
+        </div>
+        <div class="folder f-dark">
+          <span class="f-glyph" style="color:var(--accent)">→</span><h3>Automação</h3>
+          <p>Cobrança e comunicação pelo WhatsApp com régua configurável, pausa automática e aprovação humana.</p>
+          <span class="f-big" style="color:var(--accent)">4 modelos</span>
+        </div>
+        <div class="folder f-white">
+          <span class="f-glyph">()</span><h3>Visibilidade</h3>
+          <p>Dashboard e relatórios de produtividade, prazos, recebimentos, inadimplência e lucratividade.</p>
+          <span class="f-big">13 telas</span>
+        </div>
+      </div>
+      <p class="lede" style="margin-top:2rem;">
+        Proposta de valor: reduzir tarefas manuais, evitar processos esquecidos, padronizar o trabalho dos
+        atendentes, melhorar a comunicação com lojas e clientes finais e acelerar o recebimento das cobranças.
+      </p>
+      <div class="s-foot"><span>Vertix</span><span>Objetivo do produto</span><span>04 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5 — ESCOPO (escuro) -->
+  <section class="slide s-dark">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">04 — Escopo</p>
+      <h2 class="big">Módulos da plataforma</h2>
+      <div class="mod-grid">
+        <div class="mod"><span class="mn">01</span><div><h3>Dashboard</h3><p>Processos, valores a receber, tarefas do dia, carga por atendente e alertas prioritários.</p></div></div>
+        <div class="mod"><span class="mn">02</span><div><h3>Clientes e lojas</h3><p>Cadastro único com regra comercial, tabela de preços e cobrança por processo ou fechamento.</p></div></div>
+        <div class="mod"><span class="mn">03</span><div><h3>Veículos</h3><p>Histórico por placa e Renavam, com aviso de processo aberto e validação de duplicidade.</p></div></div>
+        <div class="mod"><span class="mn">04</span><div><h3>Catálogo de serviços</h3><p>Nome padronizado, preço, prazo, checklist de documentos e combinação de serviços.</p></div></div>
+        <div class="mod"><span class="mn">05</span><div><h3>Processos</h3><p>Código único por processo, lista com filtros, kanban por etapa, agenda e linha do tempo.</p></div></div>
+        <div class="mod"><span class="mn">06</span><div><h3>Documentos e checklist</h3><p>Lista automática por serviço, versões, aprovação/reprovação e cobrança de faltantes.</p></div></div>
+        <div class="mod"><span class="mn">07</span><div><h3>Pendências e tarefas</h3><p>Tipos padronizados, responsável, prazo, fila diária e SLA com sinalização por cor.</p></div></div>
+        <div class="mod"><span class="mn">08</span><div><h3>Central WhatsApp</h3><p>Conversas no contexto do processo, modelos aprovados, gatilhos e histórico auditável.</p></div></div>
+        <div class="mod"><span class="mn">09</span><div><h3>Financeiro</h3><p>Honorários, taxas e despesas por processo, régua de cobrança e baixa automática via webhook.</p></div></div>
+        <div class="mod"><span class="mn">10</span><div><h3>Relatórios</h3><p>Indicadores operacionais e financeiros, produtividade, inadimplência e exportação PDF/Excel.</p></div></div>
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Escopo essencial</span><span>05 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6 — DIFERENCIAL WHATSAPP (claro) -->
+  <section class="slide s-light">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">05 — Diferencial</p>
+      <h2 class="big">WhatsApp integrado ao processo <span class="glyph-ast" style="color:var(--accent-2)">✱</span></h2>
+      <p class="lede">Cada mensagem nasce vinculada a um cliente, processo, cobrança ou tarefa — via API oficial, nunca simulação de WhatsApp Web.</p>
+      <div class="twocol">
+        <div>
+          <h3>Gatilhos operacionais</h3>
+          <ul class="plist">
+            <li>Processo criado → confirma e envia código de acompanhamento.</li>
+            <li>Documento faltante → solicita com instrução de envio.</li>
+            <li>Pendência criada → informa motivo, responsável e prazo.</li>
+            <li>Processo pronto → avisa disponibilidade e próximos passos.</li>
+            <li>Cliente respondeu → pausa a automação e chama o atendente.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Régua de cobrança</h3>
+          <ul class="plist">
+            <li>Ao gerar → resumo, valor, vencimento e link de pagamento.</li>
+            <li>Antes do vencimento → lembrete configurável.</li>
+            <li>No vencimento → aviso objetivo no dia.</li>
+            <li>Após o vencimento → sequência gradual com limite.</li>
+            <li>Pagamento identificado → interrompe tudo e confirma.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout-l">
+        Automação com controle humano: mensagens sensíveis exigem aprovação do administrador, e qualquer
+        régua pode ser pausada por cliente, processo ou cobrança.
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Atendimento e cobrança</span><span>06 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7 — FASES (escuro) -->
+  <section class="slide s-dark">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">06 — Plano de entrega</p>
+      <h2 class="big">Fases do projeto →</h2>
+      <div class="phases">
+        <div class="phase"><span class="pn">F0</span><div><h3>Descoberta e protótipo</h3><p>Entrevistas, mapeamento de serviços, status, cobranças e protótipo das telas.</p></div><span class="pill now">Nesta proposta</span></div>
+        <div class="phase"><span class="pn">F1</span><div><h3>MVP operacional</h3><p>Login e perfis, cadastros, processos com etapas, documentos, pendências, tarefas, dashboard e migração da planilha.</p></div><span class="pill now">Nesta proposta</span></div>
+        <div class="phase"><span class="pn">F2</span><div><h3>WhatsApp e financeiro</h3><p>Central de mensagens, modelos, gatilhos, régua de cobrança, fechamentos por loja e baixa automática.</p></div><span class="pill now">Nesta proposta</span></div>
+        <div class="phase"><span class="pn">F3</span><div><h3>Autoatendimento</h3><p>Formulário de abertura, portal de lojas, página de acompanhamento do cliente e OCR de documentos.</p></div><span class="pill next">Evolução</span></div>
+        <div class="phase"><span class="pn">F4</span><div><h3>Inteligência gerencial</h3><p>Previsões, alertas de risco de atraso, indicadores avançados e integrações adicionais.</p></div><span class="pill next">Evolução</span></div>
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Fases recomendadas</span><span>07 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8 — TECNOLOGIA (claro) -->
+  <section class="slide s-light">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">07 — Tecnologia</p>
+      <h2 class="big">Estrutura técnica <span class="glyph"><svg viewBox="0 0 52 44" fill="none" aria-hidden="true"><path d="M18 3 A24 24 0 0 0 18 41" stroke="#6C5BF2" stroke-width="11"/><path d="M34 3 A24 24 0 0 1 34 41" stroke="#0C0C0C" stroke-width="11"/></svg></span></h2>
+      <div class="tech">
+        <div><h4>Interface</h4><p>Aplicação web responsiva / PWA — ícone na tela do celular, rápida em internet comum.</p></div>
+        <div><h4>Backend</h4><p>API com regras de negócio, permissões, automações e integrações.</p></div>
+        <div><h4>Banco de dados</h4><p>PostgreSQL gerenciado — dados estruturados, histórico e relatórios.</p></div>
+        <div><h4>Arquivos</h4><p>Armazenamento privado em nuvem para CNH, CRLV, ATPV-e e comprovantes.</p></div>
+        <div><h4>WhatsApp</h4><p>API oficial ou provedor homologado, com webhooks e modelos aprovados.</p></div>
+        <div><h4>Pagamentos</h4><p>Gateway com Pix, boleto e link — baixa automática por webhook.</p></div>
+        <div><h4>Segurança e LGPD</h4><p>Acesso por perfil, documentos privados, auditoria e política de retenção.</p></div>
+        <div><h4>Monitoramento</h4><p>Logs, alertas, backups automáticos e restauração testada.</p></div>
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Arquitetura sugerida</span><span>08 / 09</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9 — APROVAÇÃO (escuro) -->
+  <section class="slide s-dark">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">08 — Aprovação</p>
+      <h2 class="big">Vamos tirar sua operação da planilha? <span class="glyph-ast" style="color:var(--accent)">✱</span></h2>
+      <p class="lede">
+        Ao aprovar este escopo, iniciamos a fase de descoberta e liberamos o orçamento detalhado por fase,
+        com plano de pagamento e cronograma. Nada é cobrado antes disso.
+      </p>
+      <div class="accept-card">
+        <label for="nome">Seu nome completo <span style="color:var(--accent)">*</span></label>
+        <input id="nome" type="text" autocomplete="name" placeholder="Vinicius da Silva" />
+        <p class="err" id="nome-err" role="alert">Informe seu nome completo para aprovar.</p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btn-accept">Aprovar escopo</button>
+          <button type="button" class="btn btn-ghost">Quero ajustar algo</button>
+        </div>
+        <p style="margin-top:1rem;font-size:0.75rem;color:var(--muted);">A aprovação registra nome, data e hora e vale como aceite do escopo conceitual.</p>
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>VTX-2026-015 · Documento confidencial</span><span>09 / 09</span></div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= ESTADO 2 — ORÇAMENTO APÓS APROVAÇÃO ================= -->
+<main id="approved">
+  <section class="slide s-violet">
+    <div class="grain"></div>
+    <div class="slide-inner">
+      <div class="s-top">
+        <div class="brand">
+          <svg viewBox="0 0 132 162" fill="none" aria-hidden="true">
+            <path d="M6 132 L66 14 L126 132" stroke="#0C0C0C" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M34 150 L66 88 L98 150" stroke="#F4F4F0" stroke-width="20" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>
+          </svg>
+          <b>VERTIX</b>
+        </div>
+        <span class="tag">@2026</span>
+      </div>
+      <div class="check-badge" data-reveal><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg></div>
+      <h1 class="mega" style="margin-top:1.2rem;" data-reveal>Orçamento <span class="glyph-ast">✱</span> liberado</h1>
+      <div class="ok-banner">
+        Escopo <strong>Sistema Despachante Veicular</strong> aprovado por <strong id="ok-nome">—</strong> em <span id="ok-data">—</span>.
+        Este orçamento confirma os valores por fase e libera o início da descoberta.
+      </div>
+      <div class="s-foot"><span>Preparado para Vinicius</span><span>VTX-2026-015</span><span>Orçamento</span></div>
+    </div>
+  </section>
+
+  <section class="slide s-dark">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">01 — Investimento</p>
+      <h2 class="big">Orçamento por fase</h2>
+      <div class="folders" style="max-width:56rem;">
+        <div class="folder f-dark"><span class="f-glyph" style="color:var(--accent)">F0</span><h3>Descoberta e protótipo</h3><p>Entrevistas, mapeamento e protótipo navegável das telas.</p><span class="f-big" style="color:var(--accent)">R$ 2.400</span></div>
+        <div class="folder f-violet"><span class="f-glyph">F1</span><h3>MVP operacional</h3><p>Sistema completo substituindo a planilha, com migração do histórico.</p><span class="f-big">R$ 15.800</span></div>
+        <div class="folder f-ink"><span class="f-glyph">F2</span><h3>WhatsApp + financeiro</h3><p>Central de mensagens, régua de cobrança e baixa automática.</p><span class="f-big">R$ 8.600</span></div>
+      </div>
+      <div class="inv-total">
+        <p class="v">R$ 26.800</p>
+        <p class="l">Investimento total das fases 0–2. Valores de exemplo do modelo — confirmados após as respostas da descoberta.</p>
+      </div>
+      <div class="pay-list">
+        <div class="pay-item"><span class="idx">1ª</span><div class="info"><h4>Entrada — 30% na aprovação</h4><p>Vencimento: 30 jul 2026 · Pix, cartão ou boleto</p></div><span class="val">R$ 8.040</span></div>
+        <div class="pay-item"><span class="idx">2ª</span><div class="info"><h4>40% na entrega do MVP (F1)</h4><p>Liberada junto com o sistema em operação</p></div><span class="val">R$ 10.720</span></div>
+        <div class="pay-item"><span class="idx">3ª</span><div class="info"><h4>30% na entrega da automação (F2)</h4><p>WhatsApp e financeiro ativos em produção</p></div><span class="val">R$ 8.040</span></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary">Pagar entrada via Pix</button>
+        <button type="button" class="btn btn-ghost">Receber link de pagamento</button>
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Fases 3 e 4 orçadas como evolução</span><span>01 / 02</span></div>
+    </div>
+  </section>
+
+  <section class="slide s-light">
+    <div class="grain"></div>
+    <div class="slide-inner" data-reveal>
+      <p class="tag">02 — Próximos passos</p>
+      <h2 class="big">O que acontece agora →</h2>
+      <div class="twocol">
+        <div>
+          <ul class="plist" style="margin-top:1.4rem;">
+            <li><strong>Pagamento da entrada</strong>&nbsp;— confirma o início e reserva a agenda do projeto.</li>
+            <li><strong>Descoberta (F0)</strong>&nbsp;— entrevistas com o administrador e os dois atendentes, catálogo de serviços e validação do protótipo.</li>
+            <li><strong>Desenvolvimento do MVP (F1)</strong>&nbsp;— acompanhamento semanal com acesso de teste.</li>
+          </ul>
+        </div>
+        <div>
+          <ul class="plist" style="margin-top:1.4rem;">
+            <li><strong>Migração da planilha</strong>&nbsp;— importação de teste, conciliação dos totais e data de corte.</li>
+            <li><strong>Operação assistida</strong>&nbsp;— treinamento da equipe e período em paralelo com a planilha.</li>
+            <li><strong>Automação (F2)</strong>&nbsp;— WhatsApp e régua de cobrança entram com regras seguras.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout-l">Dúvidas em qualquer etapa? A equipe Vertix acompanha você pelo WhatsApp durante todo o projeto.</div>
+      <div class="btn-row"><button type="button" class="btn btn-primary">Falar no WhatsApp</button></div>
+      <div class="s-foot"><span>Vertix</span><span>VTX-2026-015 · Documento confidencial</span><span>02 / 02</span></div>
+    </div>
+  </section>
+</main>
+
+<!-- Controle de demonstração do modelo (não faz parte do template final) -->
+<div class="demo-bar" role="group" aria-label="Controles do modelo">
+  <span>Modelo</span>
+  <button type="button" id="demo-proposta" class="on">Proposta</button>
+  <button type="button" id="demo-aprovada">Aprovada</button>
+</div>
+
+<script>
+  (function () {
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var revealEls = document.querySelectorAll('[data-reveal]');
+    if (reduced || !('IntersectionObserver' in window)) {
+      revealEls.forEach(function (el) { el.classList.add('in'); });
+    } else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.12 });
+      revealEls.forEach(function (el) { io.observe(el); });
+    }
+
+    var body = document.body;
+    var nomeInput = document.getElementById('nome');
+    var nomeErr = document.getElementById('nome-err');
+    var btnProposta = document.getElementById('demo-proposta');
+    var btnAprovada = document.getElementById('demo-aprovada');
+
+    function setState(approved, nome) {
+      body.classList.toggle('is-approved', approved);
+      btnProposta.classList.toggle('on', !approved);
+      btnAprovada.classList.toggle('on', approved);
+      if (approved) {
+        document.getElementById('ok-nome').textContent = nome || 'Vinicius';
+        document.getElementById('ok-data').textContent = new Date().toLocaleDateString('pt-BR', {
+          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        document.querySelectorAll('#approved [data-reveal]').forEach(function (el) { el.classList.add('in'); });
+      }
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    }
+
+    document.getElementById('btn-accept').addEventListener('click', function () {
+      var nome = nomeInput.value.trim();
+      if (nome === '') { nomeErr.style.display = 'block'; nomeInput.focus(); return; }
+      nomeErr.style.display = 'none';
+      setState(true, nome);
+    });
+    nomeInput.addEventListener('input', function () { nomeErr.style.display = 'none'; });
+    btnProposta.addEventListener('click', function () { setState(false); });
+    btnAprovada.addEventListener('click', function () { setState(true, nomeInput.value.trim()); });
+  })();
+</script>
+</body>
+</html>

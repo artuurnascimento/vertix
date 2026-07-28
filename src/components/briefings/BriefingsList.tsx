@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../lib/database.types'
 import { formatRelativeTime, getTipoServicoMeta } from '../../lib/format'
 import { formatResposta, parsePerguntas } from '../../lib/briefing'
+import BriefingResumo from './BriefingResumo'
 
 type BriefingRow = Tables<'briefings'> & {
   projects:
@@ -249,7 +250,17 @@ export default function BriefingsList() {
                       transition={{ duration: 0.25, ease: 'easeOut' }}
                       className="overflow-hidden"
                     >
-                      <dl className="space-y-4 border-t border-white/5 px-5 py-5">
+                      <div className="border-t border-white/5 px-5 pt-5">
+                        <BriefingResumo
+                          briefingId={briefing.id}
+                          resumoMeta={
+                            (briefing.resumo_meta as
+                              | Record<string, string>
+                              | null) ?? null
+                          }
+                        />
+                      </div>
+                      <dl className="space-y-4 px-5 pb-5">
                         {perguntas.map((pergunta) => {
                           const resposta = formatResposta(
                             respostas[pergunta.id]

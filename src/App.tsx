@@ -20,6 +20,7 @@ import BriefingForm from './pages/public/BriefingForm'
 import Proposta from './pages/public/Proposta'
 import Portal from './pages/public/Portal'
 import ContractSign from './pages/public/ContractSign'
+import NpsSurvey from './pages/public/NpsSurvey'
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/proposta/:token" element={<Proposta />} />
       <Route path="/portal/:token" element={<Portal />} />
       <Route path="/contrato/:token" element={<ContractSign />} />
+      <Route path="/nps/:token" element={<NpsSurvey />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>

@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../lib/database.types'
 import { formatRelativeTime } from '../../lib/format'
+import { SLA_BADGE, computeSla, slaTempoLabel } from '../../lib/sla'
 
 type TicketRow = Tables<'support_tickets'> & {
   projects:
@@ -186,6 +187,12 @@ export default function TicketsList() {
             const statusBadge = STATUS_BADGE[ticket.status] ?? UNKNOWN_BADGE
             const prioridadeBadge =
               PRIORIDADE_BADGE[ticket.prioridade] ?? UNKNOWN_BADGE
+            const sla = computeSla(
+              ticket.prioridade,
+              ticket.created_at,
+              ticket.resolved_at
+            )
+            const slaBadge = SLA_BADGE[sla.status]
             const aberto = abertoId === ticket.id
 
             return (
@@ -228,6 +235,14 @@ export default function TicketsList() {
                   >
                     {statusBadge.label}
                   </span>
+                  {ticket.status !== 'resolvido' && (
+                    <span
+                      title={slaTempoLabel(sla)}
+                      className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${slaBadge.className}`}
+                    >
+                      {slaBadge.label}
+                    </span>
+                  )}
 
                   <span className="text-xs font-light tabular-nums text-muted">
                     aberto {formatRelativeTime(ticket.created_at)}
@@ -275,9 +290,19 @@ export default function TicketsList() {
                         </p>
                         <p className="mt-3 text-xs font-light text-muted">
                           Aberto há {formatRelativeTime(ticket.created_at)}
+                          {ticket.first_response_at
+                            ? ` · 1ª resposta ${formatRelativeTime(ticket.first_response_at)}`
+                            : ''}
                           {ticket.resolved_at
                             ? ` · resolvido ${formatRelativeTime(ticket.resolved_at)}`
                             : ''}
+                        </p>
+                        <p className="mt-1 text-xs font-light text-muted">
+                          Meta de SLA ({sla.horas}h) —{' '}
+                          <span className={slaBadge.className.split(' ').pop()}>
+                            {slaBadge.label.toLowerCase()}
+                          </span>{' '}
+                          · {slaTempoLabel(sla)}
                         </p>
                       </div>
                     </motion.div>

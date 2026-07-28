@@ -115,6 +115,13 @@ export type Database = {
             foreignKeyName: "ad_accounts_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "ad_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -321,6 +328,9 @@ export type Database = {
           id: string
           project_id: string
           respostas: Json | null
+          resumo: string | null
+          resumo_gerado_em: string | null
+          resumo_meta: Json | null
           status: string
           submitted_at: string | null
           template_id: string
@@ -330,6 +340,9 @@ export type Database = {
           id?: string
           project_id: string
           respostas?: Json | null
+          resumo?: string | null
+          resumo_gerado_em?: string | null
+          resumo_meta?: Json | null
           status?: string
           submitted_at?: string | null
           template_id: string
@@ -339,6 +352,9 @@ export type Database = {
           id?: string
           project_id?: string
           respostas?: Json | null
+          resumo?: string | null
+          resumo_gerado_em?: string | null
+          resumo_meta?: Json | null
           status?: string
           submitted_at?: string | null
           template_id?: string
@@ -504,6 +520,33 @@ export type Database = {
           },
         ]
       }
+      job_runs: {
+        Row: {
+          created_at: string
+          detalhe: string | null
+          id: string
+          itens: number
+          job: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          itens?: number
+          job: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          itens?: number
+          job?: string
+          status?: string
+        }
+        Relationships: []
+      }
       lead_submissions: {
         Row: {
           created_at: string
@@ -551,6 +594,134 @@ export type Database = {
           titulo?: string
         }
         Relationships: []
+      }
+      nps_surveys: {
+        Row: {
+          client_id: string
+          comentario: string | null
+          created_at: string
+          id: string
+          project_id: string
+          responded_at: string | null
+          score: number | null
+          sent_at: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          client_id: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          responded_at?: string | null
+          score?: number | null
+          sent_at?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          client_id?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          responded_at?: string | null
+          score?: number | null
+          sent_at?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nps_surveys_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "nps_surveys_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nps_surveys_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nudges: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          dedupe_key: string
+          descricao: string | null
+          id: string
+          link: string | null
+          project_id: string | null
+          resolved_at: string | null
+          resolvido: boolean
+          severidade: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          dedupe_key: string
+          descricao?: string | null
+          id?: string
+          link?: string | null
+          project_id?: string | null
+          resolved_at?: string | null
+          resolvido?: boolean
+          severidade?: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          dedupe_key?: string
+          descricao?: string | null
+          id?: string
+          link?: string | null
+          project_id?: string | null
+          resolved_at?: string | null
+          resolvido?: boolean
+          severidade?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nudges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "nudges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nudges_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -737,6 +908,13 @@ export type Database = {
             foreignKeyName: "projects_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -882,6 +1060,13 @@ export type Database = {
             foreignKeyName: "receivables_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "receivables_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -955,6 +1140,13 @@ export type Database = {
             foreignKeyName: "subscriptions_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -971,6 +1163,7 @@ export type Database = {
         Row: {
           created_at: string
           descricao: string | null
+          first_response_at: string | null
           id: string
           prioridade: string
           project_id: string
@@ -981,6 +1174,7 @@ export type Database = {
         Insert: {
           created_at?: string
           descricao?: string | null
+          first_response_at?: string | null
           id?: string
           prioridade?: string
           project_id: string
@@ -991,6 +1185,7 @@ export type Database = {
         Update: {
           created_at?: string
           descricao?: string | null
+          first_response_at?: string | null
           id?: string
           prioridade?: string
           project_id?: string
@@ -1186,9 +1381,98 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      client_health: {
+        Row: {
+          atraso_qtd: number | null
+          client_id: string | null
+          dias_inativo: number | null
+          em_atraso_valor: number | null
+          empresa: string | null
+          faixa: string | null
+          nome: string | null
+          nudges_urgentes: number | null
+          projetos_parados: number | null
+          score: number | null
+          sla_estourados: number | null
+          tickets_abertos: number | null
+          ultimo_nps: number | null
+        }
+        Relationships: []
+      }
+      nps_summary: {
+        Row: {
+          detratores: number | null
+          neutros: number | null
+          nps: number | null
+          promotores: number | null
+          total_enviadas: number | null
+          total_respostas: number | null
+        }
+        Relationships: []
+      }
+      support_ticket_sla: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          first_response_at: string | null
+          id: string | null
+          prioridade: string | null
+          project_id: string | null
+          resolved_at: string | null
+          sla_due_at: string | null
+          sla_horas: number | null
+          status: string | null
+          status_sla: string | null
+          titulo: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          first_response_at?: string | null
+          id?: string | null
+          prioridade?: string | null
+          project_id?: string | null
+          resolved_at?: string | null
+          sla_due_at?: never
+          sla_horas?: never
+          status?: string | null
+          status_sla?: never
+          titulo?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          first_response_at?: string | null
+          id?: string | null
+          prioridade?: string | null
+          project_id?: string | null
+          resolved_at?: string | null
+          sla_due_at?: never
+          sla_horas?: never
+          status?: string | null
+          status_sla?: never
+          titulo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      _cron_generate_receivables: { Args: never; Returns: undefined }
+      _cron_payment_reminders: { Args: never; Returns: undefined }
+      _cron_scan_nudges: { Args: never; Returns: undefined }
+      _generate_subscription_receivables_internal: {
+        Args: never
+        Returns: number
+      }
+      _scan_nudges: { Args: never; Returns: number }
       approve_project_stage: { Args: { p_token: string }; Returns: Json }
       create_lead: {
         Args: {
@@ -1207,6 +1491,7 @@ export type Database = {
       generate_subscription_receivables: { Args: never; Returns: number }
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
       get_contract_by_token: { Args: { p_token: string }; Returns: Json }
+      get_nps_by_token: { Args: { p_token: string }; Returns: Json }
       get_portal_ads: { Args: { p_token: string }; Returns: Json }
       get_portal_by_token: { Args: { t: string }; Returns: Json }
       get_portal_files: { Args: { p_token: string }; Returns: Json }
@@ -1226,6 +1511,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      push_nudge: {
+        Args: {
+          p_client_id: string
+          p_dedupe_key: string
+          p_descricao: string
+          p_link: string
+          p_project_id: string
+          p_severidade: string
+          p_tipo: string
+          p_titulo: string
+        }
+        Returns: boolean
+      }
       respond_proposal: {
         Args: { p_aceite: boolean; p_nome: string; t: string }
         Returns: Json
@@ -1238,7 +1536,12 @@ export type Database = {
         }
         Returns: Json
       }
+      sla_hours: { Args: { p_prioridade: string }; Returns: number }
       submit_briefing: { Args: { p_respostas: Json; t: string }; Returns: Json }
+      submit_nps: {
+        Args: { p_comentario: string; p_score: number; p_token: string }
+        Returns: Json
+      }
       track_utm_conversion: {
         Args: {
           p_pedido_ref?: string
