@@ -176,9 +176,10 @@ export default function PagarPage() {
             payer: { email: info.cliente_email },
           },
           customization: {
+            // Sem debitCard de propósito: a única opção que o MP oferece aí é
+            // o "Cartão de Débito Virtual CAIXA", que mais confunde que ajuda.
             paymentMethods: {
               creditCard: 'all',
-              debitCard: 'all',
               bankTransfer: 'all',
             },
             visual: {
@@ -370,6 +371,27 @@ export default function PagarPage() {
               Confirmação automática: seu projeto segue sem burocracia.
             </li>
           </ul>
+
+          <div className="mt-6">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted">
+              Formas de pagamento aceitas
+            </p>
+            <ul className="mt-2.5 flex flex-wrap items-center gap-2">
+              {['Pix', 'Visa', 'Mastercard', 'Elo', 'Amex', 'Hipercard'].map(
+                (bandeira) => (
+                  <li
+                    key={bandeira}
+                    className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-ink"
+                  >
+                    {bandeira}
+                  </li>
+                )
+              )}
+            </ul>
+            <p className="mt-2 text-xs font-light text-muted">
+              Crédito em até 12x.
+            </p>
+          </div>
         </section>
 
         {/* ------------------------------------------------- pagamento ---- */}
