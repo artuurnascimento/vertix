@@ -11,6 +11,8 @@
  * senhas, JWTs ou chaves.
  */
 
+import { withCors } from '../_shared/cors.ts'
+
 interface RequestBody {
   email?: string
   nome?: string
@@ -38,7 +40,7 @@ function generateTempPassword(): string {
   return `Vx${base.slice(0, 14)}!9`
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -187,4 +189,4 @@ Deno.serve(async (req) => {
     role,
     senha_temporaria: tempPassword,
   })
-})
+}))

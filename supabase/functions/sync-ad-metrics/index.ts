@@ -22,6 +22,8 @@
  * NUNCA loga o valor de META_ADS_TOKEN nem do JWT recebido.
  */
 
+import { withCors } from '../_shared/cors.ts'
+
 interface RequestBody {
   ad_account_id?: string
 }
@@ -204,7 +206,7 @@ async function syncCampaignsForAccount(
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -463,4 +465,4 @@ Deno.serve(async (req) => {
   }
 
   return jsonResponse({ sincronizadas, falhas } satisfies SyncSummary)
-})
+}))

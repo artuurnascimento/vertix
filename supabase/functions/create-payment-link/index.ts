@@ -11,6 +11,8 @@
  * Nunca loga o valor de MP_ACCESS_TOKEN nem do JWT recebido.
  */
 
+import { withCors } from '../_shared/cors.ts'
+
 interface RequestBody {
   receivable_id?: string
 }
@@ -28,7 +30,7 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -187,4 +189,4 @@ Deno.serve(async (req) => {
   }
 
   return jsonResponse({ ok: true, payment_link: initPoint })
-})
+}))

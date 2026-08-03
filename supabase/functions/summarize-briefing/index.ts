@@ -10,6 +10,8 @@
  * determinístico. Em ambos os casos, persiste em briefings.resumo/resumo_meta.
  */
 
+import { withCors } from '../_shared/cors.ts'
+
 interface Pergunta {
   id: string
   label: string
@@ -225,7 +227,7 @@ async function resumoGroq(
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const groqKey = Deno.env.get('GROQ_API_KEY')
@@ -350,4 +352,4 @@ Deno.serve(async (req) => {
   }
 
   return jsonResponse({ ok: true, resumo, resumo_meta: meta, fonte: meta.fonte })
-})
+}))

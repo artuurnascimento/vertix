@@ -13,6 +13,8 @@
  * NUNCA loga tokens.
  */
 
+import { withCors } from '../_shared/cors.ts'
+
 interface RequestBody {
   campaign_id?: string
   level?: 'adset' | 'ad'
@@ -71,7 +73,7 @@ function parseConversoes(actions: InsightAction[] | undefined): number {
   return 0
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -219,4 +221,4 @@ Deno.serve(async (req) => {
   }
 
   return jsonResponse({ itens })
-})
+}))
