@@ -481,15 +481,23 @@ export default function PagarPage() {
         </section>
       </motion.div>
 
-      <p className="mt-10 text-center text-xs font-light text-muted">
-        Dúvidas sobre esta cobrança? Fale com a gente —{' '}
-        <a
-          href="mailto:contato@vertix.studio"
-          className="text-accent underline-offset-2 hover:underline"
-        >
-          contato@vertix.studio
-        </a>
-      </p>
+      <footer className="mt-10 flex flex-col items-center gap-1.5 text-center text-xs font-light text-muted">
+        <p>
+          Dúvidas sobre esta cobrança? Fale com a gente —{' '}
+          <a
+            href="mailto:contato@vertix.studio"
+            className="text-accent underline-offset-2 hover:underline"
+          >
+            contato@vertix.studio
+          </a>
+        </p>
+        <p className="text-[11px] text-muted/80">
+          Vertix Studio · CNPJ 54.203.421/0001-49
+        </p>
+        <p className="text-[11px] text-muted/80">
+          Rua 02, Ulisses Guimarães — Bela Vista de Goiás/GO · CEP 75244-970
+        </p>
+      </footer>
     </Shell>
   )
 }
