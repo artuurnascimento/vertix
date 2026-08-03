@@ -239,3 +239,15 @@ body {
     transform: none;
   }
 }
+
+/* Texto e cadeado do botão Pagar em branco — o tema do Brick os deixa
+ * escuros, sem contraste sobre o gradiente da marca. */
+#payment-brick button[type='submit'],
+#payment-brick button[type='submit'] * {
+  color: #fff !important;
+}
+
+#payment-brick button[type='submit'] svg,
+#payment-brick button[type='submit'] svg * {
+  fill: #fff !important;
+}
