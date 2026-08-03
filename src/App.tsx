@@ -21,6 +21,7 @@ import Proposta from './pages/public/Proposta'
 import Portal from './pages/public/Portal'
 import ContractSign from './pages/public/ContractSign'
 import NpsSurvey from './pages/public/NpsSurvey'
+import PagarPage from './pages/public/PagarPage'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/portal/:token" element={<Portal />} />
       <Route path="/contrato/:token" element={<ContractSign />} />
       <Route path="/nps/:token" element={<NpsSurvey />} />
+      <Route path="/pagar/:token" element={<PagarPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>

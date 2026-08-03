@@ -5,19 +5,21 @@ import { supabase } from '../../lib/supabase'
 
 interface PaymentLinkButtonProps {
   receivableId: string
+  paymentToken: string
   paymentLink: string | null
   onError: (message: string) => void
 }
 
 const COPIED_TIMEOUT_MS = 2000
-const MP_NOT_CONFIGURED_ERROR = 'MP_ACCESS_TOKEN não configurado'
 
 /**
- * Botão de cobrança (fase 9): sem payment_link ainda, "Gerar link" chama a
- * edge function; com payment_link, vira "Copiar link de pagamento".
+ * Botão de cobrança: gera o link da NOSSA página de pagamento
+ * (/pagar/:payment_token) e o grava em payment_link — é essa URL que os
+ * lembretes de e-mail usam. Com link gerado, vira "Copiar link de pagamento".
  */
 export default function PaymentLinkButton({
   receivableId,
+  paymentToken,
   paymentLink,
   onError,
 }: PaymentLinkButtonProps) {
@@ -26,26 +28,19 @@ export default function PaymentLinkButton({
 
   const generateLink = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke(
-        'create-payment-link',
-        { body: { receivable_id: receivableId } }
-      )
-      if (error) {
-        const message =
-          (data as { error?: string } | null)?.error ?? error.message
-        throw new Error(message)
-      }
-      return data
+      const url = `${window.location.origin}/pagar/${paymentToken}`
+      const { error } = await supabase
+        .from('receivables')
+        .update({ payment_link: url })
+        .eq('id', receivableId)
+      if (error) throw new Error(error.message)
+      return url
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['receivables'] })
     },
-    onError: (error: Error) => {
-      if (error.message.includes(MP_NOT_CONFIGURED_ERROR)) {
-        onError('Configure o Mercado Pago nas variáveis do Supabase.')
-      } else {
-        onError('Não foi possível gerar o link de pagamento.')
-      }
+    onError: () => {
+      onError('Não foi possível gerar o link de pagamento.')
     },
   })
 

@@ -1019,6 +1019,7 @@ export type Database = {
           id: string
           pago_em: string | null
           payment_link: string | null
+          payment_token: string
           project_id: string
           proposal_id: string | null
           status: string
@@ -1034,6 +1035,7 @@ export type Database = {
           id?: string
           pago_em?: string | null
           payment_link?: string | null
+          payment_token?: string
           project_id: string
           proposal_id?: string | null
           status?: string
@@ -1049,6 +1051,7 @@ export type Database = {
           id?: string
           pago_em?: string | null
           payment_link?: string | null
+          payment_token?: string
           project_id?: string
           proposal_id?: string | null
           status?: string
@@ -1492,6 +1495,7 @@ export type Database = {
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
       get_contract_by_token: { Args: { p_token: string }; Returns: Json }
       get_nps_by_token: { Args: { p_token: string }; Returns: Json }
+      get_payment_info: { Args: { p_token: string }; Returns: Json }
       get_portal_ads: { Args: { p_token: string }; Returns: Json }
       get_portal_by_token: { Args: { t: string }; Returns: Json }
       get_portal_files: { Args: { p_token: string }; Returns: Json }

@@ -337,6 +337,7 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
                           })()}
                           <PaymentLinkButton
                             receivableId={row.id}
+                            paymentToken={row.payment_token}
                             paymentLink={row.payment_link}
                             onError={onLinkError}
                           />
