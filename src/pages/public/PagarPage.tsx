@@ -146,6 +146,7 @@ export default function PagarPage() {
     // para "pago" e a página confirma sozinha, sem o cliente recarregar.
     refetchInterval: pageState === 'pix_waiting' ? PIX_POLL_MS : false,
     queryFn: async (): Promise<PaymentInfo> => {
+      if (!token) throw new Error('token_ausente')
       const { data, error } = await supabase.rpc('get_payment_info', {
         p_token: token,
       })
