@@ -132,6 +132,8 @@ export default function PagarPage() {
   const [payError, setPayError] = useState<string | null>(null)
   const [brickReady, setBrickReady] = useState(false)
   const [copied, setCopied] = useState(false)
+  // Liga o efeito de "preencher" no botão Pagar enquanto o pagamento processa.
+  const [processing, setProcessing] = useState(false)
   const brickRef = useRef<BrickController | null>(null)
 
   const {
@@ -206,11 +208,20 @@ export default function PagarPage() {
             },
             onSubmit: async ({ formData }: { formData: unknown }) => {
               setPayError(null)
-              const { data, error } = await supabase.functions.invoke(
-                'process-payment',
-                { body: { token, formData } }
-              )
-              const res = (data ?? {}) as ProcessResponse
+              setProcessing(true)
+              let res: ProcessResponse
+              let invokeError: unknown
+              try {
+                const { data, error } = await supabase.functions.invoke(
+                  'process-payment',
+                  { body: { token, formData } }
+                )
+                res = (data ?? {}) as ProcessResponse
+                invokeError = error
+              } finally {
+                setProcessing(false)
+              }
+              const error = invokeError
 
               if (error || res.error) {
                 const message =
@@ -327,7 +338,10 @@ export default function PagarPage() {
         className="mt-10 grid gap-6 md:grid-cols-[5fr_6fr] md:gap-8"
       >
         {/* ---------------------------------------------------- resumo ---- */}
-        <section aria-label="Resumo da cobrança">
+        <section
+          aria-label="Resumo da cobrança"
+          className="text-center md:text-left"
+        >
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-accent">
             Cobrança · Vertix Studio
           </p>
@@ -344,7 +358,7 @@ export default function PagarPage() {
             <p className="mt-4 text-4xl font-bold tabular-nums text-ink">
               {BRL.format(info.valor)}
             </p>
-            <p className="mt-2 flex items-center gap-1.5 text-xs font-light text-muted">
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-light text-muted md:justify-start">
               <CalendarDays className="h-3.5 w-3.5" />
               Vencimento {formatDate(info.vencimento)}
               {info.status === 'atrasado' && (
@@ -355,7 +369,7 @@ export default function PagarPage() {
             </p>
           </div>
 
-          <ul className="mt-6 flex flex-col gap-3 text-sm font-light text-muted">
+          <ul className="mx-auto mt-6 flex max-w-sm flex-col gap-3 text-left text-sm font-light text-muted md:mx-0 md:max-w-none">
             <li className="flex items-start gap-2.5">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
               Processado pelo Mercado Pago, líder em pagamentos na América
@@ -376,7 +390,7 @@ export default function PagarPage() {
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted">
               Formas de pagamento aceitas
             </p>
-            <ul className="mt-2.5 flex flex-wrap items-center gap-2">
+            <ul className="mt-2.5 flex flex-wrap items-center justify-center gap-2 md:justify-start">
               {['Pix', 'Visa', 'Mastercard', 'Elo', 'Amex', 'Hipercard'].map(
                 (bandeira) => (
                   <li
@@ -449,7 +463,10 @@ export default function PagarPage() {
                   <div className="h-24 animate-pulse rounded-lg bg-surface-2" />
                 </div>
               )}
-              <div id={BRICK_CONTAINER_ID} />
+              <div
+                id={BRICK_CONTAINER_ID}
+                className={processing ? 'vtx-processing' : undefined}
+              />
             </>
           )}
 
@@ -492,7 +509,7 @@ function Shell({
       <div
         className={`relative mx-auto w-full ${wide ? 'max-w-4xl' : 'max-w-xl'}`}
       >
-        <header className="flex items-center gap-2.5">
+        <header className="flex items-center justify-center gap-2.5 md:justify-start">
           <LogoMark className="h-7 w-7" />
           <span className="text-sm font-semibold tracking-[0.35em] text-ink">
             VERTIX
