@@ -151,3 +151,91 @@ body {
     opacity: 0.15;
   }
 }
+
+/*
+ * Botão Pagar no estilo do CTA do site: pílula com o gradiente da marca em
+ * movimento lento, contorno claro interno e um brilho que varre o botão.
+ * Brilho e preenchimento (estado .vtx-processing) dividem o ::before — por
+ * isso o preenchimento declara width:100% explícito.
+ */
+#payment-brick button[type='submit'] {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px !important;
+  background: linear-gradient(123deg, #16123f 7%, #6c5bf2 37%, #5546e0 72%, #3bb0e0 100%) !important;
+  background-size: 180% 180% !important;
+  outline: 2px solid #f4f4f0 !important;
+  outline-offset: -3px;
+  box-shadow:
+    0 4px 18px rgba(108, 91, 242, 0.45),
+    4px 4px 12px #5546e0 inset !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700 !important;
+  animation: vtx-btn-gradient 6s ease-in-out infinite;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#payment-brick button[type='submit']:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 26px rgba(108, 91, 242, 0.6),
+    4px 4px 12px #5546e0 inset !important;
+}
+
+/* Brilho que varre da esquerda pra direita de tempos em tempos. */
+#payment-brick:not(.vtx-processing) button[type='submit']::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  animation: vtx-btn-shine 3.4s ease-in-out infinite;
+}
+
+#payment-brick.vtx-processing button[type='submit']::before {
+  width: 100%;
+}
+
+@keyframes vtx-btn-gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes vtx-btn-shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #payment-brick button[type='submit'] {
+    animation: none;
+  }
+  #payment-brick:not(.vtx-processing) button[type='submit']::before {
+    animation: none;
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  #payment-brick button[type='submit']:hover {
+    transform: none;
+  }
+}
