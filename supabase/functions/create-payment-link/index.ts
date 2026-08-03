@@ -1,14 +1,16 @@
 /**
  * create-payment-link
  *
- * Recebe { receivable_id }, exige JWT de usuário autenticado (via header
- * Authorization) que seja membro do time (checado em public.profiles com
- * service role), cria uma preferência de pagamento no Mercado Pago para a
- * parcela informada e grava payment_link (init_point) + gateway_payment_id
- * na receivable via service role.
+ * Recebe { receivable_id }, exige JWT de usuário autenticado que seja membro
+ * do time (checado em public.profiles com service role) e grava em
+ * payment_link a URL da NOSSA página de pagamento (/pagar/:payment_token) —
+ * o checkout acontece no nosso domínio e o Mercado Pago só processa, via
+ * edge function process-payment.
  *
- * Sem MP_ACCESS_TOKEN configurada, responde 400 (config ausente).
- * Nunca loga o valor de MP_ACCESS_TOKEN nem do JWT recebido.
+ * A base da URL vem do header Origin da requisição (o navegador sempre envia
+ * em POST cross-origin), com fallback em ADMIN_APP_URL. Função mantida por
+ * compatibilidade: frontends antigos que ainda a chamam passam a gerar o
+ * link novo automaticamente.
  */
 
 import { withCors } from '../_shared/cors.ts'
@@ -19,8 +21,7 @@ interface RequestBody {
 
 interface ReceivableRecord {
   id: string
-  descricao: string
-  valor: number
+  payment_token: string
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -28,6 +29,21 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+function resolveBaseUrl(req: Request): string | null {
+  const origin = req.headers.get('Origin')
+  if (origin) {
+    try {
+      const parsed = new URL(origin)
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return parsed.origin
+      }
+    } catch {
+      // cai no fallback
+    }
+  }
+  return Deno.env.get('ADMIN_APP_URL') ?? null
 }
 
 Deno.serve(withCors(async (req) => {
@@ -94,15 +110,15 @@ Deno.serve(withCors(async (req) => {
     return jsonResponse({ error: 'Acesso negado.' }, 403)
   }
 
-  const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
-  if (!mpAccessToken) {
-    return jsonResponse({ error: 'MP_ACCESS_TOKEN não configurado' }, 400)
+  const baseUrl = resolveBaseUrl(req)
+  if (!baseUrl) {
+    return jsonResponse({ error: 'origem_desconhecida' }, 400)
   }
 
-  // Busca a parcela com service role.
+  // Busca o token público da parcela.
   const receivableRes = await fetch(
     `${supabaseUrl}/rest/v1/receivables?id=eq.${receivableId}` +
-      '&select=id,descricao,valor',
+      '&select=id,payment_token',
     {
       headers: {
         apikey: serviceRoleKey,
@@ -123,47 +139,8 @@ Deno.serve(withCors(async (req) => {
     return jsonResponse({ error: 'Parcela não encontrada.' }, 404)
   }
 
-  // Cria a preferência de pagamento no Mercado Pago.
-  const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${mpAccessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      items: [
-        {
-          title: receivable.descricao,
-          quantity: 1,
-          unit_price: receivable.valor,
-          currency_id: 'BRL',
-        },
-      ],
-      external_reference: receivable.id,
-    }),
-  })
+  const paymentLink = `${baseUrl}/pagar/${receivable.payment_token}`
 
-  const mpBody = (await mpRes.json()) as Record<string, unknown>
-  if (!mpRes.ok) {
-    console.error(
-      '[create-payment-link] Erro do Mercado Pago:',
-      mpRes.status,
-      JSON.stringify(mpBody)
-    )
-    return jsonResponse(
-      { error: 'Falha ao criar preferência de pagamento.' },
-      502
-    )
-  }
-
-  const initPoint = mpBody.init_point as string | undefined
-  const preferenceId = mpBody.id as string | undefined
-  if (!initPoint || !preferenceId) {
-    console.error('[create-payment-link] Resposta do MP sem init_point/id.')
-    return jsonResponse({ error: 'Resposta inválida do gateway.' }, 502)
-  }
-
-  // Grava payment_link + gateway_payment_id na parcela via service role.
   const updateRes = await fetch(
     `${supabaseUrl}/rest/v1/receivables?id=eq.${receivableId}`,
     {
@@ -174,10 +151,7 @@ Deno.serve(withCors(async (req) => {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       },
-      body: JSON.stringify({
-        payment_link: initPoint,
-        gateway_payment_id: preferenceId,
-      }),
+      body: JSON.stringify({ payment_link: paymentLink }),
     }
   )
   if (!updateRes.ok) {
@@ -188,5 +162,5 @@ Deno.serve(withCors(async (req) => {
     return jsonResponse({ error: 'Falha ao salvar link de pagamento.' }, 502)
   }
 
-  return jsonResponse({ ok: true, payment_link: initPoint })
+  return jsonResponse({ ok: true, payment_link: paymentLink })
 }))
