@@ -87,3 +87,16 @@ body {
     scroll-behavior: auto;
   }
 }
+
+/*
+ * Payment Brick (Mercado Pago) — o selo "Parcelamento disponível" vem com
+ * height fixo de 16px no CSS do próprio Brick; quando o texto quebra de linha
+ * em telas estreitas, ele vaza do fundo. Altura automática + nowrap mantém o
+ * visual de pill de uma linha que o MP pretendia.
+ */
+#payment-brick [class*='value-prop'] {
+  height: auto !important;
+  min-height: 16px;
+  white-space: nowrap;
+  align-items: center;
+}
