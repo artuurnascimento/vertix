@@ -32,6 +32,7 @@ export default function App() {
       {/* Páginas públicas tokenizadas — sem autenticação. */}
       <Route path="/briefing/:token" element={<BriefingForm />} />
       <Route path="/proposta/:token" element={<Proposta />} />
+      <Route path="/p/:token" element={<Proposta />} />
       <Route path="/portal/:token" element={<Portal />} />
       <Route path="/contrato/:token" element={<ContractSign />} />
       <Route path="/nps/:token" element={<NpsSurvey />} />

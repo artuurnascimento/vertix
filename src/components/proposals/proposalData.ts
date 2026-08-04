@@ -58,7 +58,8 @@ export function sumInstallments(
 // ---------------------------------------------------------------------------
 
 export function proposalUrl(token: string): string {
-  return `${window.location.origin}/proposta/${token}`
+  // /p é o alias curto de /proposta — link mais limpo para enviar ao cliente.
+  return `${window.location.origin}/p/${token}`
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {
@@ -98,6 +99,8 @@ const proposalByTokenSchema = z.object({
         vencimento: z.string(),
         status: z.string(),
         payment_link: z.string().nullable(),
+        /** Token da página /pagar — checkout imediato sem "Gerar link". */
+        payment_token: z.string().nullable().catch(null),
       })
       .nullable()
       .catch(null),

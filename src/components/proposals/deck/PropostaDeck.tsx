@@ -347,6 +347,11 @@ export default function PropostaDeck({
   // projeto só aparecem quando o receivable da entrada estiver pago.
   if (aguardandoEntrada && entrada) {
     const saldo = proposta.valor_total - entrada.valor
+    // Checkout imediato: com o payment_token a página /pagar existe desde a
+    // criação da parcela — não precisa esperar ninguém clicar em "Gerar link".
+    const checkoutHref =
+      entrada.payment_link ??
+      (entrada.payment_token ? `/pagar/${entrada.payment_token}` : null)
     return (
       <div className="vdk min-h-screen bg-bg font-kanit">
         <Slide surface="violeta">
@@ -395,9 +400,9 @@ export default function PropostaDeck({
               saldo de {formatBRL(saldo)} fica para a entrega.
             </p>
           </div>
-          {entrada.payment_link ? (
+          {checkoutHref ? (
             <a
-              href={entrada.payment_link}
+              href={checkoutHref}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-8 inline-block touch-manipulation rounded-lg bg-accent px-7 py-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-colors duration-200 hover:bg-accent-2"

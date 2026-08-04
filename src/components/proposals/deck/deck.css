@@ -133,3 +133,8 @@
 .vdk .s-dark .fine { color: var(--vmut); }
 .vdk .s-light .fine { color: #55554f; }
 .vdk .s-violet .fine { color: rgba(12, 12, 12, 0.75); }
+
+/* Rodapé/cabeçalho do slide: itens curtos (código VTX, data) não quebram em
+ * várias linhas no mobile — o conjunto quebra em bloco quando faltar espaço. */
+.vdk .s-top, .vdk .s-foot { flex-wrap: wrap; }
+.vdk .s-top > *, .vdk .s-foot > * { white-space: nowrap; }
