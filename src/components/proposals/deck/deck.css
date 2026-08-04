@@ -143,6 +143,20 @@
 .vdk.vdk-presenting .slide { transition: opacity 0.5s ease; }
 .vdk.vdk-presenting .slide:not(.vdk-current) { opacity: 0.15; }
 
+/* Marcador de leitura: acende o bloco de texto que a narração está falando.
+ * box-shadow com spread = "padding" visual sem mexer no layout. */
+.vdk.vdk-presenting .vdk-reading {
+  background: rgba(108, 91, 242, 0.16);
+  box-shadow: 0 0 0 8px rgba(108, 91, 242, 0.16);
+  border-radius: 6px;
+  transition: background 0.35s ease, box-shadow 0.35s ease;
+}
+.vdk.vdk-presenting .s-violet .vdk-reading {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.18);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .vdk.vdk-presenting .slide { transition: none; }
+  .vdk.vdk-presenting .slide,
+  .vdk.vdk-presenting .vdk-reading { transition: none; }
 }

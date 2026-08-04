@@ -27,6 +27,22 @@ interface DeckPresentationProps {
   onExit: () => void
 }
 
+const STOPWORDS = new Set([
+  'para', 'como', 'mais', 'isso', 'esse', 'essa', 'pelo', 'pela', 'cada',
+  'quando', 'vocês', 'voces', 'todos', 'toda', 'tudo', 'aqui', 'ainda',
+  'sobre', 'entre', 'depois', 'antes', 'então', 'entao', 'reais',
+])
+
+/** Palavras significativas (≥4 letras, sem pontuação) de um trecho. */
+function tokeniza(texto: string): Set<string> {
+  return new Set(
+    texto
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((p) => p.length >= 4 && !STOPWORDS.has(p))
+  )
+}
+
 /**
  * Modo apresentação: não re-renderiza nada — rola a própria página até o
  * slide da vez, destaca-o (CSS .vdk-presenting) e narra o roteiro. Ao fim da
@@ -38,13 +54,15 @@ export default function DeckPresentation({
 }: DeckPresentationProps) {
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
-  const [legenda, setLegenda] = useState<string | null>(null)
   const nodesRef = useRef<HTMLElement[]>([])
   const abortRef = useRef<AbortController | null>(null)
   // Cada playFrom incrementa o run; loops antigos percebem e morrem em paz.
   const runRef = useRef(0)
   // Espelho de `paused` legível de dentro do loop async (evita closure velha).
   const pausedRef = useRef(false)
+  // Blocos de texto do slide atual + qual está marcado como "sendo lido".
+  const candidatosRef = useRef<{ el: HTMLElement; tokens: Set<string> }[]>([])
+  const lendoRef = useRef<HTMLElement | null>(null)
   const total = tracks.length
 
   const highlight = (i: number) => {
@@ -52,6 +70,49 @@ export default function DeckPresentation({
       node.classList.toggle('vdk-current', n === i)
     )
     nodesRef.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    // Recolhe os blocos de texto do slide da vez p/ o marcador de leitura.
+    limpaLeitura()
+    const slide = nodesRef.current[i]
+    candidatosRef.current = slide
+      ? Array.from(slide.querySelectorAll<HTMLElement>('h1, h2, h3, p, li'))
+          .filter(
+            (el) =>
+              !el.closest('.s-foot') && (el.textContent ?? '').trim().length >= 8
+          )
+          .map((el) => ({ el, tokens: tokeniza(el.textContent ?? '') }))
+      : []
+  }
+
+  const limpaLeitura = () => {
+    lendoRef.current?.classList.remove('vdk-reading')
+    lendoRef.current = null
+  }
+
+  /**
+   * A narração é um roteiro de vendedor, não o texto literal do slide — então
+   * o trecho falado é casado com o bloco de texto que mais compartilha
+   * palavras com ele, e esse bloco ganha o marcador visual.
+   */
+  const marcaLeitura = (trechoFalado: string) => {
+    const palavras = tokeniza(trechoFalado)
+    if (palavras.size === 0) return
+    let melhor: HTMLElement | null = null
+    let melhorScore = 0
+    for (const cand of candidatosRef.current) {
+      let score = 0
+      palavras.forEach((p) => {
+        if (cand.tokens.has(p)) score++
+      })
+      if (score > melhorScore) {
+        melhorScore = score
+        melhor = cand.el
+      }
+    }
+    // Sem casamento razoável, mantém o marcador onde está (não pisca à toa).
+    if (!melhor || melhorScore < 2 || melhor === lendoRef.current) return
+    lendoRef.current?.classList.remove('vdk-reading')
+    melhor.classList.add('vdk-reading')
+    lendoRef.current = melhor
   }
 
   // Se o usuário pausou bem na troca de seção, segura aqui até retomar —
@@ -73,14 +134,13 @@ export default function DeckPresentation({
       await esperaRetomar(run)
       if (run !== runRef.current) return
       setIdx(i)
-      setLegenda(null)
       highlight(i)
       const ctrl = new AbortController()
       abortRef.current = ctrl
       const track = tracks[i]
       const cues = track.legenda
-      // Legenda em tempo real: acompanha a posição do MP3 e mostra o trecho
-      // que a voz está falando naquele instante.
+      // Sincronia em tempo real: o cue da posição atual do MP3 aponta qual
+      // bloco de texto do slide deve estar marcado como "sendo lido".
       const onTime = cues?.length
         ? (ms: number) => {
             let atual: string | null = null
@@ -88,7 +148,7 @@ export default function DeckPresentation({
               if (cue.i <= ms) atual = cue.t
               else break
             }
-            setLegenda(atual)
+            if (atual) marcaLeitura(atual)
           }
         : undefined
       // Voz neural pré-gerada quando existe; sintetizador só como fallback.
@@ -96,7 +156,7 @@ export default function DeckPresentation({
         ? await playAudio(track.audio, ctrl.signal, onTime)
         : false
       if (!tocou && !ctrl.signal.aborted) {
-        await speakText(track.texto, ctrl.signal, setLegenda)
+        await speakText(track.texto, ctrl.signal, marcaLeitura)
       }
       if (run !== runRef.current || ctrl.signal.aborted) return
     }
@@ -108,6 +168,7 @@ export default function DeckPresentation({
     abortRef.current?.abort()
     cancelSpeech()
     stopAudio()
+    limpaLeitura()
     document.querySelector('.vdk')?.classList.remove('vdk-presenting')
     nodesRef.current.forEach((node) => node.classList.remove('vdk-current'))
     if (document.fullscreenElement) {
@@ -149,6 +210,7 @@ export default function DeckPresentation({
       abortRef.current?.abort()
       cancelSpeech()
       stopAudio()
+      lendoRef.current?.classList.remove('vdk-reading')
       root?.classList.remove('vdk-presenting')
       nodesRef.current.forEach((node) => node.classList.remove('vdk-current'))
     }
@@ -159,16 +221,8 @@ export default function DeckPresentation({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed inset-x-0 bottom-5 z-50 flex flex-col items-center gap-3 px-4 font-kanit"
+      className="fixed inset-x-0 bottom-5 z-50 flex justify-center px-4 font-kanit"
     >
-      {legenda && (
-        <p
-          aria-live="polite"
-          className="max-w-xl rounded-2xl border border-white/10 bg-[#151515]/95 px-5 py-3 text-center text-[15px] font-medium leading-snug text-white shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur"
-        >
-          {legenda}
-        </p>
-      )}
       <div
         role="toolbar"
         aria-label="Controles da apresentação"
