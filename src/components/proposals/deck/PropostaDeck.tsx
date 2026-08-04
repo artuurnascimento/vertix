@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
+import { Play } from 'lucide-react'
 import { formatBRL, formatDateBR } from '../../../lib/commercial'
 import { pagarPublicUrl } from '../../../lib/publicUrls'
 import type { ProposalByToken } from '../proposalData'
-import { slideSurface } from './deckData'
+import { deckNarrations, slideSurface } from './deckData'
+import DeckPresentation from './DeckPresentation'
+import { speechSupported } from '../../../lib/speech'
 import type { DeckSlide, ProposalDeck } from './deckData'
 import './deck.css'
 
@@ -351,6 +355,7 @@ export default function PropostaDeck({
   aceiteNome,
   children,
 }: PropostaDeckProps) {
+  const [presenting, setPresenting] = useState(false)
   const clienteLabel = deck.clienteLabel ?? cliente.nome
   const codigo = deck.codigo ?? 'Vertix'
   const capa = deck.slides[0]
@@ -549,6 +554,16 @@ export default function PropostaDeck({
             <LongArrow />
             <p>{capa.subtitulo}</p>
           </div>
+          {speechSupported && !presenting && (
+            <button
+              type="button"
+              onClick={() => setPresenting(true)}
+              className="mt-8 inline-flex touch-manipulation items-center gap-2.5 rounded-full bg-[#0c0c0c] px-6 py-3.5 text-sm font-semibold uppercase tracking-widest text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)] transition-transform duration-200 hover:-translate-y-0.5"
+            >
+              <Play className="h-4 w-4" />
+              Assistir apresentação
+            </button>
+          )}
           <Foot
             left={`Preparada para ${clienteLabel}`}
             center={codigo}
@@ -584,6 +599,13 @@ export default function PropostaDeck({
           right={`${pageNumber(totalPaginas)} / ${pageNumber(totalPaginas)}`}
         />
       </Slide>
+
+      {presenting && (
+        <DeckPresentation
+          narrations={deckNarrations(deck)}
+          onExit={() => setPresenting(false)}
+        />
+      )}
     </div>
   )
 }

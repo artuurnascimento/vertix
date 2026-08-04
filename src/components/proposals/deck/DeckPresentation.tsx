@@ -1,0 +1,163 @@
+import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  X,
+} from 'lucide-react'
+import {
+  cancelSpeech,
+  pauseSpeech,
+  resumeSpeech,
+  speakText,
+} from '../../../lib/speech'
+
+interface DeckPresentationProps {
+  /** Roteiro na ordem das seções .slide do deck (slides + aprovação). */
+  narrations: string[]
+  onExit: () => void
+}
+
+/**
+ * Modo apresentação: não re-renderiza nada — rola a própria página até o
+ * slide da vez, destaca-o (CSS .vdk-presenting) e narra o roteiro. Ao fim da
+ * fala de cada seção, avança sozinho. Controles flutuantes embaixo.
+ */
+export default function DeckPresentation({
+  narrations,
+  onExit,
+}: DeckPresentationProps) {
+  const [idx, setIdx] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const nodesRef = useRef<HTMLElement[]>([])
+  const abortRef = useRef<AbortController | null>(null)
+  // Cada playFrom incrementa o run; loops antigos percebem e morrem em paz.
+  const runRef = useRef(0)
+  const total = narrations.length
+
+  const highlight = (i: number) => {
+    nodesRef.current.forEach((node, n) =>
+      node.classList.toggle('vdk-current', n === i)
+    )
+    nodesRef.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const playFrom = async (start: number) => {
+    const run = ++runRef.current
+    abortRef.current?.abort()
+    cancelSpeech()
+    setPaused(false)
+    for (let i = start; i < total && i < nodesRef.current.length; i++) {
+      if (run !== runRef.current) return
+      setIdx(i)
+      highlight(i)
+      const ctrl = new AbortController()
+      abortRef.current = ctrl
+      await speakText(narrations[i], ctrl.signal)
+      if (run !== runRef.current || ctrl.signal.aborted) return
+    }
+    if (run === runRef.current) exit()
+  }
+
+  const exit = () => {
+    runRef.current++
+    abortRef.current?.abort()
+    cancelSpeech()
+    document.querySelector('.vdk')?.classList.remove('vdk-presenting')
+    nodesRef.current.forEach((node) => node.classList.remove('vdk-current'))
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined)
+    }
+    onExit()
+  }
+
+  const togglePause = () => {
+    if (paused) {
+      resumeSpeech()
+    } else {
+      pauseSpeech()
+    }
+    setPaused(!paused)
+  }
+
+  const go = (delta: number) => {
+    const alvo = Math.min(total - 1, Math.max(0, idx + delta))
+    void playFrom(alvo)
+  }
+
+  useEffect(() => {
+    const root = document.querySelector('.vdk')
+    nodesRef.current = Array.from(
+      document.querySelectorAll<HTMLElement>('.vdk .slide')
+    ).slice(0, total)
+    root?.classList.add('vdk-presenting')
+    // Tela cheia é cortesia — iPhone não suporta e a apresentação segue igual.
+    void document.documentElement.requestFullscreen?.().catch(() => undefined)
+    void playFrom(0)
+
+    return () => {
+      runRef.current++
+      abortRef.current?.abort()
+      cancelSpeech()
+      root?.classList.remove('vdk-presenting')
+      nodesRef.current.forEach((node) => node.classList.remove('vdk-current'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed inset-x-0 bottom-5 z-50 flex justify-center px-4 font-kanit"
+      role="toolbar"
+      aria-label="Controles da apresentação"
+    >
+      <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#151515]/95 px-3 py-2 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          disabled={idx === 0}
+          aria-label="Slide anterior"
+          className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={togglePause}
+          aria-label={paused ? 'Retomar narração' : 'Pausar narração'}
+          className="rounded-full bg-accent p-2.5 text-white transition-colors hover:bg-accent-2"
+        >
+          {paused ? (
+            <Play className="h-4 w-4" />
+          ) : (
+            <Pause className="h-4 w-4" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          disabled={idx >= total - 1}
+          aria-label="Próximo slide"
+          className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+        <span className="px-2 text-xs font-medium tabular-nums text-white/60">
+          {idx + 1} / {total}
+        </span>
+        <button
+          type="button"
+          onClick={exit}
+          aria-label="Encerrar apresentação"
+          className="rounded-full p-2 text-white/70 transition-colors hover:bg-red-500/20 hover:text-red-300"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </motion.div>
+  )
+}

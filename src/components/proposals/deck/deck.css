@@ -138,3 +138,11 @@
  * várias linhas no mobile — o conjunto quebra em bloco quando faltar espaço. */
 .vdk .s-top, .vdk .s-foot { flex-wrap: wrap; }
 .vdk .s-top > *, .vdk .s-foot > * { white-space: nowrap; }
+
+/* Modo apresentação: só o slide narrado fica aceso; os demais esmaecem. */
+.vdk.vdk-presenting .slide { transition: opacity 0.5s ease; }
+.vdk.vdk-presenting .slide:not(.vdk-current) { opacity: 0.15; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vdk.vdk-presenting .slide { transition: none; }
+}
