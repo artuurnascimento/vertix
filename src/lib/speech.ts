@@ -85,11 +85,13 @@ export function splitSentences(text: string): string[] {
 
 /**
  * Fala o texto inteiro; resolve quando terminar ou quando o signal abortar.
- * Abortar cancela a fila do sintetizador na hora.
+ * Abortar cancela a fila do sintetizador na hora. `onChunk` recebe cada
+ * sentença no momento em que ela começa a ser falada (legenda do fallback).
  */
 export async function speakText(
   text: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  onChunk?: (chunk: string) => void
 ): Promise<void> {
   if (!speechSupported || signal.aborted) return
   const synth = window.speechSynthesis
@@ -97,13 +99,15 @@ export async function speakText(
 
   for (const chunk of splitSentences(text)) {
     if (signal.aborted) return
+    onChunk?.(chunk)
     await new Promise<void>((resolve) => {
       const utterance = new SpeechSynthesisUtterance(chunk)
       utterance.lang = 'pt-BR'
       utterance.rate = 1.03
       if (voice) utterance.voice = voice
       // Watchdog: se onend nunca vier (síntese muda/quebrada), a apresentação
-      // vira slideshow temporizado em vez de travar no slide.
+      // vira slideshow temporizado em vez de travar no slide. Pausar a fala
+      // pausa o watchdog junto — senão ele estoura no meio da pausa e avança.
       const timeoutMs = 5000 + chunk.length * 130
       let timer: ReturnType<typeof setTimeout>
       const finish = () => {
@@ -118,6 +122,11 @@ export async function speakText(
       timer = setTimeout(finish, timeoutMs)
       utterance.onend = finish
       utterance.onerror = finish
+      utterance.onpause = () => clearTimeout(timer)
+      utterance.onresume = () => {
+        clearTimeout(timer)
+        timer = setTimeout(finish, timeoutMs)
+      }
       signal.addEventListener('abort', onAbort, { once: true })
       synth.speak(utterance)
       // iOS às vezes inicia a fila pausada — resume é inócuo nos demais.

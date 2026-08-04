@@ -38,6 +38,15 @@ const passoSchema = z.object({
 /** Superfície do slide; cada tipo tem um default coerente com o template. */
 const superficieSchema = z.enum(['violeta', 'escuro', 'claro'])
 
+/** Cue de legenda sincronizada: [início, fim] em ms do MP3 + trecho falado. */
+const legendaCueSchema = z.object({
+  i: z.number(),
+  f: z.number(),
+  t: z.string(),
+})
+
+export type LegendaCue = z.infer<typeof legendaCueSchema>
+
 const baseSlide = {
   tag: z.string(),
   titulo: z.string(),
@@ -47,6 +56,8 @@ const baseSlide = {
   narracao: z.string().optional(),
   /** MP3 pré-gerado (voz neural) — quando existe, toca em vez do sintetizador. */
   narracaoAudio: z.string().optional(),
+  /** Legenda sincronizada palavra-a-palavra do MP3 (gerada junto com ele). */
+  narracaoLegenda: z.array(legendaCueSchema).optional(),
 }
 
 const slideSchema = z.discriminatedUnion('tipo', [
@@ -56,6 +67,7 @@ const slideSchema = z.discriminatedUnion('tipo', [
     subtitulo: z.string(),
     narracao: z.string().optional(),
     narracaoAudio: z.string().optional(),
+    narracaoLegenda: z.array(legendaCueSchema).optional(),
   }),
   z.object({
     ...baseSlide,
@@ -111,6 +123,7 @@ const deckSchema = z.object({
     texto: z.string(),
     narracao: z.string().optional(),
     narracaoAudio: z.string().optional(),
+    narracaoLegenda: z.array(legendaCueSchema).optional(),
   }),
   posAceite: z.object({
     titulo: z.string(),
@@ -210,6 +223,7 @@ export function slideNarration(slide: DeckSlide): string {
 export interface NarrationTrack {
   texto: string
   audio?: string
+  legenda?: LegendaCue[]
 }
 
 /** Trilhas na ordem das seções do deck (slides + aprovação). */
@@ -218,12 +232,14 @@ export function deckNarrationTracks(deck: ProposalDeck): NarrationTrack[] {
     ...deck.slides.map((s) => ({
       texto: slideNarration(s),
       audio: s.narracaoAudio,
+      legenda: s.narracaoLegenda,
     })),
     {
       texto:
         deck.aprovacao.narracao ??
         `${semGlifos(deck.aprovacao.titulo)}. ${deck.aprovacao.texto}`,
       audio: deck.aprovacao.narracaoAudio,
+      legenda: deck.aprovacao.narracaoLegenda,
     },
   ]
 }

@@ -38,10 +38,13 @@ export default function DeckPresentation({
 }: DeckPresentationProps) {
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [legenda, setLegenda] = useState<string | null>(null)
   const nodesRef = useRef<HTMLElement[]>([])
   const abortRef = useRef<AbortController | null>(null)
   // Cada playFrom incrementa o run; loops antigos percebem e morrem em paz.
   const runRef = useRef(0)
+  // Espelho de `paused` legível de dentro do loop async (evita closure velha).
+  const pausedRef = useRef(false)
   const total = tracks.length
 
   const highlight = (i: number) => {
@@ -51,25 +54,49 @@ export default function DeckPresentation({
     nodesRef.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  // Se o usuário pausou bem na troca de seção, segura aqui até retomar —
+  // senão a narração do próximo slide começa "por baixo" da pausa.
+  const esperaRetomar = async (run: number) => {
+    while (pausedRef.current && run === runRef.current) {
+      await new Promise((r) => setTimeout(r, 200))
+    }
+  }
+
   const playFrom = async (start: number) => {
     const run = ++runRef.current
     abortRef.current?.abort()
     cancelSpeech()
     stopAudio()
+    pausedRef.current = false
     setPaused(false)
     for (let i = start; i < total && i < nodesRef.current.length; i++) {
+      await esperaRetomar(run)
       if (run !== runRef.current) return
       setIdx(i)
+      setLegenda(null)
       highlight(i)
       const ctrl = new AbortController()
       abortRef.current = ctrl
       const track = tracks[i]
+      const cues = track.legenda
+      // Legenda em tempo real: acompanha a posição do MP3 e mostra o trecho
+      // que a voz está falando naquele instante.
+      const onTime = cues?.length
+        ? (ms: number) => {
+            let atual: string | null = null
+            for (const cue of cues) {
+              if (cue.i <= ms) atual = cue.t
+              else break
+            }
+            setLegenda(atual)
+          }
+        : undefined
       // Voz neural pré-gerada quando existe; sintetizador só como fallback.
       const tocou = track.audio
-        ? await playAudio(track.audio, ctrl.signal)
+        ? await playAudio(track.audio, ctrl.signal, onTime)
         : false
       if (!tocou && !ctrl.signal.aborted) {
-        await speakText(track.texto, ctrl.signal)
+        await speakText(track.texto, ctrl.signal, setLegenda)
       }
       if (run !== runRef.current || ctrl.signal.aborted) return
     }
@@ -98,6 +125,7 @@ export default function DeckPresentation({
       pauseSpeech()
       pauseAudio()
     }
+    pausedRef.current = !paused
     setPaused(!paused)
   }
 
@@ -131,11 +159,21 @@ export default function DeckPresentation({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed inset-x-0 bottom-5 z-50 flex justify-center px-4 font-kanit"
-      role="toolbar"
-      aria-label="Controles da apresentação"
+      className="fixed inset-x-0 bottom-5 z-50 flex flex-col items-center gap-3 px-4 font-kanit"
     >
-      <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#151515]/95 px-3 py-2 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur">
+      {legenda && (
+        <p
+          aria-live="polite"
+          className="max-w-xl rounded-2xl border border-white/10 bg-[#151515]/95 px-5 py-3 text-center text-[15px] font-medium leading-snug text-white shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur"
+        >
+          {legenda}
+        </p>
+      )}
+      <div
+        role="toolbar"
+        aria-label="Controles da apresentação"
+        className="flex items-center gap-1 rounded-full border border-white/10 bg-[#151515]/95 px-3 py-2 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur"
+      >
         <button
           type="button"
           onClick={() => go(-1)}
