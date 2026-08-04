@@ -5,9 +5,10 @@ import { Play } from 'lucide-react'
 import { formatBRL, formatDateBR } from '../../../lib/commercial'
 import { pagarPublicUrl } from '../../../lib/publicUrls'
 import type { ProposalByToken } from '../proposalData'
-import { deckNarrations, slideSurface } from './deckData'
+import { deckNarrationTracks, slideSurface } from './deckData'
 import DeckPresentation from './DeckPresentation'
 import { speechSupported, unlockSpeech } from '../../../lib/speech'
+import { unlockAudio } from '../../../lib/narrationAudio'
 import type { DeckSlide, ProposalDeck } from './deckData'
 import './deck.css'
 
@@ -356,6 +357,9 @@ export default function PropostaDeck({
   children,
 }: PropostaDeckProps) {
   const [presenting, setPresenting] = useState(false)
+  // Com MP3 pré-gerado a apresentação dispensa o sintetizador do navegador.
+  const temNarracaoAudio = deck.slides.some((s) => s.narracaoAudio)
+  const podeApresentar = temNarracaoAudio || speechSupported
   const clienteLabel = deck.clienteLabel ?? cliente.nome
   const codigo = deck.codigo ?? 'Vertix'
   const capa = deck.slides[0]
@@ -554,12 +558,13 @@ export default function PropostaDeck({
             <LongArrow />
             <p>{capa.subtitulo}</p>
           </div>
-          {speechSupported && !presenting && (
+          {podeApresentar && !presenting && (
             <button
               type="button"
               onClick={() => {
-                // Precisa ser síncrono no gesto — iOS descarta fala iniciada
-                // fora do toque do usuário.
+                // Precisa ser síncrono no gesto — iOS descarta áudio/fala
+                // iniciados fora do toque do usuário.
+                unlockAudio()
                 unlockSpeech()
                 setPresenting(true)
               }}
@@ -607,7 +612,7 @@ export default function PropostaDeck({
 
       {presenting && (
         <DeckPresentation
-          narrations={deckNarrations(deck)}
+          tracks={deckNarrationTracks(deck)}
           onExit={() => setPresenting(false)}
         />
       )}

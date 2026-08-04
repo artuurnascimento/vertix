@@ -45,6 +45,8 @@ const baseSlide = {
   superficie: superficieSchema.optional(),
   /** Roteiro falado do modo apresentação; sem ele, a narração é derivada. */
   narracao: z.string().optional(),
+  /** MP3 pré-gerado (voz neural) — quando existe, toca em vez do sintetizador. */
+  narracaoAudio: z.string().optional(),
 }
 
 const slideSchema = z.discriminatedUnion('tipo', [
@@ -53,6 +55,7 @@ const slideSchema = z.discriminatedUnion('tipo', [
     titulo: z.string(),
     subtitulo: z.string(),
     narracao: z.string().optional(),
+    narracaoAudio: z.string().optional(),
   }),
   z.object({
     ...baseSlide,
@@ -107,6 +110,7 @@ const deckSchema = z.object({
     titulo: z.string(),
     texto: z.string(),
     narracao: z.string().optional(),
+    narracaoAudio: z.string().optional(),
   }),
   posAceite: z.object({
     titulo: z.string(),
@@ -202,11 +206,24 @@ export function slideNarration(slide: DeckSlide): string {
   return partes.filter(Boolean).join(' ')
 }
 
-/** Narrações na ordem das seções do deck (slides + aprovação). */
-export function deckNarrations(deck: ProposalDeck): string[] {
+/** Trilha de uma seção: MP3 pré-gerado (quando há) + texto pro fallback. */
+export interface NarrationTrack {
+  texto: string
+  audio?: string
+}
+
+/** Trilhas na ordem das seções do deck (slides + aprovação). */
+export function deckNarrationTracks(deck: ProposalDeck): NarrationTrack[] {
   return [
-    ...deck.slides.map(slideNarration),
-    deck.aprovacao.narracao ??
-      `${semGlifos(deck.aprovacao.titulo)}. ${deck.aprovacao.texto}`,
+    ...deck.slides.map((s) => ({
+      texto: slideNarration(s),
+      audio: s.narracaoAudio,
+    })),
+    {
+      texto:
+        deck.aprovacao.narracao ??
+        `${semGlifos(deck.aprovacao.titulo)}. ${deck.aprovacao.texto}`,
+      audio: deck.aprovacao.narracaoAudio,
+    },
   ]
 }

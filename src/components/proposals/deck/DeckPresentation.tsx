@@ -13,10 +13,17 @@ import {
   resumeSpeech,
   speakText,
 } from '../../../lib/speech'
+import {
+  pauseAudio,
+  playAudio,
+  resumeAudio,
+  stopAudio,
+} from '../../../lib/narrationAudio'
+import type { NarrationTrack } from './deckData'
 
 interface DeckPresentationProps {
-  /** Roteiro na ordem das seções .slide do deck (slides + aprovação). */
-  narrations: string[]
+  /** Trilhas na ordem das seções .slide do deck (slides + aprovação). */
+  tracks: NarrationTrack[]
   onExit: () => void
 }
 
@@ -26,7 +33,7 @@ interface DeckPresentationProps {
  * fala de cada seção, avança sozinho. Controles flutuantes embaixo.
  */
 export default function DeckPresentation({
-  narrations,
+  tracks,
   onExit,
 }: DeckPresentationProps) {
   const [idx, setIdx] = useState(0)
@@ -35,7 +42,7 @@ export default function DeckPresentation({
   const abortRef = useRef<AbortController | null>(null)
   // Cada playFrom incrementa o run; loops antigos percebem e morrem em paz.
   const runRef = useRef(0)
-  const total = narrations.length
+  const total = tracks.length
 
   const highlight = (i: number) => {
     nodesRef.current.forEach((node, n) =>
@@ -48,6 +55,7 @@ export default function DeckPresentation({
     const run = ++runRef.current
     abortRef.current?.abort()
     cancelSpeech()
+    stopAudio()
     setPaused(false)
     for (let i = start; i < total && i < nodesRef.current.length; i++) {
       if (run !== runRef.current) return
@@ -55,7 +63,14 @@ export default function DeckPresentation({
       highlight(i)
       const ctrl = new AbortController()
       abortRef.current = ctrl
-      await speakText(narrations[i], ctrl.signal)
+      const track = tracks[i]
+      // Voz neural pré-gerada quando existe; sintetizador só como fallback.
+      const tocou = track.audio
+        ? await playAudio(track.audio, ctrl.signal)
+        : false
+      if (!tocou && !ctrl.signal.aborted) {
+        await speakText(track.texto, ctrl.signal)
+      }
       if (run !== runRef.current || ctrl.signal.aborted) return
     }
     if (run === runRef.current) exit()
@@ -65,6 +80,7 @@ export default function DeckPresentation({
     runRef.current++
     abortRef.current?.abort()
     cancelSpeech()
+    stopAudio()
     document.querySelector('.vdk')?.classList.remove('vdk-presenting')
     nodesRef.current.forEach((node) => node.classList.remove('vdk-current'))
     if (document.fullscreenElement) {
@@ -74,10 +90,13 @@ export default function DeckPresentation({
   }
 
   const togglePause = () => {
+    // Pausar/retomar os dois canais é inócuo no que estiver ocioso.
     if (paused) {
       resumeSpeech()
+      resumeAudio()
     } else {
       pauseSpeech()
+      pauseAudio()
     }
     setPaused(!paused)
   }
@@ -101,6 +120,7 @@ export default function DeckPresentation({
       runRef.current++
       abortRef.current?.abort()
       cancelSpeech()
+      stopAudio()
       root?.classList.remove('vdk-presenting')
       nodesRef.current.forEach((node) => node.classList.remove('vdk-current'))
     }
