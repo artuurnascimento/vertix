@@ -8,6 +8,15 @@
 export const PROPOSTA_PUBLIC_BASE = 'https://go.vertix.studio'
 export const PAGAR_PUBLIC_BASE = 'https://pay.vertix.studio'
 
+export const ADMIN_BASE = 'https://sistema.vertix.studio'
+
+/** Hosts de link público têm CSP mais permissiva — o painel não roda neles. */
+export const PUBLIC_LINK_HOSTS = ['pay.vertix.studio', 'go.vertix.studio']
+
+export function isPublicLinkHost(): boolean {
+  return PUBLIC_LINK_HOSTS.includes(window.location.hostname)
+}
+
 export function propostaPublicUrl(token: string): string {
   // O domínio já diz o contexto — o token vai direto na raiz.
   return `${PROPOSTA_PUBLIC_BASE}/${token}`

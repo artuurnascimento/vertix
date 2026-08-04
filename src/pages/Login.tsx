@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import LogoMark from '../components/ui/LogoMark'
 import { useAuth } from '../lib/auth'
+import { ADMIN_BASE, isPublicLinkHost } from '../lib/publicUrls'
 
 export default function Login() {
   const { user, profile, loading, signIn } = useAuth()
@@ -12,6 +13,12 @@ export default function Login() {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // Login só no domínio principal — pay./go. têm CSP mais permissiva.
+  if (isPublicLinkHost()) {
+    window.location.replace(ADMIN_BASE)
+    return null
+  }
 
   if (!loading && user && profile) {
     return <Navigate to="/admin" replace />
