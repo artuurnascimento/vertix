@@ -1528,6 +1528,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      revert_proposal_acceptance: {
+        Args: { p_proposal_id: string }
+        Returns: Json
+      }
       respond_proposal: {
         Args: { p_aceite: boolean; p_nome: string; t: string }
         Returns: Json

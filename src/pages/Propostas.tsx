@@ -9,6 +9,7 @@ import {
   Search,
   Send,
   Trash2,
+  Undo2,
   X,
 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -37,6 +38,7 @@ const COPIED_FEEDBACK_MS = 2500
 type CopyFeedback =
   | { kind: 'copied' }
   | { kind: 'fallback'; url: string }
+  | { kind: 'error'; message: string }
 
 const iconButtonClass =
   'rounded-lg p-2 text-muted/60 transition-all duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent'
@@ -113,6 +115,32 @@ export default function Propostas() {
           queryKey: ['activity', proposal.project_id],
         }),
       ])
+    },
+  })
+
+  // Reverte um aceite (teste ou engano): a RPC recusa se houver parcela paga.
+  const [pendingRevertId, setPendingRevertId] = useState<string | null>(null)
+  const revertMutation = useMutation({
+    mutationFn: async (proposal: ProposalWithProject) => {
+      const { error } = await supabase.rpc('revert_proposal_acceptance', {
+        p_proposal_id: proposal.id,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: async (_data, proposal) => {
+      setPendingRevertId(null)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['proposals'] }),
+        queryClient.invalidateQueries({ queryKey: ['receivables'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['activity', proposal.project_id],
+        }),
+      ])
+    },
+    onError: (error: Error) => {
+      setPendingRevertId(null)
+      setFeedback({ kind: 'error', message: error.message })
     },
   })
 
@@ -365,6 +393,33 @@ export default function Propostas() {
                             <Link2 className="h-4 w-4" />
                           </button>
                         )}
+                        {proposal.status === 'aceita' && (
+                          <button
+                            type="button"
+                            disabled={revertMutation.isPending}
+                            onClick={() => {
+                              if (pendingRevertId === proposal.id) {
+                                revertMutation.mutate(proposal)
+                              } else {
+                                setPendingRevertId(proposal.id)
+                              }
+                            }}
+                            onBlur={() => setPendingRevertId(null)}
+                            title={
+                              pendingRevertId === proposal.id
+                                ? 'Clique novamente para confirmar — remove as parcelas em aberto e volta a proposta para "enviada"'
+                                : 'Reverter aceite'
+                            }
+                            aria-label={`Reverter aceite da proposta ${proposal.titulo}`}
+                            className={`rounded-lg p-2 transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-40 ${
+                              pendingRevertId === proposal.id
+                                ? 'bg-amber-400/20 text-amber-300'
+                                : 'text-muted/60 hover:bg-amber-400/10 hover:text-amber-300'
+                            }`}
+                          >
+                            <Undo2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
@@ -399,6 +454,18 @@ export default function Propostas() {
               <span className="flex items-center gap-2 text-sm text-ink">
                 <Check className="h-4 w-4 text-emerald-300" />
                 Link copiado!
+              </span>
+            ) : feedback.kind === 'error' ? (
+              <span className="flex items-center gap-3 text-sm text-red-300">
+                <span>{feedback.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setFeedback(null)}
+                  aria-label="Fechar aviso"
+                  className="shrink-0 rounded-lg p-2 text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </span>
             ) : (
               <span className="flex items-center gap-3 text-xs text-muted">
