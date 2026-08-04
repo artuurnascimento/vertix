@@ -74,7 +74,11 @@ export default function DeckPresentation({
     limpaLeitura()
     const slide = nodesRef.current[i]
     candidatosRef.current = slide
-      ? Array.from(slide.querySelectorAll<HTMLElement>('h1, h2, h3, p, li'))
+      ? Array.from(
+          slide.querySelectorAll<HTMLElement>(
+            'h1, h2, h3, p, li, .bar-row, .callout'
+          )
+        )
           .filter(
             (el) =>
               !el.closest('.s-foot') && (el.textContent ?? '').trim().length >= 8
@@ -86,6 +90,13 @@ export default function DeckPresentation({
   const limpaLeitura = () => {
     lendoRef.current?.classList.remove('vdk-reading')
     lendoRef.current = null
+  }
+
+  const marcaBloco = (el: HTMLElement | null) => {
+    if (!el || el === lendoRef.current) return
+    lendoRef.current?.classList.remove('vdk-reading')
+    el.classList.add('vdk-reading')
+    lendoRef.current = el
   }
 
   /**
@@ -143,12 +154,19 @@ export default function DeckPresentation({
       // bloco de texto do slide deve estar marcado como "sendo lido".
       const onTime = cues?.length
         ? (ms: number) => {
-            let atual: string | null = null
+            let atual: (typeof cues)[number] | null = null
             for (const cue of cues) {
-              if (cue.i <= ms) atual = cue.t
+              if (cue.i <= ms) atual = cue
               else break
             }
-            if (atual) marcaLeitura(atual)
+            if (!atual) return
+            // Mapeamento autorado (exato) quando o cue traz o índice do
+            // bloco; casamento por palavras só como fallback.
+            if (atual.b !== undefined) {
+              marcaBloco(candidatosRef.current[atual.b]?.el ?? null)
+            } else {
+              marcaLeitura(atual.t)
+            }
           }
         : undefined
       // Voz neural pré-gerada quando existe; sintetizador só como fallback.

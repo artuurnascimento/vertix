@@ -38,11 +38,14 @@ const passoSchema = z.object({
 /** Superfície do slide; cada tipo tem um default coerente com o template. */
 const superficieSchema = z.enum(['violeta', 'escuro', 'claro'])
 
-/** Cue de legenda sincronizada: [início, fim] em ms do MP3 + trecho falado. */
+/** Cue de legenda sincronizada: [início, fim] em ms do MP3 + trecho falado.
+ * `b` aponta o bloco de texto do slide a marcar (índice na lista de
+ * candidatos h1/h2/h3/p/li/.bar-row/.callout, em ordem de documento). */
 const legendaCueSchema = z.object({
   i: z.number(),
   f: z.number(),
   t: z.string(),
+  b: z.number().optional(),
 })
 
 export type LegendaCue = z.infer<typeof legendaCueSchema>
