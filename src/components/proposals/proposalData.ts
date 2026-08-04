@@ -88,6 +88,19 @@ const proposalByTokenSchema = z.object({
     accepted_at: z.string().nullable(),
     aceite_nome: z.string().nullable(),
     sent_at: z.string().nullable(),
+    /** Deck jsonb (apresentação slide-deck) — parseado por deck/deckData.ts. */
+    apresentacao: z.unknown().nullable().catch(null),
+    /** Primeiro receivable da proposta — checkout da entrada após o aceite. */
+    entrada: z
+      .object({
+        id: z.string(),
+        valor: z.number(),
+        vencimento: z.string(),
+        status: z.string(),
+        payment_link: z.string().nullable(),
+      })
+      .nullable()
+      .catch(null),
   }),
   projeto_nome: z.string(),
   cliente: z.object({

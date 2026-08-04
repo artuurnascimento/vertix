@@ -1,0 +1,135 @@
+/* Deck de apresentação da proposta — estilo slide-deck da marca Vertix.
+   Escopo .vdk para não vazar para o restante do app. Tokens iguais ao
+   tailwind.config (bg/ink/muted/accent/surfaces). */
+
+.vdk { --vbg: #0c0c0c; --vink: #f4f4f0; --vmut: #8a8a82; --vacc: #6c5bf2; --vacc2: #5546e0;
+  --vline-d: rgba(255, 255, 255, 0.07); --vline-l: rgba(12, 12, 12, 0.12);
+  --vease: cubic-bezier(0.16, 1, 0.3, 1);
+  font-weight: 300; line-height: 1.55; }
+
+.vdk .slide { position: relative; padding: clamp(3rem, 6vw, 5.5rem) clamp(1.25rem, 6vw, 5rem) clamp(4.5rem, 7vw, 6.5rem); overflow: clip; }
+.vdk .slide-inner { max-width: 68rem; margin: 0 auto; position: relative; }
+.vdk .s-violet { background: var(--vacc); color: #0c0c0c; }
+.vdk .s-dark { background: var(--vbg); color: var(--vink); }
+.vdk .s-light { background: var(--vink); color: #0c0c0c; }
+.vdk .grain { position: absolute; inset: 0; opacity: 0.03; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.vdk .s-dark::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(640px circle at 12% -4%, rgba(108, 91, 242, 0.08), transparent 62%); }
+
+.vdk .s-top, .vdk .s-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; }
+.vdk .s-top { margin-bottom: clamp(2.5rem, 5vw, 4.5rem); }
+.vdk .s-foot { margin-top: clamp(2.8rem, 5vw, 4.5rem); padding-top: 1rem; }
+.vdk .s-violet .s-foot { border-top: 1px solid rgba(12, 12, 12, 0.25); }
+.vdk .s-dark .s-foot { border-top: 1px solid var(--vline-d); color: var(--vmut); }
+.vdk .s-light .s-foot { border-top: 1px solid var(--vline-l); color: #55554f; }
+.vdk .s-foot span:nth-child(2) { flex: 1; text-align: center; }
+
+.vdk .brand { display: flex; align-items: center; gap: 0.55rem; }
+.vdk .brand svg { height: 1.4rem; width: auto; }
+.vdk .brand b { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.35em; }
+
+.vdk .tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.22em; }
+.vdk .s-dark .tag { color: var(--vacc); }
+.vdk .s-light .tag { color: var(--vacc2); }
+.vdk .s-violet .tag { color: #0c0c0c; }
+
+.vdk h1.mega { font-size: clamp(2.6rem, 1rem + 6.6vw, 6.4rem); font-weight: 800; line-height: 1; letter-spacing: -0.015em; }
+.vdk h2.big { font-size: clamp(1.9rem, 1rem + 3.4vw, 3.4rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.01em; margin-top: 0.6rem; }
+.vdk .glyph-ast { display: inline-block; font-weight: 900; transform: translateY(-0.05em); }
+.vdk .s-dark .glyph-ast { color: var(--vacc); }
+.vdk .s-light .glyph-ast { color: var(--vacc2); }
+.vdk .glyph svg { height: 0.72em; width: auto; vertical-align: baseline; }
+
+.vdk .arrow-line { display: flex; align-items: center; gap: 1.2rem; margin-top: clamp(1.8rem, 4vw, 3rem); }
+.vdk .arrow-line svg { flex: none; width: clamp(6rem, 14vw, 11rem); height: auto; }
+.vdk .arrow-line p { font-size: clamp(0.95rem, 1.6vw, 1.15rem); font-weight: 400; max-width: 30rem; line-height: 1.5; }
+
+.vdk .lede { margin-top: 1rem; font-size: 0.98rem; max-width: 40rem; }
+.vdk .s-dark .lede { color: #c9c9c2; }
+.vdk .s-light .lede { color: #3a3a35; }
+.vdk .s-violet .lede { color: rgba(12, 12, 12, 0.85); }
+
+/* Cards com aba de pasta */
+.vdk .folders { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); margin-top: clamp(2rem, 4vw, 3rem); }
+.vdk .folder { position: relative; border-radius: 0 1rem 1rem 1rem; padding: 1.3rem 1.4rem 1.4rem; margin-top: 1rem; }
+.vdk .folder::before { content: ''; position: absolute; top: -0.95rem; left: 0; width: 42%; height: 1rem; background: inherit; border-radius: 0.7rem 1.1rem 0 0; }
+.vdk .folder h3 { font-size: 0.95rem; font-weight: 600; margin-top: 0.6rem; }
+.vdk .folder p { font-size: 0.84rem; margin-top: 0.3rem; opacity: 0.82; }
+.vdk .folder .f-big { display: block; font-size: clamp(1.9rem, 3.5vw, 2.6rem); font-weight: 800; margin-top: 1rem; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.vdk .f-ink { background: var(--vink); color: #0c0c0c; }
+.vdk .f-dark { background: #131313; color: var(--vink); border: 1px solid var(--vline-d); }
+.vdk .f-dark::before { border: 1px solid var(--vline-d); border-bottom: none; }
+.vdk .f-violet { background: var(--vacc); color: #0c0c0c; }
+.vdk .f-glyph { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+.vdk .f-dark .f-glyph, .vdk .f-dark .f-big { color: var(--vacc); }
+
+/* Stats */
+.vdk .stat-flow { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; margin-top: clamp(1.8rem, 4vw, 2.6rem); }
+.vdk .stat-flow .sv { font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+.vdk .stat-flow .sl { font-size: 0.8rem; max-width: 9rem; opacity: 0.75; line-height: 1.35; }
+.vdk .stat-flow svg { width: clamp(2.6rem, 6vw, 4rem); height: auto; flex: none; }
+.vdk .mega-stat { margin-top: clamp(2rem, 4vw, 3rem); }
+.vdk .mega-stat .v { font-size: clamp(3.4rem, 8vw, 6rem); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.vdk .s-dark .mega-stat .v { color: var(--vacc); }
+.vdk .mega-stat .l { font-size: 0.92rem; max-width: 26rem; margin-top: 0.6rem; }
+.vdk .s-dark .mega-stat .l { color: #c9c9c2; }
+
+/* Gráfico de barras */
+.vdk .chart { margin-top: clamp(2rem, 4vw, 3rem); display: grid; gap: 1rem; max-width: 38rem; }
+.vdk .bar-row { display: grid; grid-template-columns: 8.5rem 1fr auto; gap: 0.9rem; align-items: center; font-size: 0.82rem; }
+.vdk .bar-row .bl { font-weight: 500; text-align: right; color: #3a3a35; }
+.vdk .s-dark .bar-row .bl { color: var(--vmut); }
+.vdk .bar-track { height: 1.5rem; border-radius: 0.4rem; background: rgba(12, 12, 12, 0.07); overflow: hidden; }
+.vdk .s-dark .bar-track { background: rgba(255, 255, 255, 0.06); }
+.vdk .bar-fill { height: 100%; border-radius: 0.4rem; }
+.vdk .bar-fill.b-dark { background: #0c0c0c; }
+.vdk .s-dark .bar-fill.b-dark { background: var(--vink); }
+.vdk .bar-fill.b-accent { background: var(--vacc); }
+.vdk .bar-row .bv { font-weight: 700; font-variant-numeric: tabular-nums; }
+.vdk .chart-src { font-size: 0.72rem; opacity: 0.65; margin-top: 0.4rem; }
+
+/* Módulos numerados */
+.vdk .mod-grid { display: grid; gap: 0 2.5rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); margin-top: clamp(1.8rem, 4vw, 2.6rem); border-top: 1px solid var(--vline-d); }
+.vdk .s-light .mod-grid { border-color: var(--vline-l); }
+.vdk .mod { display: flex; gap: 1rem; padding: 1.15rem 0; border-bottom: 1px solid var(--vline-d); align-items: flex-start; }
+.vdk .s-light .mod { border-color: var(--vline-l); }
+.vdk .mod .mn { font-size: 0.78rem; font-weight: 700; color: var(--vacc); min-width: 1.7rem; font-variant-numeric: tabular-nums; padding-top: 0.15rem; }
+.vdk .mod h3 { font-size: 0.98rem; font-weight: 600; }
+.vdk .mod p { font-size: 0.83rem; color: var(--vmut); margin-top: 0.15rem; }
+.vdk .s-light .mod p { color: #55554f; }
+
+/* Listas em duas colunas */
+.vdk .twocol { display: grid; gap: 2.2rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); margin-top: clamp(1.8rem, 4vw, 2.6rem); }
+.vdk .twocol h3 { font-size: 1rem; font-weight: 700; }
+.vdk .plist { margin-top: 0.9rem; display: grid; gap: 0.55rem; }
+.vdk .plist li { list-style: none; display: flex; gap: 0.65rem; font-size: 0.88rem; color: #3a3a35; align-items: baseline; }
+.vdk .s-dark .plist li { color: #c9c9c2; }
+.vdk .plist li::before { content: '→'; font-weight: 700; color: var(--vacc2); }
+.vdk .s-dark .plist li::before { color: var(--vacc); }
+.vdk .callout { margin-top: 1.6rem; border-left: 3px solid var(--vacc2); padding: 0.7rem 1.1rem; background: rgba(108, 91, 242, 0.08); border-radius: 0 0.6rem 0.6rem 0; font-size: 0.88rem; color: #2c2c28; max-width: 44rem; }
+.vdk .s-dark .callout { color: #c9c9c2; border-color: var(--vacc); background: rgba(108, 91, 242, 0.1); }
+
+/* Investimento */
+.vdk .inv-total { margin-top: 2rem; display: flex; align-items: baseline; gap: 1.2rem; flex-wrap: wrap; }
+.vdk .inv-total .v { font-size: clamp(2.6rem, 6vw, 4.2rem); font-weight: 800; color: var(--vacc); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.vdk .inv-total .l { font-size: 0.85rem; color: var(--vmut); max-width: 18rem; }
+.vdk .price-old { font-size: clamp(1.2rem, 2.5vw, 1.7rem); font-weight: 500; color: var(--vmut); text-decoration: line-through; text-decoration-color: rgba(248, 113, 113, 0.75); text-decoration-thickness: 2px; font-variant-numeric: tabular-nums; }
+.vdk .pay-list { margin-top: 1.6rem; border: 1px solid var(--vline-d); border-radius: 1rem; overflow: hidden; max-width: 44rem; }
+.vdk .pay-item { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; padding: 1.1rem 1.3rem; border-top: 1px solid var(--vline-d); background: #151515; }
+.vdk .pay-item:first-child { border-top: none; }
+.vdk .pay-item .idx { height: 2rem; width: 2.4rem; flex: none; border-radius: 0.5rem; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; background: rgba(108, 91, 242, 0.14); border: 1px solid rgba(108, 91, 242, 0.3); color: #a99ef7; font-variant-numeric: tabular-nums; }
+.vdk .pay-item .info { flex: 1; min-width: 11rem; }
+.vdk .pay-item .info h4 { font-size: 0.93rem; font-weight: 500; }
+.vdk .pay-item .info p { font-size: 0.78rem; color: var(--vmut); }
+.vdk .pay-item .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Pós-aceite */
+.vdk .ok-banner { margin-top: 1.6rem; border: 1px solid rgba(12, 12, 12, 0.35); background: rgba(12, 12, 12, 0.12); border-radius: 0.9rem; padding: 1rem 1.3rem; font-size: 0.92rem; max-width: 38rem; }
+.vdk .check-badge { height: 3.6rem; width: 3.6rem; border-radius: 50%; display: grid; place-items: center; background: rgba(12, 12, 12, 0.15); }
+.vdk .check-badge svg { height: 1.6rem; width: 1.6rem; }
+
+.vdk .fine { margin-top: 2rem; font-size: 0.82rem; }
+.vdk .s-dark .fine { color: var(--vmut); }
+.vdk .s-light .fine { color: #55554f; }
+.vdk .s-violet .fine { color: rgba(12, 12, 12, 0.75); }

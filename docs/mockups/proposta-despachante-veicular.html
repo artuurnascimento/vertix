@@ -139,7 +139,12 @@
   /* ---------- Aceite / botões ---------- */
   .accept-card { margin-top:clamp(2rem,4vw,3rem); background:var(--surface-1); border:1px solid var(--line-d);
     border-radius:1.1rem; padding:clamp(1.4rem,4vw,2.2rem); max-width:34rem; box-shadow:0 24px 80px -40px rgba(108,91,242,0.35); }
-  .accept-card label { font-size:0.9rem; font-weight:500; }
+  .accept-card label { font-size:0.9rem; font-weight:500; display:block; margin-top:1.3rem; }
+  .plan-pick { margin-top:0.6rem; display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .pick { cursor:pointer; font:inherit; font-size:0.85rem; font-weight:500; color:var(--muted); background:var(--surface-2);
+    border:1px solid var(--line-d); border-radius:0.6rem; padding:0.65rem 1.1rem; transition:color 0.2s, background 0.2s, border 0.2s, box-shadow 0.2s; }
+  .pick:hover { color:var(--ink); }
+  .pick.on { color:#fff; background:rgba(108,91,242,0.18); border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,91,242,0.15); }
   .accept-card input { width:100%; min-height:2.9rem; margin-top:0.5rem; border-radius:0.6rem; border:1px solid var(--line-d);
     background:var(--surface-2); padding:0.75rem 1rem; font:inherit; font-size:1rem; color:var(--ink); outline:none; transition:border 0.2s, box-shadow 0.2s; }
   .accept-card input:focus { border-color:rgba(108,91,242,0.6); box-shadow:0 0 0 3px rgba(108,91,242,0.25); }
@@ -168,6 +173,8 @@
     stroke-dasharray:30; stroke-dashoffset:30; animation:draw 0.6s 0.3s var(--ease) forwards; }
   @keyframes draw { to { stroke-dashoffset:0; } }
   .inv-total { margin-top:2rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap; }
+  .price-old { font-size:clamp(1.2rem,2.5vw,1.7rem); font-weight:500; color:var(--muted); text-decoration:line-through;
+    text-decoration-color:rgba(248,113,113,0.75); text-decoration-thickness:2px; font-variant-numeric:tabular-nums; }
   .inv-total .v { font-size:clamp(2.6rem,6vw,4.2rem); font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-0.02em; }
   .inv-total .l { font-size:0.85rem; color:var(--muted); max-width:18rem; }
   .pay-list { margin-top:1.6rem; border:1px solid var(--line-d); border-radius:1rem; overflow:hidden; max-width:44rem; }
@@ -227,7 +234,7 @@
         <p>Processos, documentos, atendimento, financeiro e cobrança automatizada via WhatsApp — a operação inteira fora da planilha, em uma única plataforma.</p>
       </div>
       <div class="s-foot">
-        <span>Preparada para Vinicius</span>
+        <span>Preparada para Vinicius Leal e Caio José</span>
         <span>VTX-2026-015</span>
         <span>27 jul 2026</span>
       </div>
@@ -307,7 +314,7 @@
         <div class="folder f-white">
           <span class="f-glyph">()</span><h3>Visibilidade</h3>
           <p>Dashboard e relatórios de produtividade, prazos, recebimentos, inadimplência e lucratividade.</p>
-          <span class="f-big">13 telas</span>
+          <span class="f-big">10 módulos</span>
         </div>
       </div>
       <p class="lede" style="margin-top:2rem;">
@@ -323,20 +330,21 @@
     <div class="grain"></div>
     <div class="slide-inner" data-reveal>
       <p class="tag">04 — Escopo</p>
-      <h2 class="big">Módulos da plataforma</h2>
+      <h2 class="big">O que o sistema entrega <span class="glyph-ast" style="color:var(--accent)">✱</span></h2>
+      <p class="lede">Exatamente o que vocês pediram: substitui a planilha e automatiza o controle principal da operação.</p>
       <div class="mod-grid">
-        <div class="mod"><span class="mn">01</span><div><h3>Dashboard</h3><p>Processos, valores a receber, tarefas do dia, carga por atendente e alertas prioritários.</p></div></div>
-        <div class="mod"><span class="mn">02</span><div><h3>Clientes e lojas</h3><p>Cadastro único com regra comercial, tabela de preços e cobrança por processo ou fechamento.</p></div></div>
-        <div class="mod"><span class="mn">03</span><div><h3>Veículos</h3><p>Histórico por placa e Renavam, com aviso de processo aberto e validação de duplicidade.</p></div></div>
-        <div class="mod"><span class="mn">04</span><div><h3>Catálogo de serviços</h3><p>Nome padronizado, preço, prazo, checklist de documentos e combinação de serviços.</p></div></div>
-        <div class="mod"><span class="mn">05</span><div><h3>Processos</h3><p>Código único por processo, lista com filtros, kanban por etapa, agenda e linha do tempo.</p></div></div>
-        <div class="mod"><span class="mn">06</span><div><h3>Documentos e checklist</h3><p>Lista automática por serviço, versões, aprovação/reprovação e cobrança de faltantes.</p></div></div>
-        <div class="mod"><span class="mn">07</span><div><h3>Pendências e tarefas</h3><p>Tipos padronizados, responsável, prazo, fila diária e SLA com sinalização por cor.</p></div></div>
-        <div class="mod"><span class="mn">08</span><div><h3>Central WhatsApp</h3><p>Conversas no contexto do processo, modelos aprovados, gatilhos e histórico auditável.</p></div></div>
-        <div class="mod"><span class="mn">09</span><div><h3>Financeiro</h3><p>Honorários, taxas e despesas por processo, régua de cobrança e baixa automática via webhook.</p></div></div>
-        <div class="mod"><span class="mn">10</span><div><h3>Relatórios</h3><p>Indicadores operacionais e financeiros, produtividade, inadimplência e exportação PDF/Excel.</p></div></div>
+        <div class="mod"><span class="mn">01</span><div><h3>Acessos e perfis</h3><p>3 usuários — 1 administrador e 2 atendentes, cada um com as permissões certas.</p></div></div>
+        <div class="mod"><span class="mn">02</span><div><h3>Clientes e lojas</h3><p>Cadastro centralizado, sem variações de nome espalhadas pela planilha.</p></div></div>
+        <div class="mod"><span class="mn">03</span><div><h3>Veículos e serviços</h3><p>Cadastro de veículos e catálogo de serviços padronizado.</p></div></div>
+        <div class="mod"><span class="mn">04</span><div><h3>Processos</h3><p>Abertura e acompanhamento com status claros e pendências registradas.</p></div></div>
+        <div class="mod"><span class="mn">05</span><div><h3>Busca rápida</h3><p>Por placa, cliente, atendente e período — sem caçar linha em aba.</p></div></div>
+        <div class="mod"><span class="mn">06</span><div><h3>Financeiro básico</h3><p>Controle de valores com cobranças pendentes, pagas e vencidas.</p></div></div>
+        <div class="mod"><span class="mn">07</span><div><h3>Cobrança via WhatsApp</h3><p>Automática, com histórico das mensagens dentro do sistema.</p></div></div>
+        <div class="mod"><span class="mn">08</span><div><h3>Dashboard básico</h3><p>Visão geral da operação assim que você entra.</p></div></div>
+        <div class="mod"><span class="mn">09</span><div><h3>Migração e exportação</h3><p>Importação da planilha atual e exportação para Excel quando precisar.</p></div></div>
+        <div class="mod"><span class="mn">10</span><div><h3>Computador e celular</h3><p>Sistema adaptado para uso no escritório e na rua.</p></div></div>
       </div>
-      <div class="s-foot"><span>Vertix</span><span>Escopo essencial</span><span>05 / 09</span></div>
+      <div class="s-foot"><span>Vertix</span><span>Escopo completo incluso</span><span>05 / 09</span></div>
     </div>
   </section>
 
@@ -346,32 +354,32 @@
     <div class="slide-inner" data-reveal>
       <p class="tag">05 — Diferencial</p>
       <h2 class="big">WhatsApp integrado ao processo <span class="glyph-ast" style="color:var(--accent-2)">✱</span></h2>
-      <p class="lede">Cada mensagem nasce vinculada a um cliente, processo, cobrança ou tarefa — via API oficial, nunca simulação de WhatsApp Web.</p>
+      <p class="lede">O coração do que vocês pediram: cada mensagem nasce vinculada a um cliente, processo ou cobrança — com histórico guardado dentro do sistema.</p>
       <div class="twocol">
         <div>
-          <h3>Gatilhos operacionais</h3>
+          <h3>Cobrança automática</h3>
           <ul class="plist">
-            <li>Processo criado → confirma e envia código de acompanhamento.</li>
-            <li>Documento faltante → solicita com instrução de envio.</li>
-            <li>Pendência criada → informa motivo, responsável e prazo.</li>
-            <li>Processo pronto → avisa disponibilidade e próximos passos.</li>
-            <li>Cliente respondeu → pausa a automação e chama o atendente.</li>
-          </ul>
-        </div>
-        <div>
-          <h3>Régua de cobrança</h3>
-          <ul class="plist">
-            <li>Ao gerar → resumo, valor, vencimento e link de pagamento.</li>
+            <li>Ao gerar → resumo, valor, vencimento e forma de pagamento.</li>
             <li>Antes do vencimento → lembrete configurável.</li>
             <li>No vencimento → aviso objetivo no dia.</li>
             <li>Após o vencimento → sequência gradual com limite.</li>
             <li>Pagamento identificado → interrompe tudo e confirma.</li>
           </ul>
         </div>
+        <div>
+          <h3>Comunicação no contexto</h3>
+          <ul class="plist">
+            <li>Processo criado → confirma e envia código de acompanhamento.</li>
+            <li>Documento faltante → solicita com instrução de envio.</li>
+            <li>Pendência criada → informa motivo, responsável e prazo.</li>
+            <li>Processo pronto → avisa disponibilidade e próximos passos.</li>
+            <li>Histórico das mensagens → tudo registrado no processo.</li>
+          </ul>
+        </div>
       </div>
       <div class="callout-l">
-        Automação com controle humano: mensagens sensíveis exigem aprovação do administrador, e qualquer
-        régua pode ser pausada por cliente, processo ou cobrança.
+        Automação com controle humano: dá para pausar a régua por cliente, processo ou cobrança
+        a qualquer momento — e nada é enviado em excesso.
       </div>
       <div class="s-foot"><span>Vertix</span><span>Atendimento e cobrança</span><span>06 / 09</span></div>
     </div>
@@ -381,16 +389,26 @@
   <section class="slide s-dark">
     <div class="grain"></div>
     <div class="slide-inner" data-reveal>
-      <p class="tag">06 — Plano de entrega</p>
-      <h2 class="big">Fases do projeto →</h2>
-      <div class="phases">
-        <div class="phase"><span class="pn">F0</span><div><h3>Descoberta e protótipo</h3><p>Entrevistas, mapeamento de serviços, status, cobranças e protótipo das telas.</p></div><span class="pill now">Nesta proposta</span></div>
-        <div class="phase"><span class="pn">F1</span><div><h3>MVP operacional</h3><p>Login e perfis, cadastros, processos com etapas, documentos, pendências, tarefas, dashboard e migração da planilha.</p></div><span class="pill now">Nesta proposta</span></div>
-        <div class="phase"><span class="pn">F2</span><div><h3>WhatsApp e financeiro</h3><p>Central de mensagens, modelos, gatilhos, régua de cobrança, fechamentos por loja e baixa automática.</p></div><span class="pill now">Nesta proposta</span></div>
-        <div class="phase"><span class="pn">F3</span><div><h3>Autoatendimento</h3><p>Formulário de abertura, portal de lojas, página de acompanhamento do cliente e OCR de documentos.</p></div><span class="pill next">Evolução</span></div>
-        <div class="phase"><span class="pn">F4</span><div><h3>Inteligência gerencial</h3><p>Previsões, alertas de risco de atraso, indicadores avançados e integrações adicionais.</p></div><span class="pill next">Evolução</span></div>
+      <p class="tag">06 — Investimento</p>
+      <h2 class="big">Quanto custa →</h2>
+      <p class="lede">Sistema completo, com todo o escopo apresentado, em condição especial de parceria:</p>
+      <div class="inv-total">
+        <div>
+          <p class="price-old">R$ 11.900</p>
+          <p class="v">R$ 5.000</p>
+        </div>
+        <p class="l">Valor único do projeto, do briefing à entrega. Proposta válida até 10 ago 2026.</p>
       </div>
-      <div class="s-foot"><span>Vertix</span><span>Fases recomendadas</span><span>07 / 09</span></div>
+      <div class="folders">
+        <div class="folder f-violet"><span class="f-glyph">✱</span><h3>Garantia de 3 meses</h3><p>Manutenção e reparo do sistema inclusos após a entrega, sem custo extra.</p></div>
+        <div class="folder f-ink"><span class="f-glyph">()</span><h3>Pagamento facilitado</h3><p>Cartão de crédito ou Pix — como for melhor para vocês.</p></div>
+        <div class="folder f-dark"><span class="f-glyph" style="color:var(--accent)">→</span><h3>Para começar</h3><p>Entrada de 30% (R$ 1.500) na aprovação. O saldo de R$ 3.500 fica para a entrega.</p></div>
+      </div>
+      <p class="lede" style="margin-top:2rem; font-size:0.82rem;">
+        Prazo estimado: 30 dias úteis após a confirmação da entrada. Custos de terceiros — hospedagem e
+        API oficial do WhatsApp — são contratados direto por vocês. Alterações fora do escopo são orçadas à parte.
+      </p>
+      <div class="s-foot"><span>Vertix</span><span>Investimento e condições</span><span>07 / 09</span></div>
     </div>
   </section>
 
@@ -398,19 +416,38 @@
   <section class="slide s-light">
     <div class="grain"></div>
     <div class="slide-inner" data-reveal>
-      <p class="tag">07 — Tecnologia</p>
-      <h2 class="big">Estrutura técnica <span class="glyph"><svg viewBox="0 0 52 44" fill="none" aria-hidden="true"><path d="M18 3 A24 24 0 0 0 18 41" stroke="#6C5BF2" stroke-width="11"/><path d="M34 3 A24 24 0 0 1 34 41" stroke="#0C0C0C" stroke-width="11"/></svg></span></h2>
-      <div class="tech">
-        <div><h4>Interface</h4><p>Aplicação web responsiva / PWA — ícone na tela do celular, rápida em internet comum.</p></div>
-        <div><h4>Backend</h4><p>API com regras de negócio, permissões, automações e integrações.</p></div>
-        <div><h4>Banco de dados</h4><p>PostgreSQL gerenciado — dados estruturados, histórico e relatórios.</p></div>
-        <div><h4>Arquivos</h4><p>Armazenamento privado em nuvem para CNH, CRLV, ATPV-e e comprovantes.</p></div>
-        <div><h4>WhatsApp</h4><p>API oficial ou provedor homologado, com webhooks e modelos aprovados.</p></div>
-        <div><h4>Pagamentos</h4><p>Gateway com Pix, boleto e link — baixa automática por webhook.</p></div>
-        <div><h4>Segurança e LGPD</h4><p>Acesso por perfil, documentos privados, auditoria e política de retenção.</p></div>
-        <div><h4>Monitoramento</h4><p>Logs, alertas, backups automáticos e restauração testada.</p></div>
+      <p class="tag">07 — Upgrades futuros</p>
+      <h2 class="big">Como o sistema pode crescer <span class="glyph"><svg viewBox="0 0 52 44" fill="none" aria-hidden="true"><path d="M18 3 A24 24 0 0 0 18 41" stroke="#6C5BF2" stroke-width="11"/><path d="M34 3 A24 24 0 0 1 34 41" stroke="#0C0C0C" stroke-width="11"/></svg></span></h2>
+      <p class="lede">O sistema entregue já resolve a operação de vocês. Quando quiserem ir além, ele evolui por módulo — sem refazer nada do que já foi construído.</p>
+      <div class="twocol">
+        <div>
+          <h3>Gestão profissional</h3>
+          <ul class="plist">
+            <li>Checklist de documentos e etapas diferentes por tipo de serviço.</li>
+            <li>Tarefas, lembretes, prazos e alertas de processo atrasado.</li>
+            <li>Distribuição de processos entre atendentes e histórico de quem fez o quê.</li>
+            <li>Fechamento semanal, quinzenal ou mensal agrupado por loja, com demonstrativo em PDF.</li>
+            <li>Despesas e lucro por processo + relatórios por cliente, loja, serviço e atendente.</li>
+            <li>Página de acompanhamento para o cliente e bloqueio de inadimplentes.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Automação avançada</h3>
+          <ul class="plist">
+            <li>Portal completo para lojas parceiras e para o cliente final.</li>
+            <li>Caixa de atendimento do WhatsApp dentro do sistema, com múltiplos atendentes.</li>
+            <li>Abertura de processo pelo WhatsApp ou por formulário externo.</li>
+            <li>Leitura automática de documentos por OCR — placa, CPF, Renavam e chassi.</li>
+            <li>Inteligência artificial para resumir conversas, sugerir respostas e prever atrasos.</li>
+            <li>Aplicativo PWA instalável, pesquisa de satisfação e integrações externas.</li>
+          </ul>
+        </div>
       </div>
-      <div class="s-foot"><span>Vertix</span><span>Arquitetura sugerida</span><span>08 / 09</span></div>
+      <div class="callout-l">
+        Nenhum upgrade é obrigatório e nenhum tem preço nesta proposta — cada módulo é orçado
+        individualmente, quando fizer sentido para a operação.
+      </div>
+      <div class="s-foot"><span>Vertix</span><span>Evolução por módulo — orçada à parte</span><span>08 / 09</span></div>
     </div>
   </section>
 
@@ -421,12 +458,13 @@
       <p class="tag">08 — Aprovação</p>
       <h2 class="big">Vamos tirar sua operação da planilha? <span class="glyph-ast" style="color:var(--accent)">✱</span></h2>
       <p class="lede">
-        Ao aprovar este escopo, iniciamos a fase de descoberta e liberamos o orçamento detalhado por fase,
-        com plano de pagamento e cronograma. Nada é cobrado antes disso.
+        Ao aprovar, vocês garantem o valor de R$ 5.000 e todas as condições desta proposta.
+        Em seguida liberamos o pagamento da entrada de 30% — R$ 1.500, via Pix ou cartão de
+        crédito — para colocar o projeto em produção.
       </p>
       <div class="accept-card">
-        <label for="nome">Seu nome completo <span style="color:var(--accent)">*</span></label>
-        <input id="nome" type="text" autocomplete="name" placeholder="Vinicius da Silva" />
+        <label for="nome" style="margin-top:0;">Seu nome completo <span style="color:var(--accent)">*</span></label>
+        <input id="nome" type="text" autocomplete="name" placeholder="Vinicius Leal" />
         <p class="err" id="nome-err" role="alert">Informe seu nome completo para aprovar.</p>
         <div class="btn-row">
           <button type="button" class="btn btn-primary" id="btn-accept">Aprovar escopo</button>
@@ -455,39 +493,36 @@
         <span class="tag">@2026</span>
       </div>
       <div class="check-badge" data-reveal><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg></div>
-      <h1 class="mega" style="margin-top:1.2rem;" data-reveal>Orçamento <span class="glyph-ast">✱</span> liberado</h1>
+      <h1 class="mega" style="margin-top:1.2rem;" data-reveal>Vamos <span class="glyph-ast">✱</span> começar</h1>
       <div class="ok-banner">
-        Escopo <strong>Sistema Despachante Veicular</strong> aprovado por <strong id="ok-nome">—</strong> em <span id="ok-data">—</span>.
-        Este orçamento confirma os valores por fase e libera o início da descoberta.
+        Proposta <strong>Sistema Despachante Veicular</strong> aprovada por <strong id="ok-nome">—</strong> em <span id="ok-data">—</span>.
+        A entrada de 30% — R$ 1.500, via Pix ou cartão — confirma o início do projeto.
       </div>
-      <div class="s-foot"><span>Preparado para Vinicius</span><span>VTX-2026-015</span><span>Orçamento</span></div>
+      <div class="s-foot"><span>Preparado para Vinicius Leal e Caio José</span><span>VTX-2026-015</span><span>Pagamento</span></div>
     </div>
   </section>
 
   <section class="slide s-dark">
     <div class="grain"></div>
     <div class="slide-inner" data-reveal>
-      <p class="tag">01 — Investimento</p>
-      <h2 class="big">Orçamento por fase</h2>
-      <div class="folders" style="max-width:56rem;">
-        <div class="folder f-dark"><span class="f-glyph" style="color:var(--accent)">F0</span><h3>Descoberta e protótipo</h3><p>Entrevistas, mapeamento e protótipo navegável das telas.</p><span class="f-big" style="color:var(--accent)">R$ 2.400</span></div>
-        <div class="folder f-violet"><span class="f-glyph">F1</span><h3>MVP operacional</h3><p>Sistema completo substituindo a planilha, com migração do histórico.</p><span class="f-big">R$ 15.800</span></div>
-        <div class="folder f-ink"><span class="f-glyph">F2</span><h3>WhatsApp + financeiro</h3><p>Central de mensagens, régua de cobrança e baixa automática.</p><span class="f-big">R$ 8.600</span></div>
-      </div>
+      <p class="tag">01 — Pagamento</p>
+      <h2 class="big">Investimento confirmado</h2>
       <div class="inv-total">
-        <p class="v">R$ 26.800</p>
-        <p class="l">Investimento total das fases 0–2. Valores de exemplo do modelo — confirmados após as respostas da descoberta.</p>
+        <div>
+          <p class="price-old">R$ 11.900</p>
+          <p class="v">R$ 5.000</p>
+        </div>
+        <p class="l">Valor fechado do projeto, com garantia de 3 meses de manutenção e reparo inclusa após a entrega.</p>
       </div>
       <div class="pay-list">
-        <div class="pay-item"><span class="idx">1ª</span><div class="info"><h4>Entrada — 30% na aprovação</h4><p>Vencimento: 30 jul 2026 · Pix, cartão ou boleto</p></div><span class="val">R$ 8.040</span></div>
-        <div class="pay-item"><span class="idx">2ª</span><div class="info"><h4>40% na entrega do MVP (F1)</h4><p>Liberada junto com o sistema em operação</p></div><span class="val">R$ 10.720</span></div>
-        <div class="pay-item"><span class="idx">3ª</span><div class="info"><h4>30% na entrega da automação (F2)</h4><p>WhatsApp e financeiro ativos em produção</p></div><span class="val">R$ 8.040</span></div>
+        <div class="pay-item"><span class="idx">1ª</span><div class="info"><h4>Entrada — 30% na aprovação</h4><p>Pix ou cartão de crédito · confirma o início do projeto</p></div><span class="val">R$ 1.500</span></div>
+        <div class="pay-item"><span class="idx">2ª</span><div class="info"><h4>Saldo — 70% na entrega</h4><p>Sistema rodando, equipe treinada e planilha migrada</p></div><span class="val">R$ 3.500</span></div>
       </div>
       <div class="btn-row">
         <button type="button" class="btn btn-primary">Pagar entrada via Pix</button>
-        <button type="button" class="btn btn-ghost">Receber link de pagamento</button>
+        <button type="button" class="btn btn-ghost">Pagar com cartão de crédito</button>
       </div>
-      <div class="s-foot"><span>Vertix</span><span>Fases 3 e 4 orçadas como evolução</span><span>01 / 02</span></div>
+      <div class="s-foot"><span>Vertix</span><span>Garantia de 3 meses após a entrega</span><span>01 / 02</span></div>
     </div>
   </section>
 
@@ -500,15 +535,15 @@
         <div>
           <ul class="plist" style="margin-top:1.4rem;">
             <li><strong>Pagamento da entrada</strong>&nbsp;— confirma o início e reserva a agenda do projeto.</li>
-            <li><strong>Descoberta (F0)</strong>&nbsp;— entrevistas com o administrador e os dois atendentes, catálogo de serviços e validação do protótipo.</li>
-            <li><strong>Desenvolvimento do MVP (F1)</strong>&nbsp;— acompanhamento semanal com acesso de teste.</li>
+            <li><strong>Descoberta</strong>&nbsp;— entrevistas com o administrador e os dois atendentes, catálogo de serviços e validação do protótipo.</li>
+            <li><strong>Desenvolvimento</strong>&nbsp;— acompanhamento semanal com acesso de teste.</li>
           </ul>
         </div>
         <div>
           <ul class="plist" style="margin-top:1.4rem;">
             <li><strong>Migração da planilha</strong>&nbsp;— importação de teste, conciliação dos totais e data de corte.</li>
             <li><strong>Operação assistida</strong>&nbsp;— treinamento da equipe e período em paralelo com a planilha.</li>
-            <li><strong>Automação (F2)</strong>&nbsp;— WhatsApp e régua de cobrança entram com regras seguras.</li>
+            <li><strong>Garantia de 3 meses</strong>&nbsp;— manutenção e reparo inclusos após a entrega; upgrades orçados à parte quando fizer sentido.</li>
           </ul>
         </div>
       </div>
@@ -550,7 +585,7 @@
       btnProposta.classList.toggle('on', !approved);
       btnAprovada.classList.toggle('on', approved);
       if (approved) {
-        document.getElementById('ok-nome').textContent = nome || 'Vinicius';
+        document.getElementById('ok-nome').textContent = nome || 'Vinicius Leal';
         document.getElementById('ok-data').textContent = new Date().toLocaleDateString('pt-BR', {
           day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
         });

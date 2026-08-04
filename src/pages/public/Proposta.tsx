@@ -6,6 +6,8 @@ import { CircleSlash, LinkIcon, RotateCw } from 'lucide-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import LogoMark from '../../components/ui/LogoMark'
+import PropostaDeck from '../../components/proposals/deck/PropostaDeck'
+import { parseProposalDeck } from '../../components/proposals/deck/deckData'
 import {
   formatBRL,
   formatDateBR,
@@ -207,6 +209,17 @@ export default function Proposta() {
     queryKey: ['proposal-public', token],
     enabled: Boolean(token),
     retry: false,
+    // Enquanto o cliente estiver no checkout da entrada, a página fica
+    // observando o pagamento — quando o receivable vira "pago" (webhook MP ou
+    // baixa manual), os próximos passos aparecem sem precisar recarregar.
+    refetchInterval: (query) => {
+      const atual = query.state.data
+      if (!atual) return false
+      const aguardandoPagamento =
+        atual.proposta.status === 'aceita' &&
+        atual.proposta.entrada?.status === 'pendente'
+      return aguardandoPagamento ? 8000 : false
+    },
     queryFn: async () => {
       const { data: payload, error } = await supabase.rpc(
         'get_proposal_by_token',
@@ -233,6 +246,9 @@ export default function Proposta() {
     onSuccess: ({ choice, result }) => {
       if (result.success) {
         setResponded(choice)
+        // No aceite, recarrega o payload: o respond_proposal acabou de criar
+        // os receivables e o deck precisa da entrada para montar o checkout.
+        if (choice === 'aceitar') void refetch()
         return
       }
       setPendingChoice(null)
@@ -244,7 +260,6 @@ export default function Proposta() {
     },
   })
 
-  if (responded === 'aceitar') return <AcceptedScreen />
   if (responded === 'recusar') return <DeclinedScreen />
 
   if (isLoading) {
@@ -263,7 +278,12 @@ export default function Proposta() {
   if (!data) return <InvalidLinkScreen />
 
   const { proposta, projeto_nome: projetoNome, cliente } = data
-  const canRespond = proposta.status === 'enviada'
+  const deck = parseProposalDeck(proposta.apresentacao)
+
+  if (responded === 'aceitar' && !deck) return <AcceptedScreen />
+
+  const aceito = responded === 'aceitar' || proposta.status === 'aceita'
+  const canRespond = proposta.status === 'enviada' && responded === null
 
   const startChoice = (choice: Choice) => {
     setRootError(null)
@@ -273,6 +293,135 @@ export default function Proposta() {
     }
     setNomeError(null)
     setPendingChoice(choice)
+  }
+
+  const respostaSection = canRespond ? (
+    <div className="mt-6 max-w-2xl rounded-2xl border border-white/5 bg-surface-1 p-5 sm:p-8">
+      <h2 className="text-base font-semibold text-ink">Responder proposta</h2>
+      <p className="mt-1 text-sm font-light text-muted">
+        Confirme seu nome completo para registrar a resposta.
+      </p>
+
+      <label className="mt-5 flex flex-col gap-2">
+        <span className="text-sm font-medium text-ink">
+          Seu nome completo
+          <span aria-hidden className="ml-1 text-accent">
+            *
+          </span>
+        </span>
+        <input
+          type="text"
+          autoComplete="name"
+          value={nome}
+          onChange={(e) => {
+            setNome(e.target.value)
+            if (nomeError) setNomeError(null)
+          }}
+          placeholder="Maria da Silva"
+          aria-invalid={Boolean(nomeError)}
+          className={inputClass}
+        />
+        {nomeError && (
+          <span role="alert" className="text-xs text-red-400">
+            {nomeError}
+          </span>
+        )}
+      </label>
+
+      {rootError && (
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"
+        >
+          {rootError}
+        </p>
+      )}
+
+      <AnimatePresence mode="wait" initial={false}>
+        {pendingChoice === null ? (
+          <motion.div
+            key="choices"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="mt-6 flex flex-col gap-3 sm:flex-row"
+          >
+            <button
+              type="button"
+              onClick={() => startChoice('aceitar')}
+              className="flex-1 touch-manipulation rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Aceitar proposta
+            </button>
+            <button
+              type="button"
+              onClick={() => startChoice('recusar')}
+              className="flex-1 touch-manipulation rounded-lg border border-white/10 px-5 py-3.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Recusar
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="confirm"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="mt-6 rounded-xl border border-white/10 bg-surface-2/60 p-4"
+          >
+            <p className="text-sm text-ink">
+              {pendingChoice === 'aceitar'
+                ? `Confirmar o aceite da proposta como ${nome.trim()}?`
+                : `Confirmar a recusa da proposta como ${nome.trim()}?`}
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate(pendingChoice)}
+                className={`flex-1 touch-manipulation rounded-lg px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 ${
+                  pendingChoice === 'aceitar'
+                    ? 'bg-accent hover:bg-accent-2'
+                    : 'bg-red-500/90 hover:bg-red-500'
+                }`}
+              >
+                {mutation.isPending
+                  ? 'Registrando…'
+                  : pendingChoice === 'aceitar'
+                    ? 'Confirmar aceite'
+                    : 'Confirmar recusa'}
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => setPendingChoice(null)}
+                className="flex-1 touch-manipulation rounded-lg border border-white/10 px-5 py-3 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Voltar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  ) : null
+
+  if (deck) {
+    return (
+      <PropostaDeck
+        deck={deck}
+        proposta={proposta}
+        cliente={cliente}
+        aceito={aceito}
+        aceiteNome={
+          proposta.aceite_nome ?? (responded === 'aceitar' ? nome.trim() : null)
+        }
+      >
+        {respostaSection}
+      </PropostaDeck>
+    )
   }
 
   return (
@@ -399,120 +548,7 @@ export default function Proposta() {
         </div>
 
         {/* Resposta do cliente */}
-        {canRespond && (
-          <div className="mt-6 rounded-2xl border border-white/5 bg-surface-1 p-5 sm:p-8">
-            <h2 className="text-base font-semibold text-ink">
-              Responder proposta
-            </h2>
-            <p className="mt-1 text-sm font-light text-muted">
-              Confirme seu nome completo para registrar a resposta.
-            </p>
-
-            <label className="mt-5 flex flex-col gap-2">
-              <span className="text-sm font-medium text-ink">
-                Seu nome completo
-                <span aria-hidden className="ml-1 text-accent">
-                  *
-                </span>
-              </span>
-              <input
-                type="text"
-                autoComplete="name"
-                value={nome}
-                onChange={(e) => {
-                  setNome(e.target.value)
-                  if (nomeError) setNomeError(null)
-                }}
-                placeholder="Maria da Silva"
-                aria-invalid={Boolean(nomeError)}
-                className={inputClass}
-              />
-              {nomeError && (
-                <span role="alert" className="text-xs text-red-400">
-                  {nomeError}
-                </span>
-              )}
-            </label>
-
-            {rootError && (
-              <p
-                role="alert"
-                className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"
-              >
-                {rootError}
-              </p>
-            )}
-
-            <AnimatePresence mode="wait" initial={false}>
-              {pendingChoice === null ? (
-                <motion.div
-                  key="choices"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="mt-6 flex flex-col gap-3 sm:flex-row"
-                >
-                  <button
-                    type="button"
-                    onClick={() => startChoice('aceitar')}
-                    className="flex-1 touch-manipulation rounded-lg bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(108,91,242,0.6)] transition-all duration-200 hover:bg-accent-2 hover:shadow-[0_10px_28px_-8px_rgba(85,70,224,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                  >
-                    Aceitar proposta
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => startChoice('recusar')}
-                    className="flex-1 touch-manipulation rounded-lg border border-white/10 px-5 py-3.5 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                  >
-                    Recusar
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="confirm"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="mt-6 rounded-xl border border-white/10 bg-surface-2/60 p-4"
-                >
-                  <p className="text-sm text-ink">
-                    {pendingChoice === 'aceitar'
-                      ? `Confirmar o aceite da proposta como ${nome.trim()}?`
-                      : `Confirmar a recusa da proposta como ${nome.trim()}?`}
-                  </p>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
-                      disabled={mutation.isPending}
-                      onClick={() => mutation.mutate(pendingChoice)}
-                      className={`flex-1 touch-manipulation rounded-lg px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 ${
-                        pendingChoice === 'aceitar'
-                          ? 'bg-accent hover:bg-accent-2'
-                          : 'bg-red-500/90 hover:bg-red-500'
-                      }`}
-                    >
-                      {mutation.isPending
-                        ? 'Registrando…'
-                        : pendingChoice === 'aceitar'
-                          ? 'Confirmar aceite'
-                          : 'Confirmar recusa'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={mutation.isPending}
-                      onClick={() => setPendingChoice(null)}
-                      className="flex-1 touch-manipulation rounded-lg border border-white/10 px-5 py-3 text-sm font-medium text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Voltar
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+        {respostaSection}
       </motion.div>
     </Shell>
   )
