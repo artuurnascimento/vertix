@@ -9,9 +9,10 @@ export const PROPOSTA_PUBLIC_BASE = 'https://go.vertix.studio'
 export const PAGAR_PUBLIC_BASE = 'https://pay.vertix.studio'
 
 export function propostaPublicUrl(token: string): string {
-  return `${PROPOSTA_PUBLIC_BASE}/p/${token}`
+  // O domínio já diz o contexto — o token vai direto na raiz.
+  return `${PROPOSTA_PUBLIC_BASE}/${token}`
 }
 
 export function pagarPublicUrl(paymentToken: string): string {
-  return `${PAGAR_PUBLIC_BASE}/pagar/${paymentToken}`
+  return `${PAGAR_PUBLIC_BASE}/${paymentToken}`
 }

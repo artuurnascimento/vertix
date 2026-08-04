@@ -131,7 +131,7 @@ Deno.serve(withCors(async (req) => {
     return jsonResponse({ error: 'Parcela não encontrada.' }, 404)
   }
 
-  const paymentLink = `${baseUrl}/pagar/${receivable.payment_token}`
+  const paymentLink = `${baseUrl}/${receivable.payment_token}`
 
   const updateRes = await fetch(
     `${supabaseUrl}/rest/v1/receivables?id=eq.${receivableId}`,

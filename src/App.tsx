@@ -22,6 +22,7 @@ import Portal from './pages/public/Portal'
 import ContractSign from './pages/public/ContractSign'
 import NpsSurvey from './pages/public/NpsSurvey'
 import PagarPage from './pages/public/PagarPage'
+import HostToken from './pages/public/HostToken'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/briefing/:token" element={<BriefingForm />} />
       <Route path="/proposta/:token" element={<Proposta />} />
       <Route path="/p/:token" element={<Proposta />} />
+      <Route path="/:token" element={<HostToken />} />
       <Route path="/portal/:token" element={<Portal />} />
       <Route path="/contrato/:token" element={<ContractSign />} />
       <Route path="/nps/:token" element={<NpsSurvey />} />
