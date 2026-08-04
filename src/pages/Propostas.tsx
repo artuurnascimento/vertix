@@ -4,6 +4,7 @@ import {
   Check,
   FileText,
   Link2,
+  MessageCircle,
   Pencil,
   Plus,
   Search,
@@ -29,6 +30,21 @@ import {
   proposalUrl,
 } from '../components/proposals/proposalData'
 import type { ProposalWithProject } from '../components/proposals/proposalData'
+import { buildWhatsAppLink, firstNameOf } from '../components/ui/whatsapp'
+
+/** Link de WhatsApp com a proposta — usa o telefone do cliente quando houver. */
+function whatsappShareUrl(proposal: ProposalWithProject): string {
+  const cliente = proposal.projects?.clients
+  const nome = cliente?.nome ? firstNameOf(cliente.nome) : null
+  const mensagem =
+    `Olá${nome ? `, ${nome}` : ''}! ` +
+    `A proposta "${proposal.titulo}" da Vertix está pronta para você: ` +
+    proposalUrl(proposal.token)
+  return (
+    buildWhatsAppLink(cliente?.telefone ?? null, mensagem) ??
+    `https://wa.me/?text=${encodeURIComponent(mensagem)}`
+  )
+}
 
 const SKELETON_ROWS = 4
 const ROW_STAGGER_S = 0.04
@@ -82,7 +98,7 @@ export default function Propostas() {
       const { data, error } = await supabase
         .from('proposals')
         .select(
-          '*, projects(id, nome, tipo_servico, clients(id, nome, empresa))'
+          '*, projects(id, nome, tipo_servico, clients(id, nome, empresa, telefone))'
         )
         .order('created_at', { ascending: false })
       if (error) throw new Error(error.message)
@@ -392,6 +408,18 @@ export default function Propostas() {
                           >
                             <Link2 className="h-4 w-4" />
                           </button>
+                        )}
+                        {canCopyLink && (
+                          <a
+                            href={whatsappShareUrl(proposal)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Enviar proposta pelo WhatsApp"
+                            aria-label={`Enviar proposta ${proposal.titulo} pelo WhatsApp`}
+                            className="rounded-lg p-2 text-emerald-400 transition-colors duration-150 hover:bg-emerald-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </a>
                         )}
                         {proposal.status === 'aceita' && (
                           <button

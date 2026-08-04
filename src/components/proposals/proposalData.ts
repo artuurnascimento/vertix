@@ -14,7 +14,10 @@ export type Proposal = Tables<'proposals'>
 export type ProposalWithProject = Proposal & {
   projects:
     | (Pick<Tables<'projects'>, 'id' | 'nome' | 'tipo_servico'> & {
-        clients: Pick<Tables<'clients'>, 'id' | 'nome' | 'empresa'> | null
+        clients: Pick<
+          Tables<'clients'>,
+          'id' | 'nome' | 'empresa' | 'telefone'
+        > | null
       })
     | null
 }

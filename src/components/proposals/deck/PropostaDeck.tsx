@@ -56,7 +56,14 @@ function Glyphs({ text }: { text: string }) {
           )
         }
         if (part === '()') return <ArcsGlyph key={index} />
-        return <span key={index}>{part}</span>
+        // Cola o glifo anterior à palavra seguinte (nbsp) para o glifo nunca
+        // ficar sozinho numa linha quando o título quebra no mobile.
+        const prev = parts[index - 1]
+        const glued =
+          (prev === '✱' || prev === '()') && part.startsWith(' ')
+            ? ' ' + part.slice(1)
+            : part
+        return <span key={index}>{glued}</span>
       })}
     </>
   )
