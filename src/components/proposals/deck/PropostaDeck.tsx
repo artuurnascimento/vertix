@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { formatBRL, formatDateBR } from '../../../lib/commercial'
+import { pagarPublicUrl } from '../../../lib/publicUrls'
 import type { ProposalByToken } from '../proposalData'
 import { slideSurface } from './deckData'
 import type { DeckSlide, ProposalDeck } from './deckData'
@@ -351,7 +352,7 @@ export default function PropostaDeck({
     // criação da parcela — não precisa esperar ninguém clicar em "Gerar link".
     const checkoutHref =
       entrada.payment_link ??
-      (entrada.payment_token ? `/pagar/${entrada.payment_token}` : null)
+      (entrada.payment_token ? pagarPublicUrl(entrada.payment_token) : null)
     return (
       <div className="vdk min-h-screen bg-bg font-kanit">
         <Slide surface="violeta">

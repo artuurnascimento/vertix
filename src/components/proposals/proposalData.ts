@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { propostaPublicUrl } from '../../lib/publicUrls'
 import type { Json, Tables } from '../../lib/database.types'
 import type { ProposalInstallment, ProposalItem } from '../../lib/commercial'
 
@@ -58,8 +59,8 @@ export function sumInstallments(
 // ---------------------------------------------------------------------------
 
 export function proposalUrl(token: string): string {
-  // /p é o alias curto de /proposta — link mais limpo para enviar ao cliente.
-  return `${window.location.origin}/p/${token}`
+  // Domínio público de propostas — link limpo para enviar ao cliente.
+  return propostaPublicUrl(token)
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, Copy, Link2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
+import { pagarPublicUrl } from '../../lib/publicUrls'
 
 interface PaymentLinkButtonProps {
   receivableId: string
@@ -28,7 +29,7 @@ export default function PaymentLinkButton({
 
   const generateLink = useMutation({
     mutationFn: async () => {
-      const url = `${window.location.origin}/pagar/${paymentToken}`
+      const url = pagarPublicUrl(paymentToken)
       const { error } = await supabase
         .from('receivables')
         .update({ payment_link: url })

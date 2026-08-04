@@ -31,19 +31,11 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
-function resolveBaseUrl(req: Request): string | null {
-  const origin = req.headers.get('Origin')
-  if (origin) {
-    try {
-      const parsed = new URL(origin)
-      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-        return parsed.origin
-      }
-    } catch {
-      // cai no fallback
-    }
-  }
-  return Deno.env.get('ADMIN_APP_URL') ?? null
+// Domínio público oficial dos links de pagamento enviados a clientes.
+const PAGAR_PUBLIC_BASE = 'https://pay.vertix.studio'
+
+function resolveBaseUrl(_req: Request): string | null {
+  return PAGAR_PUBLIC_BASE
 }
 
 Deno.serve(withCors(async (req) => {
