@@ -45,28 +45,42 @@ function ArcsGlyph() {
 /** Substitui os tokens "✱" e "()" do texto pelos glifos da marca. */
 function Glyphs({ text }: { text: string }) {
   const parts = text.split(/(✱|\(\))/)
-  return (
-    <>
-      {parts.map((part, index) => {
-        if (part === '✱') {
-          return (
-            <span key={index} className="glyph-ast">
-              ✱
-            </span>
-          )
-        }
-        if (part === '()') return <ArcsGlyph key={index} />
-        // Cola o glifo anterior à palavra seguinte (nbsp) para o glifo nunca
-        // ficar sozinho numa linha quando o título quebra no mobile.
-        const prev = parts[index - 1]
-        const glued =
-          (prev === '✱' || prev === '()') && part.startsWith(' ')
-            ? ' ' + part.slice(1)
-            : part
-        return <span key={index}>{glued}</span>
-      })}
-    </>
-  )
+  // Glifos são SVG/inline-block — o navegador pode quebrar linha ao redor de
+  // elementos atômicos mesmo sem espaço. Para o glifo nunca ficar órfão numa
+  // linha, ele é embrulhado junto com a PALAVRA SEGUINTE num span nowrap.
+  const nodes: ReactNode[] = []
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    const isGlyph = part === '✱' || part === '()'
+    if (!isGlyph) {
+      if (part) nodes.push(<span key={i}>{part}</span>)
+      continue
+    }
+    const glyph =
+      part === '✱' ? (
+        <span className="glyph-ast">✱</span>
+      ) : (
+        <ArcsGlyph />
+      )
+    const next = parts[i + 1]
+    if (next && next.startsWith(' ') && next.trim() !== '') {
+      const rest = next.slice(1)
+      const spaceIdx = rest.indexOf(' ')
+      const word = spaceIdx === -1 ? rest : rest.slice(0, spaceIdx)
+      const tail = spaceIdx === -1 ? '' : rest.slice(spaceIdx)
+      nodes.push(
+        <span key={i} style={{ whiteSpace: 'nowrap' }}>
+          {glyph}
+          {' ' + word}
+        </span>
+      )
+      if (tail) nodes.push(<span key={`${i}t`}>{tail}</span>)
+      i++
+    } else {
+      nodes.push(<span key={i}>{glyph}</span>)
+    }
+  }
+  return <>{nodes}</>
 }
 
 /** Logo Vertix para superfícies violeta (traço escuro + interno claro). */
