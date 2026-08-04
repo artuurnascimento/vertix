@@ -7,7 +7,7 @@ import { pagarPublicUrl } from '../../../lib/publicUrls'
 import type { ProposalByToken } from '../proposalData'
 import { deckNarrations, slideSurface } from './deckData'
 import DeckPresentation from './DeckPresentation'
-import { speechSupported } from '../../../lib/speech'
+import { speechSupported, unlockSpeech } from '../../../lib/speech'
 import type { DeckSlide, ProposalDeck } from './deckData'
 import './deck.css'
 
@@ -557,7 +557,12 @@ export default function PropostaDeck({
           {speechSupported && !presenting && (
             <button
               type="button"
-              onClick={() => setPresenting(true)}
+              onClick={() => {
+                // Precisa ser síncrono no gesto — iOS descarta fala iniciada
+                // fora do toque do usuário.
+                unlockSpeech()
+                setPresenting(true)
+              }}
               className="mt-8 inline-flex touch-manipulation items-center gap-2.5 rounded-full bg-[#0c0c0c] px-6 py-3.5 text-sm font-semibold uppercase tracking-widest text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)] transition-transform duration-200 hover:-translate-y-0.5"
             >
               <Play className="h-4 w-4" />

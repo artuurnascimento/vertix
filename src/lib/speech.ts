@@ -44,6 +44,25 @@ export async function pickPtBrVoice(): Promise<SpeechSynthesisVoice | null> {
   return cachedVoice
 }
 
+/**
+ * iOS/Safari só autoriza síntese iniciada DENTRO do gesto do usuário — e o
+ * primeiro speak real acontece depois de awaits. Chamar isto de forma
+ * síncrona no onClick (utterance vazia, volume 0) destrava a sessão de fala
+ * para tudo que vier depois.
+ */
+export function unlockSpeech(): void {
+  if (!speechSupported) return
+  try {
+    const synth = window.speechSynthesis
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    synth.speak(u)
+    synth.resume()
+  } catch {
+    // melhor sem destravar do que quebrar o clique
+  }
+}
+
 /** Quebra o texto em sentenças curtas, agrupadas até ~200 caracteres. */
 export function splitSentences(text: string): string[] {
   const sentencas = text
@@ -83,7 +102,12 @@ export async function speakText(
       utterance.lang = 'pt-BR'
       utterance.rate = 1.03
       if (voice) utterance.voice = voice
+      // Watchdog: se onend nunca vier (síntese muda/quebrada), a apresentação
+      // vira slideshow temporizado em vez de travar no slide.
+      const timeoutMs = 5000 + chunk.length * 130
+      let timer: ReturnType<typeof setTimeout>
       const finish = () => {
+        clearTimeout(timer)
         signal.removeEventListener('abort', onAbort)
         resolve()
       }
@@ -91,10 +115,13 @@ export async function speakText(
         synth.cancel()
         finish()
       }
+      timer = setTimeout(finish, timeoutMs)
       utterance.onend = finish
       utterance.onerror = finish
       signal.addEventListener('abort', onAbort, { once: true })
       synth.speak(utterance)
+      // iOS às vezes inicia a fila pausada — resume é inócuo nos demais.
+      synth.resume()
     })
   }
 }
