@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import SplashScreen from './components/ui/SplashScreen'
+import { isPublicLinkHost } from './lib/publicUrls'
 import AdminLayout from './components/layout/AdminLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -16,6 +19,7 @@ import Contratos from './pages/Contratos'
 import Suporte from './pages/Suporte'
 import Configuracoes from './pages/Configuracoes'
 import Trafego from './pages/Trafego'
+import Lojas from './pages/Lojas'
 import BriefingForm from './pages/public/BriefingForm'
 import Proposta from './pages/public/Proposta'
 import Portal from './pages/public/Portal'
@@ -24,9 +28,47 @@ import NpsSurvey from './pages/public/NpsSurvey'
 import PagarPage from './pages/public/PagarPage'
 import HostToken from './pages/public/HostToken'
 
+const SPLASH_SESSION_KEY = 'vx-splash-shown'
+
+function splashAlreadyShown(): boolean {
+  try {
+    return sessionStorage.getItem(SPLASH_SESSION_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markSplashShown(): void {
+  try {
+    sessionStorage.setItem(SPLASH_SESSION_KEY, '1')
+  } catch {
+    // Storage indisponível (modo privado restrito) — splash repete, sem quebrar.
+  }
+}
+
+/** Splash só na superfície do painel (login + /admin), nunca nas páginas
+ *  públicas tokenizadas nem nos hosts pay./go. — e uma vez por sessão. */
+function shouldShowSplash(): boolean {
+  const path = window.location.pathname
+  const isAdminSurface =
+    path === '/' || path === '/admin' || path.startsWith('/admin/')
+  return isAdminSurface && !isPublicLinkHost() && !splashAlreadyShown()
+}
+
 export default function App() {
+  const [showSplash, setShowSplash] = useState(shouldShowSplash)
+
   return (
-    <Routes>
+    <>
+      {showSplash && (
+        <SplashScreen
+          onDone={() => {
+            markSplashShown()
+            setShowSplash(false)
+          }}
+        />
+      )}
+      <Routes>
       {/* /login antigo redireciona para a raiz (o login mora em "/"). */}
       <Route path="/login" element={<Navigate to="/" replace />} />
 
@@ -56,12 +98,14 @@ export default function App() {
           <Route path="suporte" element={<Suporte />} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="trafego" element={<Trafego />} />
+          <Route path="lojas" element={<Lojas />} />
         </Route>
       </Route>
 
       {/* Raiz = login (autenticado é redirecionado para /admin pelo próprio Login). */}
       <Route path="/" element={<Login />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }

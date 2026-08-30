@@ -13,6 +13,7 @@ import {
   Megaphone,
   Plus,
   Settings,
+  Store,
   Users,
   Wallet,
 } from 'lucide-react'
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
   { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
   { to: '/admin/trafego', label: 'Tráfego', icon: Megaphone, end: false },
+  { to: '/admin/lojas', label: 'Lojas', icon: Store, end: false },
   { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
   { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
@@ -46,6 +48,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/admin/contratos': 'Contratos',
   '/admin/financeiro': 'Financeiro',
   '/admin/trafego': 'Tráfego',
+  '/admin/lojas': 'Lojas',
   '/admin/relatorios': 'Relatórios',
   '/admin/suporte': 'Suporte',
   '/admin/configuracoes': 'Configurações',

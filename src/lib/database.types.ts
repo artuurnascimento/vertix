@@ -565,6 +565,92 @@ export type Database = {
         }
         Relationships: []
       }
+      loja_apps: {
+        Row: {
+          id: string
+          loja_id: string
+          metricas_cache: Json | null
+          produto: string
+          provisionado_em: string
+          status: string
+          ultimo_sync: string | null
+        }
+        Insert: {
+          id?: string
+          loja_id: string
+          metricas_cache?: Json | null
+          produto: string
+          provisionado_em?: string
+          status?: string
+          ultimo_sync?: string | null
+        }
+        Update: {
+          id?: string
+          loja_id?: string
+          metricas_cache?: Json | null
+          produto?: string
+          provisionado_em?: string
+          status?: string
+          ultimo_sync?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loja_apps_loja_id_fkey"
+            columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lojas: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          observacoes: string | null
+          plano: string | null
+          shop_domain: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          plano?: string | null
+          shop_domain: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          plano?: string | null
+          shop_domain?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lojas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "lojas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
