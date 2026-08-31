@@ -11,7 +11,8 @@ export default function LogoMark({ className, style }: LogoMarkProps) {
     <svg
       viewBox="0 0 132 162"
       className={className}
-      style={style}
+      // Caps arredondados do traço excedem o viewBox — sem isso as pontas clipam.
+      style={{ overflow: 'visible', ...style }}
       fill="none"
       aria-hidden="true"
     >
