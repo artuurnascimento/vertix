@@ -21,6 +21,7 @@ import {
 import type { BioLink } from './bioLinks'
 import { registrarClique } from './bioData'
 import BioScanIlustracao from './BioScanIlustracao'
+import LiquidButton from '../ui/LiquidButton'
 
 /**
  * Um botão do link de bio, nos três formatos. O formato vem do banco, então a
@@ -112,7 +113,8 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
             {link.chamada}
           </span>
         )}
-        <span className="mt-1.5 block font-kanit text-[22px] font-bold leading-[1.08] tracking-tight text-ink">
+        {/* Uma linha só: tamanho fluido pela largura da tela, sem quebra. */}
+        <span className="vx-scan-titulo mt-1.5 block font-kanit font-bold leading-[1.1] tracking-tight text-ink">
           {link.rotulo}
         </span>
         {link.descricao && (
@@ -120,14 +122,16 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
             {link.descricao}
           </span>
         )}
-        <span className="mt-2.5 flex items-end justify-between gap-2">
-          <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-ink px-3.5 py-2.5 text-[13px] font-semibold text-bg transition-transform duration-200 group-hover:-translate-y-0.5">
-            {link.texto_botao?.trim() || 'Quero saber'}
+        <span className="mt-2.5 flex items-center justify-between gap-2.5">
+          <LiquidButton className="h-[54px] min-w-0 flex-1">
+            <span className="whitespace-nowrap font-kanit text-[14px] font-extrabold uppercase tracking-[0.1em] text-[#ECE9FF] drop-shadow-[0_1px_10px_rgba(20,10,60,0.85)]">
+              {link.texto_botao?.trim() || 'Quero saber'}
+            </span>
             <ArrowUpRight
-              className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              className="h-[18px] w-[18px] shrink-0 text-[#ECE9FF] opacity-90 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               aria-hidden="true"
             />
-          </span>
+          </LiquidButton>
           <BioScanIlustracao />
         </span>
       </motion.a>
