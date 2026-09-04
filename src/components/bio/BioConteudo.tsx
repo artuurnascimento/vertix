@@ -48,8 +48,8 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
   return (
     <div className="flex flex-col items-center">
       <header className="flex flex-col items-center text-center">
-        <LogoMark className="h-14 w-14" />
-        <h1 className="mt-4 font-kanit text-lg font-bold uppercase tracking-[0.08em] text-ink">
+        <LogoMark className="h-12 w-12" />
+        <h1 className="mt-3 font-kanit text-lg font-bold uppercase tracking-[0.08em] text-ink">
           Vertix<span className="text-accent">✱</span>Studio
         </h1>
         <p className="mt-2 max-w-[17rem] text-sm font-light leading-snug text-muted">
@@ -57,7 +57,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         </p>
       </header>
 
-      <div className="mt-7 flex w-full flex-col gap-2.5">
+      <div className="mt-5 flex w-full flex-col gap-2.5">
         {destaque.map((link) => (
           <BioButton key={link.id} link={link} inerte={inerte} />
         ))}
@@ -73,7 +73,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         )}
       </div>
 
-      <nav aria-label="Contatos" className="mt-7 flex items-center gap-3">
+      <nav aria-label="Contatos" className="mt-5 flex items-center gap-3">
         <a
           href={inerte ? undefined : INSTAGRAM_URL}
           target="_blank"
@@ -92,7 +92,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         </a>
       </nav>
 
-      <p className="mt-6 text-xs font-light text-muted">
+      <p className="mt-4 text-xs font-light text-muted">
         <a
           href={inerte ? undefined : 'https://www.vertix.studio'}
           target="_blank"

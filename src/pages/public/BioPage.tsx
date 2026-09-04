@@ -14,7 +14,7 @@ const TITULO = 'Vertix — atalhos rápidos'
 
 function Casca({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen px-5 py-10 font-kanit sm:py-14">
+    <div className="min-h-screen px-5 py-5 font-kanit sm:py-12">
       <VertixBackground />
       <main className="relative mx-auto w-full max-w-sm">{children}</main>
     </div>
