@@ -190,7 +190,7 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
       className="vx-entrada vx-borda-degrade flex flex-col items-center gap-2.5 rounded-xl p-4 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
-        className="vx-icone-traco flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20"
+        className="vx-icone-traco flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-ink ring-1 ring-accent/20"
         style={
           {
             '--atraso-traco': `${ICONE_BASE_S + ordem * ICONE_PASSO_S}s`,
