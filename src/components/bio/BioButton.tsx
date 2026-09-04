@@ -90,10 +90,14 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
         {...animacao}
         className="vx-vidro group relative block overflow-hidden rounded-[26px] p-5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        {/* Reflexo no topo, como o vidro do iOS. */}
+        {/* Reflexo no topo e brilho especular no canto, como o vidro do iOS. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -left-10 -top-16 h-44 w-64 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.28),transparent)]"
         />
         {link.chamada && (
           <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
