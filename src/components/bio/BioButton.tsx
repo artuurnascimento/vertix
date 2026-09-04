@@ -122,14 +122,23 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
           </span>
         )}
         <span className="mt-2 flex items-center justify-between gap-2.5">
-          <span className="vx-btn-roxo relative flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl px-4">
-            <span className="whitespace-nowrap font-kanit text-[15px] font-extrabold uppercase tracking-[0.08em] text-white">
+          {/* Pílula + círculo, como no demo: no hover as cores trocam e a seta
+              sai pela direita enquanto outra entra pela esquerda. Grupo
+              nomeado: o efeito é do botão, não do card inteiro. */}
+          <span className="group/botao inline-flex min-w-0 shrink items-center">
+            <span className="whitespace-nowrap rounded-full bg-accent px-4 py-3 font-kanit text-[14px] font-extrabold tracking-[0.01em] text-white transition-colors duration-500 ease-in-out group-hover/botao:bg-[#241A5E] group-hover/botao:text-[#A99EF7]">
               {link.texto_botao?.trim() || 'Quero saber'}
             </span>
-            <ArrowUpRight
-              className="h-[18px] w-[18px] shrink-0 text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-              aria-hidden="true"
-            />
+            <span className="relative flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent text-white transition-colors duration-500 ease-in-out group-hover/botao:bg-[#241A5E] group-hover/botao:text-[#A99EF7]">
+              <ArrowUpRight
+                className="absolute inset-0 m-auto h-[18px] w-[18px] transition-transform duration-500 ease-in-out group-hover/botao:translate-x-10"
+                aria-hidden="true"
+              />
+              <ArrowUpRight
+                className="absolute inset-0 m-auto h-[18px] w-[18px] -translate-x-10 transition-transform duration-500 ease-in-out group-hover/botao:translate-x-0"
+                aria-hidden="true"
+              />
+            </span>
           </span>
           <BioScanIlustracao />
         </span>
