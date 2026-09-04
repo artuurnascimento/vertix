@@ -20,6 +20,7 @@ import {
 } from './bioLinks'
 import type { BioLink } from './bioLinks'
 import { registrarClique } from './bioData'
+import BioScanIlustracao from './BioScanIlustracao'
 
 /**
  * Um botão do link de bio, nos três formatos. O formato vem do banco, então a
@@ -102,24 +103,32 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
         {...comum}
         {...animacao}
         style={entrada}
-        className="vx-entrada block rounded-2xl border border-accent bg-gradient-to-br from-[#241A5E] to-accent-2 p-4 text-left transition-shadow duration-200 hover:shadow-[0_16px_40px_-16px_rgba(108,91,242,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="vx-entrada vx-scan-card group relative block overflow-hidden rounded-2xl p-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
+        {/* Aro violeta no topo, como no banner do Scan. */}
+        <span aria-hidden className="vx-scan-aro absolute inset-x-0 top-0 h-[2px]" />
         {link.chamada && (
-          <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
+          <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-accent">
             {link.chamada}
           </span>
         )}
-        <span className="mt-1 block text-lg font-bold leading-tight text-white">
+        <span className="mt-1.5 block font-kanit text-[22px] font-bold leading-[1.08] tracking-tight text-ink">
           {link.rotulo}
         </span>
         {link.descricao && (
-          <span className="mt-1.5 block text-sm font-light leading-snug text-white/80">
+          <span className="mt-2 block text-[13px] font-light leading-snug text-muted">
             {link.descricao}
           </span>
         )}
-        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-1.5 text-sm font-semibold text-bg">
-          {link.texto_botao?.trim() || 'Quero saber'}
-          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+        <span className="mt-2.5 flex items-end justify-between gap-2">
+          <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-ink px-3.5 py-2.5 text-[13px] font-semibold text-bg transition-transform duration-200 group-hover:-translate-y-0.5">
+            {link.texto_botao?.trim() || 'Quero saber'}
+            <ArrowUpRight
+              className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+          <BioScanIlustracao />
         </span>
       </motion.a>
     )
@@ -166,10 +175,10 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
       {...comum}
       {...animacao}
       style={entrada}
-      className="vx-entrada vx-borda-degrade flex flex-col items-center gap-2.5 rounded-xl p-3.5 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="vx-entrada vx-borda-degrade flex flex-col items-center gap-2 rounded-xl p-3 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
-        className="vx-icone-traco flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20"
+        className="vx-icone-traco flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20"
         style={
           {
             '--atraso-traco': `${ICONE_BASE_S + ordem * ICONE_PASSO_S}s`,

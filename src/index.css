@@ -548,3 +548,61 @@ body {
     transform: none;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   Card de destaque — desenho do banner do Vertix Scan
+   -------------------------------------------------------------------------- */
+
+.vx-scan-card {
+  background: linear-gradient(180deg, #121219, #0e0e14);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 22px 50px -24px rgba(0, 0, 0, 0.8);
+  transition: border-color 200ms ease;
+}
+
+.vx-scan-card:hover {
+  border-color: rgba(108, 91, 242, 0.45);
+}
+
+/* Aro violeta no topo, mais forte no meio. */
+.vx-scan-aro {
+  background: linear-gradient(90deg, transparent, #6c5bf2 30%, #a99ef7 50%, #6c5bf2 70%, transparent);
+}
+
+/* Ilustração: card inclinado com brilho atrás. */
+.vx-scan-tela {
+  transform: rotate(-8deg);
+  transform-origin: 50% 60%;
+}
+
+/* Barras se preenchem uma vez, em sequência, logo depois de o card entrar
+   (--entrada-atraso vem do card). Sem laço. */
+.vx-scan-barra--roxa {
+  background: linear-gradient(90deg, #6c5bf2, #a99ef7);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: vx-scan-preenche 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.vx-scan-barra--roxa:nth-child(2) {
+  animation-delay: calc(var(--entrada-atraso, 2.6s) + 0.45s);
+}
+.vx-scan-barra--roxa:nth-child(3) {
+  animation-delay: calc(var(--entrada-atraso, 2.6s) + 0.65s);
+}
+.vx-scan-barra--roxa:nth-child(4) {
+  animation-delay: calc(var(--entrada-atraso, 2.6s) + 0.85s);
+}
+
+@keyframes vx-scan-preenche {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-scan-barra--roxa {
+    animation: none;
+    transform: scaleX(1);
+  }
+}

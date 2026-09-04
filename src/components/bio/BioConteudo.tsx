@@ -107,7 +107,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         </h1>
       </header>
 
-      <div className="mt-4 flex w-full flex-col gap-2.5">
+      <div className="mt-3 flex w-full flex-col gap-2.5">
         {destaque.map((link) => (
           <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
         ))}
@@ -125,7 +125,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
 
       <nav
         aria-label="Contatos"
-        className="vx-entrada mt-5 flex items-center gap-3"
+        className="vx-entrada mt-4 flex items-center gap-3"
         style={entradaDe(ordemContatos)}
       >
         <a
@@ -147,7 +147,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
       </nav>
 
       <p
-        className="vx-entrada mt-4 text-xs font-light text-muted"
+        className="vx-entrada mt-3 text-xs font-light text-muted"
         style={entradaDe(ordemContatos + 1)}
       >
         <a
