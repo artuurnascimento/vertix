@@ -1,41 +1,14 @@
 import { useLayoutEffect, useRef } from 'react'
-import type { CSSProperties } from 'react'
-import { Mail } from 'lucide-react'
 import BioButton from './BioButton'
-import { ENTRADA_BASE_S, ENTRADA_PASSO_S, agrupaPorFormato } from './bioLinks'
+import { agrupaPorFormato } from './bioLinks'
 import type { BioLink } from './bioLinks'
 
 /**
- * Miolo da página de bio: marca, botões nos três formatos e contatos.
+ * Miolo da página de bio: marca e botões nos três formatos. Sem contatos nem
+ * rodapé — é link de bio para o Instagram, quem chega já veio de lá.
  * Sem acesso a dados aqui de propósito — a página pública e a prévia do
  * console renderizam este mesmo componente com listas de origens diferentes.
  */
-
-/** Selo abaixo da marca: credencial + o que a Vertix faz. */
-const DESCRICAO = 'Shopify Partners · E-commerce & Sistemas'
-
-const INSTAGRAM_URL = 'https://instagram.com/byvertix'
-const EMAIL_CONTATO = 'contato@vertix.studio'
-
-/** Glifo do Instagram desenhado aqui: lucide-react removeu ícones de marca. */
-function InstagramGlifo({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <path d="M17.5 6.5h.01" />
-    </svg>
-  )
-}
 
 interface BioConteudoProps {
   links: BioLink[]
@@ -78,10 +51,6 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
     }
   }, [inerte])
 
-  // Contatos e rodapé entram por último, depois de todos os botões.
-  const ordemContatos = links.length
-  const entradaDe = (ordem: number) =>
-    ({ '--entrada-atraso': `${ENTRADA_BASE_S + ordem * ENTRADA_PASSO_S}s` }) as CSSProperties
   // Ordem de entrada na tela: destaque, depois largos, depois a grade.
   const ordemDe = (link: BioLink) =>
     [...destaque, ...largos, ...grade].findIndex((l) => l.id === link.id)
@@ -89,8 +58,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
   return (
     <div className="flex flex-col items-center">
       {/* Marca animada no formato horizontal: símbolo à esquerda se desenha
-          subindo ao vértice, a palavra entra ao lado com o "I" em indigo e a
-          descrição aparece por último, abaixo. */}
+          subindo ao vértice e a palavra entra ao lado com o "I" em indigo. */}
       <header ref={marcaRef} className="flex flex-col items-center text-center">
         <span ref={linhaRef} className="vx-marca-linha flex items-center gap-3">
         <svg
@@ -122,10 +90,6 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
           VERT<span className="vx-bio-marca-i">I</span>X
         </h1>
         </span>
-        <p className="vx-bio-marca-desc inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-kanit">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(108,91,242,0.9)]" />
-          {DESCRICAO}
-        </p>
       </header>
 
       <div className="mt-3 flex w-full flex-col gap-2.5">
@@ -144,42 +108,6 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         )}
       </div>
 
-      <nav
-        aria-label="Contatos"
-        className="vx-entrada mt-4 flex items-center gap-3"
-        style={entradaDe(ordemContatos)}
-      >
-        <a
-          href={inerte ? undefined : INSTAGRAM_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Instagram da Vertix"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-surface-1 text-muted transition-colors duration-200 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          <InstagramGlifo className="h-4 w-4" />
-        </a>
-        <a
-          href={inerte ? undefined : `mailto:${EMAIL_CONTATO}`}
-          aria-label="Email da Vertix"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-surface-1 text-muted transition-colors duration-200 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          <Mail className="h-4 w-4" aria-hidden="true" />
-        </a>
-      </nav>
-
-      <p
-        className="vx-entrada mt-3 text-xs font-light text-muted"
-        style={entradaDe(ordemContatos + 1)}
-      >
-        <a
-          href={inerte ? undefined : 'https://www.vertix.studio'}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-ink transition-colors duration-200 hover:text-accent"
-        >
-          vertix.studio
-        </a>
-      </p>
     </div>
   )
 }

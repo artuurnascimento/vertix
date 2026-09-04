@@ -509,18 +509,6 @@ body {
   }
 }
 
-/* Descrição abaixo da marca: entra por último, depois da palavra. */
-.vx-bio-marca-desc {
-  margin-top: 8px;
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: rgba(244, 244, 240, 0.78);
-  white-space: nowrap;
-  opacity: 0;
-  animation: vx-splash-fade 0.6s ease 1.45s forwards;
-}
-
 /* A marca nasce no centro da tela (deslocamento medido em BioConteudo e
    entregue em --marca-desloc), se desenha ali e sobe para o lugar dela. */
 .vx-marca-centro {
@@ -567,7 +555,6 @@ body {
     stroke-dashoffset: 0;
   }
   .vx-bio-marca-word,
-  .vx-bio-marca-desc,
   .vx-entrada,
   .vx-marca-centro,
   .vx-marca-linha {
