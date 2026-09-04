@@ -88,8 +88,13 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
       <motion.a
         {...comum}
         {...animacao}
-        className="block rounded-2xl border border-accent bg-gradient-to-br from-[#241A5E] to-accent-2 p-4 text-left transition-shadow duration-200 hover:shadow-[0_16px_40px_-16px_rgba(108,91,242,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="vx-vidro group relative block overflow-hidden rounded-[26px] p-5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
+        {/* Reflexo no topo, como o vidro do iOS. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+        />
         {link.chamada && (
           <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
             {link.chamada}
@@ -103,9 +108,12 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
             {link.descricao}
           </span>
         )}
-        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-1.5 text-sm font-semibold text-bg">
+        <span className="vx-botao-vidro mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-bg">
           {link.texto_botao?.trim() || 'Quero saber'}
-          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          <ArrowUpRight
+            className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            aria-hidden="true"
+          />
         </span>
       </motion.a>
     )
