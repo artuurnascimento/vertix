@@ -305,6 +305,98 @@ export type Database = {
           },
         ]
       }
+      bio_events: {
+        Row: {
+          created_at: string
+          id: string
+          link_id: string | null
+          sessao: string
+          tipo: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_id?: string | null
+          sessao: string
+          tipo: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_id?: string | null
+          sessao?: string
+          tipo?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_events_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "bio_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bio_links: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          destino: string
+          formato: string
+          icone: string | null
+          id: string
+          inicia_em: string | null
+          mensagem: string | null
+          posicao: number
+          rotulo: string
+          termina_em: string | null
+          tipo_destino: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          destino?: string
+          formato?: string
+          icone?: string | null
+          id?: string
+          inicia_em?: string | null
+          mensagem?: string | null
+          posicao?: number
+          rotulo: string
+          termina_em?: string | null
+          tipo_destino: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          destino?: string
+          formato?: string
+          icone?: string | null
+          id?: string
+          inicia_em?: string | null
+          mensagem?: string | null
+          posicao?: number
+          rotulo?: string
+          termina_em?: string | null
+          tipo_destino?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       briefing_templates: {
         Row: {
           id: string
@@ -1578,6 +1670,7 @@ export type Database = {
         Returns: Json
       }
       generate_subscription_receivables: { Args: never; Returns: number }
+      get_bio_links: { Args: never; Returns: Json }
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
       get_contract_by_token: { Args: { p_token: string }; Returns: Json }
       get_nps_by_token: { Args: { p_token: string }; Returns: Json }
@@ -1613,6 +1706,17 @@ export type Database = {
           p_titulo: string
         }
         Returns: boolean
+      }
+      registrar_evento_bio: {
+        Args: {
+          p_campaign?: string
+          p_link_id?: string
+          p_medium?: string
+          p_sessao: string
+          p_source?: string
+          p_tipo: string
+        }
+        Returns: Json
       }
       revert_proposal_acceptance: {
         Args: { p_proposal_id: string }
