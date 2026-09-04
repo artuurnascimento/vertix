@@ -455,34 +455,43 @@ body {
       border-box;
 }
 
-/* Ícone flutuando devagar. O atraso vem do próprio card, para os quatro não
-   subirem juntos. */
-.vx-icone-flutua {
-  animation: vx-icone-flutuar 3.6s ease-in-out infinite;
+/* Quem anima é o desenho do ícone, não a caixa: os ícones são feitos de
+   traço, então o contorno se redesenha em laço. O atraso vem do card (a
+   variável --atraso-traco), para os quatro não desenharem juntos. */
+.vx-icone-traco svg {
+  overflow: visible;
 }
 
-@keyframes vx-icone-flutuar {
-  0%,
+.vx-icone-traco svg > * {
+  stroke-dasharray: 56;
+  animation: vx-traco-desenha 4s ease-in-out infinite;
+  animation-delay: var(--atraso-traco, 0s);
+}
+
+/* O ícone passa a maior parte do ciclo inteiro: ele precisa ser reconhecível,
+   e um desenho que some metade do tempo não comunica nada. O traço se
+   redesenha rápido nas pontas e fica parado no meio. */
+@keyframes vx-traco-desenha {
+  0% {
+    stroke-dashoffset: 56;
+  }
+  18%,
+  82% {
+    stroke-dashoffset: 0;
+  }
   100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
+    stroke-dashoffset: -56;
   }
 }
 
-/* No toque ou passagem do mouse o ícone cresce um pouco. */
-.vx-borda-degrade:hover .vx-icone-flutua {
-  transform: scale(1.08);
-  animation-play-state: paused;
-  transition: transform 200ms ease-out;
+/* Passagem do mouse: o desenho acelera. */
+.vx-borda-degrade:hover .vx-icone-traco svg > * {
+  animation-duration: 1.6s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vx-icone-flutua {
+  .vx-icone-traco svg > * {
     animation: none;
-  }
-  .vx-borda-degrade:hover .vx-icone-flutua {
-    transform: none;
+    stroke-dasharray: none;
   }
 }
