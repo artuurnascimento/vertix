@@ -56,7 +56,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
     [...destaque, ...largos, ...grade].findIndex((l) => l.id === link.id)
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-1 flex-col items-center">
       {/* Marca animada no formato horizontal: símbolo à esquerda se desenha
           subindo ao vértice e a palavra entra ao lado com o "I" em indigo. */}
       <header ref={marcaRef} className="flex flex-col items-center text-center">
@@ -92,7 +92,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         </span>
       </header>
 
-      <div className="mt-3 flex w-full flex-col gap-2.5">
+      <div className="mt-3 flex w-full flex-1 flex-col justify-center gap-[clamp(10px,2.2vh,20px)] pb-2">
         {destaque.map((link) => (
           <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
         ))}
@@ -100,7 +100,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
           <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
         ))}
         {grade.length > 0 && (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-[clamp(10px,2.2vh,20px)]">
             {grade.map((link) => (
               <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
             ))}

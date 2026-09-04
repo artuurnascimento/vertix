@@ -14,9 +14,13 @@ const TITULO = 'Vertix — atalhos rápidos'
 
 function Casca({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen px-5 py-4 font-kanit sm:py-12">
+    <div className="flex min-h-svh flex-col px-5 pb-2 pt-4 font-kanit sm:py-12">
       <VertixBackground />
-      <main className="relative mx-auto w-full max-w-sm">{children}</main>
+      {/* A coluna ocupa a altura da tela: a marca fica no topo e o grupo de
+          atalhos se centraliza no espaço que sobra, em qualquer altura. */}
+      <main className="relative mx-auto flex w-full max-w-sm flex-1 flex-col">
+        {children}
+      </main>
     </div>
   )
 }
