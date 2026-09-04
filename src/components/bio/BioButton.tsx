@@ -68,17 +68,10 @@ interface BioButtonProps {
   inerte?: boolean
   /** Posição na sequência de entrada (0 = primeiro a aparecer). */
   ordem?: number
-  /** Ícone em violeta em vez de branco (alternância xadrez na grade). */
-  iconeViolet?: boolean
 }
 
 
-export default function BioButton({
-  link,
-  inerte = false,
-  ordem = 0,
-  iconeViolet = false,
-}: BioButtonProps) {
+export default function BioButton({ link, inerte = false, ordem = 0 }: BioButtonProps) {
   const prefersReducedMotion = useReducedMotion()
   const href = destinoFinal(link)
 
@@ -197,9 +190,7 @@ export default function BioButton({
       className="vx-entrada vx-borda-degrade flex flex-col items-center gap-2.5 rounded-xl p-4 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
-        className={`vx-icone-traco flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 ring-1 ring-accent/20 ${
-          iconeViolet ? 'text-accent' : 'text-ink'
-        }`}
+        className="vx-icone-traco flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20"
         style={
           {
             '--atraso-traco': `${ICONE_BASE_S + ordem * ICONE_PASSO_S}s`,
