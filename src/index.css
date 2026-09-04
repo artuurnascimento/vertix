@@ -497,12 +497,27 @@ body {
   color: #6c5bf2;
 }
 
-/* Botões entram depois da marca, um por vez. */
+/* A marca nasce no centro da tela (deslocamento medido em BioConteudo e
+   entregue em --marca-desloc), se desenha ali e sobe para o lugar dela. */
+.vx-marca-centro {
+  /* Padrão: metade da tela menos o centro final da marca (20px de margem da
+     página + 98px do símbolo + 2px + ~36px da palavra ≈ centro em 88px). */
+  transform: translateY(var(--marca-desloc, calc(50vh - 88px)));
+  animation: vx-marca-sobe 0.75s cubic-bezier(0.16, 1, 0.3, 1) 1.9s forwards;
+}
+
+@keyframes vx-marca-sobe {
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Botões entram depois de a marca chegar ao topo, um por vez. */
 .vx-entrada {
   opacity: 0;
   transform: translateY(12px);
   animation: vx-splash-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: var(--entrada-atraso, 1.35s);
+  animation-delay: var(--entrada-atraso, 2.6s);
 }
 
 /* Ícones da grade: o traço se desenha UMA vez, cada card na sua vez. */
@@ -514,7 +529,7 @@ body {
   stroke-dasharray: 56;
   stroke-dashoffset: 56;
   animation: vx-splash-draw 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
-  animation-delay: var(--atraso-traco, 1.9s);
+  animation-delay: var(--atraso-traco, 3.1s);
 }
 
 /* Sem movimento: tudo visível de imediato. */
@@ -526,7 +541,8 @@ body {
     stroke-dashoffset: 0;
   }
   .vx-bio-marca-word,
-  .vx-entrada {
+  .vx-entrada,
+  .vx-marca-centro {
     animation: none;
     opacity: 1;
     transform: none;

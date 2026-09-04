@@ -84,3 +84,15 @@ export function agrupaPorFormato(links: BioLink[]): BioGrupos {
     grade: links.filter((l) => l.formato === 'grade'),
   }
 }
+
+/**
+ * Linha do tempo da abertura da página (segundos desde o carregamento):
+ *   0.15–1.25  lâminas do símbolo se desenham, com a marca no centro da tela
+ *   1.05–1.65  a palavra sobe
+ *   1.90–2.65  a marca sobe do centro para o topo (vx-marca-sobe)
+ *   2.60+      botões entram um a um; ícones da grade se desenham um por vez
+ */
+export const ENTRADA_BASE_S = 2.6
+export const ENTRADA_PASSO_S = 0.12
+export const ICONE_BASE_S = 3.1
+export const ICONE_PASSO_S = 0.35

@@ -1,6 +1,8 @@
+import { useLayoutEffect, useRef } from 'react'
+import type { CSSProperties } from 'react'
 import { Mail } from 'lucide-react'
 import BioButton from './BioButton'
-import { agrupaPorFormato } from './bioLinks'
+import { ENTRADA_BASE_S, ENTRADA_PASSO_S, agrupaPorFormato } from './bioLinks'
 import type { BioLink } from './bioLinks'
 
 /**
@@ -40,6 +42,32 @@ interface BioConteudoProps {
 
 export default function BioConteudo({ links, inerte = false }: BioConteudoProps) {
   const { destaque, largos, grade } = agrupaPorFormato(links)
+  const marcaRef = useRef<HTMLElement>(null)
+
+  // Abertura: a marca nasce no centro da tela, se desenha ali e sobe até o
+  // lugar dela. A distância depende da altura de cada aparelho, então é
+  // medida antes da primeira pintura e entregue ao CSS por variável. A prévia
+  // do console não faz isso (o "centro" ali seria o do painel, não da tela).
+  useLayoutEffect(() => {
+    if (inerte) return
+    const el = marcaRef.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // O CSS já traz um padrão (metade da altura da tela menos a posição
+    // final da marca). A medição só refina quando a janela tem altura real:
+    // em painel oculto ela reporta zero e o cálculo sairia errado.
+    const r = el.getBoundingClientRect()
+    const desloc = window.innerHeight / 2 - (r.top + r.height / 2)
+    if (window.innerHeight > 0 && desloc > 0) {
+      el.style.setProperty('--marca-desloc', `${Math.round(desloc)}px`)
+    }
+    el.classList.add('vx-marca-centro')
+  }, [inerte])
+
+  // Contatos e rodapé entram por último, depois de todos os botões.
+  const ordemContatos = links.length
+  const entradaDe = (ordem: number) =>
+    ({ '--entrada-atraso': `${ENTRADA_BASE_S + ordem * ENTRADA_PASSO_S}s` }) as CSSProperties
   // Ordem de entrada na tela: destaque, depois largos, depois a grade.
   const ordemDe = (link: BioLink) =>
     [...destaque, ...largos, ...grade].findIndex((l) => l.id === link.id)
@@ -48,7 +76,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
     <div className="flex flex-col items-center">
       {/* Marca animada, a mesma abertura do painel: as lâminas do símbolo se
           desenham subindo ao vértice e a palavra entra com o "I" em indigo. */}
-      <header className="flex flex-col items-center text-center">
+      <header ref={marcaRef} className="flex flex-col items-center text-center">
         <svg
           viewBox="0 0 132 162"
           className="vx-bio-marca-simbolo"
@@ -95,7 +123,11 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         )}
       </div>
 
-      <nav aria-label="Contatos" className="mt-5 flex items-center gap-3">
+      <nav
+        aria-label="Contatos"
+        className="vx-entrada mt-5 flex items-center gap-3"
+        style={entradaDe(ordemContatos)}
+      >
         <a
           href={inerte ? undefined : INSTAGRAM_URL}
           target="_blank"
@@ -114,7 +146,10 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         </a>
       </nav>
 
-      <p className="mt-4 text-xs font-light text-muted">
+      <p
+        className="vx-entrada mt-4 text-xs font-light text-muted"
+        style={entradaDe(ordemContatos + 1)}
+      >
         <a
           href={inerte ? undefined : 'https://www.vertix.studio'}
           target="_blank"

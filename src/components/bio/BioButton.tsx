@@ -11,7 +11,13 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { destinoFinal } from './bioLinks'
+import {
+  ENTRADA_BASE_S,
+  ENTRADA_PASSO_S,
+  ICONE_BASE_S,
+  ICONE_PASSO_S,
+  destinoFinal,
+} from './bioLinks'
 import type { BioLink } from './bioLinks'
 import { registrarClique } from './bioData'
 
@@ -63,12 +69,6 @@ interface BioButtonProps {
   ordem?: number
 }
 
-/** Quando a marca termina de entrar e os botões podem começar. */
-const ENTRADA_BASE_S = 1.35
-const ENTRADA_PASSO_S = 0.12
-/** Ícones da grade se desenham um por vez, depois de o card entrar. */
-const ICONE_BASE_S = 1.9
-const ICONE_PASSO_S = 0.35
 
 export default function BioButton({ link, inerte = false, ordem = 0 }: BioButtonProps) {
   const prefersReducedMotion = useReducedMotion()
