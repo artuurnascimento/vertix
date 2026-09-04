@@ -659,3 +659,50 @@ body {
     display: none;
   }
 }
+
+/* Seta do botão do destaque: uma sai pelo canto superior direito enquanto a
+   outra entra pelo inferior esquerdo. As duas são iguais, então no reinício
+   do laço a troca é invisível. Só transform e opacity. */
+.vx-seta-sai {
+  animation: vx-seta-sai 2.6s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+
+.vx-seta-entra {
+  animation: vx-seta-entra 2.6s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+
+@keyframes vx-seta-sai {
+  0%,
+  58% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  80%,
+  100% {
+    transform: translate(24px, -24px);
+    opacity: 0;
+  }
+}
+
+@keyframes vx-seta-entra {
+  0%,
+  58% {
+    transform: translate(-24px, 24px);
+    opacity: 0;
+  }
+  80%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-seta-sai,
+  .vx-seta-entra {
+    animation: none;
+  }
+  .vx-seta-entra {
+    opacity: 0;
+  }
+}
