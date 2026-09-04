@@ -28,6 +28,9 @@ import type { BioLink } from '../components/bio/bioLinks'
 
 type BioLinkRow = Tables<'bio_links'>
 
+/** Referência estável enquanto a consulta não respondeu (evita recalcular). */
+const VAZIO: BioLinkRow[] = []
+
 const FORMATO_PILL: Record<string, string> = {
   destaque: 'border-accent/30 bg-accent/10 text-accent',
   largo: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300',
@@ -112,7 +115,7 @@ export default function Bio() {
     onSuccess: invalidar,
   })
 
-  const lista = links ?? []
+  const lista = links ?? VAZIO
 
   const previa = useMemo(
     () => linksVisiveis(lista.map(paraBioLink), new Date()),
