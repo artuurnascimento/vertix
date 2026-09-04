@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   CLIENT_ORIGENS,
+  bioLinkFormToPayload,
+  bioLinkSchema,
   clientFormToPayload,
   clientSchema,
 } from './schemas'
-import type { ClientFormValues } from './schemas'
+import type { BioLinkFormValues, ClientFormValues } from './schemas'
 
 const VALID_VALUES: ClientFormValues = {
   nome: 'Marina Duarte',
@@ -102,5 +104,87 @@ describe('clientFormToPayload', () => {
       telefone: null,
       origem: null,
     })
+  })
+})
+
+describe('bioLinkSchema', () => {
+  const VALIDO: BioLinkFormValues = {
+    rotulo: 'Loja Shopify',
+    descricao: 'Do zero ou migração',
+    icone: 'store',
+    formato: 'grade',
+    tipo_destino: 'whatsapp',
+    destino: '(62) 99607-6194',
+    mensagem: 'Oi, Vertix!',
+    ativo: true,
+  }
+
+  it('aceita um botão de conversa completo', () => {
+    expect(bioLinkSchema.safeParse(VALIDO).success).toBe(true)
+  })
+
+  it('exige o texto do botão', () => {
+    const result = bioLinkSchema.safeParse({ ...VALIDO, rotulo: '  ' })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toEqual(['rotulo'])
+    }
+  })
+
+  it('recusa ligar um botão sem destino', () => {
+    const result = bioLinkSchema.safeParse({ ...VALIDO, destino: '', ativo: true })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        'Informe o destino para poder ligar o botão.'
+      )
+    }
+  })
+
+  it('aceita botão desligado sem destino (campanha em preparo)', () => {
+    const result = bioLinkSchema.safeParse({ ...VALIDO, destino: '', ativo: false })
+    expect(result.success).toBe(true)
+  })
+
+  it('recusa número de telefone curto demais', () => {
+    const result = bioLinkSchema.safeParse({ ...VALIDO, destino: '99607' })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toEqual(['destino'])
+    }
+  })
+
+  it('recusa endereço sem protocolo e aceita com https', () => {
+    const semProtocolo = { ...VALIDO, tipo_destino: 'url' as const, destino: 'vertix.studio' }
+    expect(bioLinkSchema.safeParse(semProtocolo).success).toBe(false)
+    expect(
+      bioLinkSchema.safeParse({ ...semProtocolo, destino: 'https://vertix.studio' })
+        .success
+    ).toBe(true)
+  })
+
+  it('recusa formato fora dos três', () => {
+    expect(bioLinkSchema.safeParse({ ...VALIDO, formato: 'gigante' }).success).toBe(
+      false
+    )
+  })
+})
+
+describe('bioLinkFormToPayload', () => {
+  it('converte campos opcionais vazios em null', () => {
+    const payload = bioLinkFormToPayload({
+      rotulo: 'Projetos',
+      descricao: '',
+      icone: '',
+      formato: 'grade',
+      tipo_destino: 'url',
+      destino: 'https://www.vertix.studio',
+      mensagem: '',
+      ativo: true,
+    })
+    expect(payload.descricao).toBeNull()
+    expect(payload.icone).toBeNull()
+    expect(payload.mensagem).toBeNull()
+    expect(payload.destino).toBe('https://www.vertix.studio')
   })
 })

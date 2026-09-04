@@ -13,7 +13,13 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 10_000 },
   use: {
-    baseURL: 'http://localhost:5175',
+    // E2E_BASE_URL permite apontar para outra porta sem editar o config
+    // (útil quando a 5175 já está ocupada por outra sessão de trabalho).
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5175',
+    // E2E_CHANNEL=chrome usa o Chrome da máquina, para quem não baixou os
+    // navegadores do Playwright (npx playwright install). Vale para todos os
+    // projetos, inclusive o de setup.
+    ...(process.env.E2E_CHANNEL ? { channel: process.env.E2E_CHANNEL } : {}),
     trace: 'on-first-retry',
   },
   projects: [

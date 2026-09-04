@@ -28,6 +28,7 @@ const Trafego = lazy(() => import('./pages/Trafego'))
 const Lojas = lazy(() => import('./pages/Lojas'))
 const LeadsRaiox = lazy(() => import('./pages/LeadsRaiox'))
 const VertixScan = lazy(() => import('./pages/VertixScan'))
+const BioAdmin = lazy(() => import('./pages/Bio'))
 const BriefingForm = lazy(() => import('./pages/public/BriefingForm'))
 const Proposta = lazy(() => import('./pages/public/Proposta'))
 const Portal = lazy(() => import('./pages/public/Portal'))
@@ -112,6 +113,7 @@ export default function App() {
           <Route path="lojas" element={<Lojas />} />
           <Route path="leads-raiox" element={<LeadsRaiox />} />
           <Route path="scan" element={<VertixScan />} />
+          <Route path="bio" element={<BioAdmin />} />
         </Route>
       </Route>
 
