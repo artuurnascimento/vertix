@@ -101,8 +101,16 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         ))}
         {grade.length > 0 && (
           <div className="grid grid-cols-2 gap-[clamp(10px,2.2vh,20px)]">
-            {grade.map((link) => (
-              <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
+            {grade.map((link, i) => (
+              <BioButton
+                key={link.id}
+                link={link}
+                inerte={inerte}
+                ordem={ordemDe(link)}
+                // Xadrez em duas colunas: violeta em (linha par, coluna par) e
+                // (linha ímpar, coluna ímpar); branco nas outras.
+                iconeViolet={(i % 2 === 0) === (Math.floor(i / 2) % 2 === 0)}
+              />
             ))}
           </div>
         )}
