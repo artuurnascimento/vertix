@@ -11,6 +11,9 @@ import type { BioLink } from './bioLinks'
  * console renderizam este mesmo componente com listas de origens diferentes.
  */
 
+/** Linha curta abaixo da marca. */
+const DESCRICAO = 'Links úteis'
+
 const INSTAGRAM_URL = 'https://instagram.com/byvertix'
 const EMAIL_CONTATO = 'contato@vertix.studio'
 
@@ -43,6 +46,7 @@ interface BioConteudoProps {
 export default function BioConteudo({ links, inerte = false }: BioConteudoProps) {
   const { destaque, largos, grade } = agrupaPorFormato(links)
   const marcaRef = useRef<HTMLElement>(null)
+  const linhaRef = useRef<HTMLSpanElement>(null)
 
   // Abertura: a marca nasce no centro da tela, se desenha ali e sobe até o
   // lugar dela. A distância depende da altura de cada aparelho, então é
@@ -62,6 +66,16 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
       el.style.setProperty('--marca-desloc', `${Math.round(desloc)}px`)
     }
     el.classList.add('vx-marca-centro')
+
+    // Enquanto a palavra não entrou, o símbolo sozinho fica centralizado:
+    // a linha começa deslocada em metade da largura da palavra (mais o vão)
+    // e desliza para o lugar quando ela aparece.
+    const linha = linhaRef.current
+    const simbolo = linha?.firstElementChild
+    if (linha && simbolo) {
+      const desvio = (linha.getBoundingClientRect().width - simbolo.getBoundingClientRect().width) / 2
+      linha.style.setProperty('--marca-desvio', `${Math.round(desvio)}px`)
+    }
   }, [inerte])
 
   // Contatos e rodapé entram por último, depois de todos os botões.
@@ -74,9 +88,11 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
 
   return (
     <div className="flex flex-col items-center">
-      {/* Marca animada, a mesma abertura do painel: as lâminas do símbolo se
-          desenham subindo ao vértice e a palavra entra com o "I" em indigo. */}
+      {/* Marca animada no formato horizontal: símbolo à esquerda se desenha
+          subindo ao vértice, a palavra entra ao lado com o "I" em indigo e a
+          descrição aparece por último, abaixo. */}
       <header ref={marcaRef} className="flex flex-col items-center text-center">
+        <span ref={linhaRef} className="vx-marca-linha flex items-center gap-3">
         <svg
           viewBox="0 0 132 162"
           className="vx-bio-marca-simbolo"
@@ -105,6 +121,8 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
         <h1 className="vx-bio-marca-word font-kanit">
           VERT<span className="vx-bio-marca-i">I</span>X
         </h1>
+        </span>
+        <p className="vx-bio-marca-desc font-kanit">{DESCRICAO}</p>
       </header>
 
       <div className="mt-3 flex w-full flex-col gap-2.5">
