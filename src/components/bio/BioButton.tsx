@@ -150,10 +150,13 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
     <motion.a
       {...comum}
       {...animacao}
-      className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-surface-1 p-4 text-center transition-colors duration-200 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="vx-borda-degrade flex flex-col items-center gap-3.5 rounded-xl p-5 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 text-accent">
-        <IconeDoLink nome={link.icone} className="h-4 w-4" />
+      <span
+        className="vx-icone-flutua flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent ring-1 ring-accent/20"
+        style={{ animationDelay: `-${(link.posicao / 10) % 4 * 0.9}s` }}
+      >
+        <IconeDoLink nome={link.icone} className="h-7 w-7" />
       </span>
       <span>
         <span className="block text-sm font-semibold leading-tight text-ink">

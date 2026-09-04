@@ -433,3 +433,56 @@ body {
   }
 }
 
+
+/* -----------------------------------------------------------------------------
+   Cards da grade do link de bio
+   -------------------------------------------------------------------------- */
+
+/* Borda em degradê roxo: o fundo sólido preenche a caixa interna e o degradê
+   ocupa a faixa da borda. Estática — sem animação, sem canvas. */
+.vx-borda-degrade {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#151515, #151515) padding-box,
+    linear-gradient(135deg, rgba(108, 91, 242, 0.9), rgba(108, 91, 242, 0.12))
+      border-box;
+}
+
+.vx-borda-degrade:hover {
+  background:
+    linear-gradient(#1c1c1c, #1c1c1c) padding-box,
+    linear-gradient(135deg, rgba(169, 158, 247, 1), rgba(108, 91, 242, 0.3))
+      border-box;
+}
+
+/* Ícone flutuando devagar. O atraso vem do próprio card, para os quatro não
+   subirem juntos. */
+.vx-icone-flutua {
+  animation: vx-icone-flutuar 3.6s ease-in-out infinite;
+}
+
+@keyframes vx-icone-flutuar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* No toque ou passagem do mouse o ícone cresce um pouco. */
+.vx-borda-degrade:hover .vx-icone-flutua {
+  transform: scale(1.08);
+  animation-play-state: paused;
+  transition: transform 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-icone-flutua {
+    animation: none;
+  }
+  .vx-borda-degrade:hover .vx-icone-flutua {
+    transform: none;
+  }
+}
