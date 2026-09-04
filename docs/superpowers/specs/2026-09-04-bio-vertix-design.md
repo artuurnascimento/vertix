@@ -57,15 +57,34 @@ irmão do que já existe, aplicado à raiz.
 - Se o host for `bio.vertix.studio`, renderiza a página do bio.
 - Em qualquer outro host, renderiza o login exatamente como hoje.
 
+A decisão não fica embutida no componente. Ela vira uma função pura em
+`src/lib/publicUrls.ts`, `ehHostBio(hostname)`, que recebe o nome do host como
+argumento em vez de ler o navegador por dentro. O motivo é testabilidade: hoje
+`isPublicLinkHost()` lê `window.location` diretamente
+(`src/lib/publicUrls.ts:17`) e, por isso, não há um único teste no projeto
+cobrindo resolução por domínio. A função nova é testável sem simular navegador.
+
+**Rota explícita além do domínio.** O bio também responde em `/bio`, em qualquer
+host. Isso não é um atalho de teste, é o padrão que o projeto já usa: o comentário
+em `src/pages/public/HostToken.tsx:10` registra que as rotas longas continuam
+valendo ao lado do atalho por domínio. É por essa rota que o roteiro de ponta a
+ponta entra, já que a suíte aponta para um endereço local fixo e não tem como
+resolver o domínio de produção.
+
 **Alterações:**
 
 - `src/App.tsx:110` — a rota `/` passa a apontar para `HostRoot` em vez de `Login`.
 - `src/lib/publicUrls.ts` — adicionar `BIO_PUBLIC_BASE = 'https://bio.vertix.studio'` e
-  incluir `bio.vertix.studio` em `PUBLIC_LINK_HOSTS`, para que o painel não tente rodar
-  nesse host e para que a política de segurança seja aplicada separadamente.
-- `vercel.json` — novo bloco de cabeçalhos com condição `has: [{type: host, value:
-  bio.vertix.studio}]`, no mesmo formato do bloco que já existe para o host de pagamento,
-  e exclusão desse host do bloco de política estrita do painel.
+  incluir `bio.vertix.studio` em `PUBLIC_LINK_HOSTS`. Isso dá dois comportamentos certos
+  de uma vez: o painel não tenta rodar nesse host, e a abertura animada da marca não
+  aparece para o visitante, porque a condição em `src/App.tsx:56` já a suprime nos hosts
+  públicos.
+- `vercel.json` — **nenhuma mudança**. Isto corrige a versão anterior deste documento,
+  que previa um bloco novo de cabeçalhos. O bloco estrito atual vale para todo host
+  exceto o de pagamento, e a política dele já libera exatamente o que o bio usa: o
+  próprio domínio, as fontes do Google e o banco. O bloco permissivo existe só por causa
+  do meio de pagamento, e o bio não tem nada disso. Herdar o estrito é mais seguro e
+  menos código.
 
 ### 3.2 Peso da página
 
@@ -141,25 +160,36 @@ Todas as tabelas do banco hoje exigem membro da equipe, via `public.is_team_memb
 (`supabase/migrations/20260712181535_nucleo_operacional.sql:109`). Quem abre o bio não
 está logado, então:
 
-**Leitura dos botões.** Política adicional para visitante anônimo em `bio_links`,
-limitada aos registros ativos e dentro da vigência. Nenhuma coluna interna existe na
-tabela, então não há vazamento.
+**Corrigido após a descoberta de padrões (2026-09-04).** A versão anterior deste
+documento previa uma política de leitura para visitante anônimo em `bio_links`. Isso
+seria o único caso do tipo no banco: uma varredura das 46 migrações mostra zero políticas
+`to anon` ou `to public` em tabelas do schema principal, e o padrão declarado em
+`supabase/migrations/20260713050001_fase8_leads.sql:22` é explícito, RLS ligada sem
+política para anônimo significa bloqueio total. Treze funções com privilégio elevado
+cobrem todo o acesso público existente. O bio segue o mesmo caminho.
 
-**Escrita de evento.** Não há política de inserção para anônimo. O registro passa por
-uma função no banco com privilégio elevado, `public.registrar_evento_bio(...)`, com
-execução concedida a anônimo e autenticado. A função:
+**Leitura dos botões.** Sem política para anônimo. Uma função,
+`public.get_bio_links()`, devolve apenas os botões ativos e dentro da vigência, já
+ordenados. Execução revogada de `public` e concedida a `anon` e `authenticated`, no
+formato usado por `public.track_utm_visit` em
+`supabase/migrations/20260714100001_utm_tracking.sql:136`.
+
+**Escrita de evento.** Também por função, `public.registrar_evento_bio(...)`. Ela:
 
 - Aceita apenas `visita` ou `clique`.
+- Exige identificador de sessão entre 8 e 64 caracteres, como a função de campanha faz.
 - Para clique, confere que o botão existe e está ativo.
-- Recusa a inserção quando aquela sessão já gravou mais de 30 eventos na última hora.
-- Não devolve nada além de sucesso.
+- Trava por sessão com `pg_advisory_xact_lock` e devolve `{ok: true, throttled: true}`
+  sem gravar quando aquela sessão passou de 30 eventos na última hora. O retorno é
+  silencioso de propósito, seguindo
+  `supabase/migrations/20260728120002_rate_limits.sql:197`, para não dar pista a quem
+  estiver sondando nem quebrar a página por causa de medição.
 
-O motivo de não abrir inserção direta: qualquer pessoa com a chave pública do navegador
-poderia inflar os números e envenenar a decisão de qual atalho funciona. Existe
-precedente do mesmo mecanismo no site institucional, que grava visita de campanha por
-função em vez de escrita direta.
+O motivo de não abrir escrita direta: qualquer pessoa com a chave pública do navegador
+poderia inflar os números e envenenar a decisão de qual atalho funciona.
 
-**Leitura de evento.** Só equipe. O visitante escreve e nunca lê.
+**Políticas nas tabelas.** Apenas as quatro do time, com `public.is_team_member()`, no
+formato do template. O visitante nunca lê nem escreve direto.
 
 ## 5. Componentes
 
