@@ -388,3 +388,47 @@ body {
     animation: none;
   }
 }
+
+/* =============================================================================
+   Fundo do link de bio — mesmas camadas do hero do Vertix Scan
+   (raiox-vertix/web/src/index.css: .vx-atmosphere e .vx-hero-bg), para as duas
+   superfícies públicas da Vertix parecerem a mesma marca. A grade de 44px é a
+   mesma que os feixes de luz percorrem.
+   ========================================================================== */
+
+.vx-bio-atmosfera {
+  background-image:
+    radial-gradient(
+      ellipse 700px 480px at 50% -10%,
+      rgba(108, 91, 242, 0.14),
+      transparent 65%
+    ),
+    linear-gradient(rgba(244, 244, 240, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 244, 240, 0.022) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    44px 44px,
+    44px 44px;
+}
+
+/* Entrada do radial: cresce e aparece, como no hero do Scan. */
+.vx-bio-fundo {
+  opacity: 0;
+  transform: scale(1.18);
+  animation: vx-bio-fundo-in 1600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes vx-bio-fundo-in {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-bio-fundo {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import BioConteudo from '../../components/bio/BioConteudo'
-import NoiseBackground from '../../components/ui/NoiseBackground'
+import VertixBackground from '../../components/ui/VertixBackground'
 import { buscarBioLinks, registrarVisita } from '../../components/bio/bioData'
 
 /**
@@ -15,7 +15,7 @@ const TITULO = 'Vertix — atalhos rápidos'
 function Casca({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen px-5 py-10 font-kanit sm:py-14">
-      <NoiseBackground />
+      <VertixBackground />
       <main className="relative mx-auto w-full max-w-sm">{children}</main>
     </div>
   )
