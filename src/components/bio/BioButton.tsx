@@ -14,6 +14,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { destinoFinal } from './bioLinks'
 import type { BioLink } from './bioLinks'
 import { registrarClique } from './bioData'
+import BorderBeam from '../ui/BorderBeam'
 
 /**
  * Um botão do link de bio, nos três formatos. O formato vem do banco, então a
@@ -135,8 +136,10 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
     <motion.a
       {...comum}
       {...animacao}
-      className="flex flex-col gap-3 rounded-xl border border-white/10 bg-surface-1 p-4 transition-colors duration-200 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="relative flex flex-col gap-3 rounded-xl border border-white/10 bg-surface-1 p-4 transition-colors duration-200 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
+      {/* Atraso derivado da posição: cards vizinhos não giram em sincronia. */}
+      <BorderBeam delay={(link.posicao / 10) % 4 * 3} />
       <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 text-accent">
         <IconeDoLink nome={link.icone} className="h-4 w-4" />
       </span>
