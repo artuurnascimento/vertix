@@ -11,8 +11,8 @@ import type { BioLink } from './bioLinks'
  * console renderizam este mesmo componente com listas de origens diferentes.
  */
 
-/** Linha curta abaixo da marca. */
-const DESCRICAO = 'Links úteis'
+/** Selo abaixo da marca: credencial + o que a Vertix faz. */
+const DESCRICAO = 'Shopify Partners · E-commerce & Sistemas'
 
 const INSTAGRAM_URL = 'https://instagram.com/byvertix'
 const EMAIL_CONTATO = 'contato@vertix.studio'
@@ -122,7 +122,10 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
           VERT<span className="vx-bio-marca-i">I</span>X
         </h1>
         </span>
-        <p className="vx-bio-marca-desc font-kanit">{DESCRICAO}</p>
+        <p className="vx-bio-marca-desc inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-kanit">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(108,91,242,0.9)]" />
+          {DESCRICAO}
+        </p>
       </header>
 
       <div className="mt-3 flex w-full flex-col gap-2.5">
