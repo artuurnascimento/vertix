@@ -433,25 +433,3 @@ body {
   }
 }
 
-/* Feixe girando na borda dos cards (BorderBeam). Gira por transform, não por
-   ângulo de degradê: animar transform funciona em qualquer navegador atual e
-   roda no compositor. */
-.vx-beam-girando {
-  animation-name: vx-beam-girar;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  transform: translate(-50%, -50%) rotate(0deg);
-  will-change: transform;
-}
-
-@keyframes vx-beam-girar {
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vx-beam-girando {
-    animation: none;
-  }
-}

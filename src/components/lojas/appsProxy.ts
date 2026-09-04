@@ -2,12 +2,16 @@ import { supabase } from '../../lib/supabase'
 
 /**
  * Cliente tipado da edge function apps-proxy — única ponte entre o painel
- * e as APIs de serviço dos apps Shopify (Recover/Reviews). Os tokens de
- * serviço vivem só nos secrets da function; aqui trafega apenas o JWT do
+ * e as APIs de serviço dos apps próprios (Recover/Reviews/Scan). Os tokens
+ * de serviço vivem só nos secrets da function; aqui trafega apenas o JWT do
  * usuário logado (anexado pelo supabase-js).
  */
 
+/** Apps por loja Shopify (aparecem no módulo Lojas). */
 export type AppProduto = 'recover' | 'reviews'
+
+/** Todos os apps atendidos pelo apps-proxy (Scan não é app por loja). */
+export type AppVertix = AppProduto | 'scan'
 
 export const PRODUTOS: AppProduto[] = ['recover', 'reviews']
 
@@ -51,7 +55,7 @@ export interface VertixSettings {
 }
 
 interface ProxyRequest {
-  app: AppProduto
+  app: AppVertix
   method: 'GET' | 'PATCH' | 'POST'
   path: string
   body?: unknown

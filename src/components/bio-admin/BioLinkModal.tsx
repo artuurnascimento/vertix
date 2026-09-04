@@ -32,6 +32,7 @@ interface BioLinkModalProps {
 type FieldErrors = Partial<Record<keyof BioLinkFormValues, string>>
 
 const ICONES_SUGERIDOS = [
+  'whatsapp',
   'radar',
   'message-circle',
   'store',
