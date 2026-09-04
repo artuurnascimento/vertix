@@ -88,26 +88,8 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
       <motion.a
         {...comum}
         {...animacao}
-        className="vx-vidro group relative block overflow-hidden rounded-[26px] p-5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="block rounded-2xl border border-accent bg-gradient-to-br from-[#241A5E] to-accent-2 p-4 text-left transition-shadow duration-200 hover:shadow-[0_16px_40px_-16px_rgba(108,91,242,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        {/* Reflexo no topo e brilho especular no canto, como o vidro do iOS. */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -left-10 -top-16 h-44 w-64 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.28),transparent)]"
-        />
-        {/* Aro de refração do Liquid Glass: faixa na borda que refrata o
-            fundo e carrega os reflexos especulares em arco. A luz gira um
-            pouco ao passar o mouse, como se o card inclinasse. */}
-        <span
-          aria-hidden
-          className="vx-liquid-aro pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
-        >
-          <span className="vx-liquid-luz absolute left-1/2 top-1/2 aspect-square w-[220%]" />
-        </span>
         {link.chamada && (
           <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
             {link.chamada}
@@ -121,12 +103,9 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
             {link.descricao}
           </span>
         )}
-        <span className="vx-botao-vidro mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-bg">
+        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-1.5 text-sm font-semibold text-bg">
           {link.texto_botao?.trim() || 'Quero saber'}
-          <ArrowUpRight
-            className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-            aria-hidden="true"
-          />
+          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
         </span>
       </motion.a>
     )

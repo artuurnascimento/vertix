@@ -59,23 +59,7 @@ export default function BioConteudo({ links, inerte = false }: BioConteudoProps)
 
       <div className="mt-5 flex w-full flex-col gap-2.5">
         {destaque.map((link) => (
-          <div key={link.id} className="relative">
-            {/* Luzes atrás do vidro: sem elas o desfoque não tem o que
-                desfocar e o efeito some no fundo escuro. */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -left-6 -top-8 h-40 w-40 rounded-full bg-accent/70 blur-3xl"
-            />
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -bottom-10 -right-4 h-36 w-44 rounded-full bg-[#C4B5FD]/50 blur-3xl"
-            />
-            <span
-              aria-hidden
-              className="pointer-events-none absolute left-1/3 top-1/2 h-24 w-24 rounded-full bg-white/25 blur-2xl"
-            />
-            <BioButton link={link} inerte={inerte} />
-          </div>
+          <BioButton key={link.id} link={link} inerte={inerte} />
         ))}
         {largos.map((link) => (
           <BioButton key={link.id} link={link} inerte={inerte} />
