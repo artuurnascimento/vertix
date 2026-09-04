@@ -476,11 +476,59 @@ body {
     /* assenta o card na página */
     0 24px 60px -18px rgba(0, 0, 0, 0.7),
     0 12px 40px -16px rgba(108, 91, 242, 0.6);
-  -webkit-backdrop-filter: blur(34px) saturate(190%) brightness(1.08);
-  backdrop-filter: blur(34px) saturate(190%) brightness(1.08);
+  /* Liquid Glass é lente, não neblina: desfoque moderado no centro para o
+     fundo continuar reconhecível; a refração fica por conta do aro. */
+  -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.06);
+  backdrop-filter: blur(16px) saturate(190%) brightness(1.06);
   transition:
     border-color 200ms ease,
     box-shadow 250ms ease;
+}
+
+/* Aro de refração: só a faixa de 9px da borda sobra (mask exclude). Ela
+   filtra o fundo com desfoque menor e mais brilho que o centro, o que lê
+   como a luz curvando na espessura do vidro. */
+.vx-liquid-aro {
+  padding: 9px;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  -webkit-backdrop-filter: blur(3px) brightness(1.35) saturate(1.6);
+  backdrop-filter: blur(3px) brightness(1.35) saturate(1.6);
+}
+
+/* Reflexos especulares em arco: um forte no canto superior esquerdo e um
+   menor no inferior direito, como uma peça de vidro pegando luz. Gira por
+   transform ao passar o mouse — sem @property, funciona em qualquer navegador. */
+.vx-liquid-luz {
+  transform: translate(-50%, -50%) rotate(0deg);
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(255, 255, 255, 0) 108deg,
+    rgba(255, 255, 255, 0.55) 140deg,
+    rgba(255, 255, 255, 0) 176deg,
+    rgba(255, 255, 255, 0) 286deg,
+    rgba(255, 255, 255, 0.98) 322deg,
+    rgba(255, 255, 255, 0) 356deg,
+    rgba(255, 255, 255, 0) 360deg
+  );
+}
+
+.vx-vidro:hover .vx-liquid-luz {
+  transform: translate(-50%, -50%) rotate(26deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-liquid-luz {
+    transition: none;
+  }
 }
 
 .vx-vidro:hover {

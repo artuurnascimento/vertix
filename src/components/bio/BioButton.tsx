@@ -99,6 +99,15 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
           aria-hidden
           className="pointer-events-none absolute -left-10 -top-16 h-44 w-64 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.28),transparent)]"
         />
+        {/* Aro de refração do Liquid Glass: faixa na borda que refrata o
+            fundo e carrega os reflexos especulares em arco. A luz gira um
+            pouco ao passar o mouse, como se o card inclinasse. */}
+        <span
+          aria-hidden
+          className="vx-liquid-aro pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
+        >
+          <span className="vx-liquid-luz absolute left-1/2 top-1/2 aspect-square w-[220%]" />
+        </span>
         {link.chamada && (
           <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
             {link.chamada}
