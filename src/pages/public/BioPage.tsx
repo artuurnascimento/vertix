@@ -6,7 +6,7 @@ import VertixBackground from '../../components/ui/VertixBackground'
 import { buscarBioLinks, registrarVisita } from '../../components/bio/bioData'
 
 /**
- * Página pública do link de bio (bio.vertix.studio e /bio em qualquer host).
+ * Página pública do link de bio (vertix.bio e /bio em qualquer host).
  * Atalhos rápidos: o visitante deve chegar ao WhatsApp em um toque.
  */
 

@@ -1,4 +1,4 @@
-# Plano de implementação — link de bio `bio.vertix.studio`
+# Plano de implementação — link de bio `vertix.bio`
 
 Data: 2026-09-04
 Especificação: `docs/superpowers/specs/2026-09-04-bio-vertix-design.md`

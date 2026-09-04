@@ -7,7 +7,7 @@ const BioPage = lazy(() => import('./BioPage'))
 
 /**
  * Rota raiz "/" — o domínio decide o que aparece, irmão de HostToken:
- *   bio.vertix.studio/  → link de bio
+ *   vertix.bio/  → link de bio
  *   qualquer outro host → login do painel, como sempre foi
  * A rota longa /bio continua valendo em qualquer host, igual a /p/:token
  * conviver com go.vertix.studio/<token>.

@@ -91,7 +91,7 @@ export default function App() {
       <Route path="/nps/:token" element={<NpsSurvey />} />
       <Route path="/pagar/:token" element={<PagarPage />} />
       {/* Link de bio: rota longa válida em qualquer host (a raiz de
-          bio.vertix.studio cai aqui pelo HostRoot, lá embaixo). */}
+          vertix.bio cai aqui pelo HostRoot, lá embaixo). */}
       <Route path="/bio" element={<BioRoute />} />
 
       <Route element={<ProtectedRoute />}>
@@ -117,7 +117,7 @@ export default function App() {
         </Route>
       </Route>
 
-      {/* Raiz: o host decide — bio.vertix.studio mostra o link de bio, os
+      {/* Raiz: o host decide — vertix.bio mostra o link de bio, os
           demais mostram o login (autenticado vai para /admin pelo Login). */}
       <Route path="/" element={<HostRoot />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />

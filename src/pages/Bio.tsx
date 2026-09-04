@@ -146,7 +146,7 @@ export default function Bio() {
             Link de bio
           </h1>
           <p className="mt-2 max-w-xl text-sm font-light text-muted">
-            Os atalhos de bio.vertix.studio. Editar aqui muda a página na hora,
+            Os atalhos de vertix.bio. Editar aqui muda a página na hora,
             sem publicar de novo.
           </p>
         </div>

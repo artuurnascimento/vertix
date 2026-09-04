@@ -31,3 +31,6 @@ coverage/
 playwright-report/
 test-results/
 e2e/.auth/
+
+# grafo de codigo gerado localmente
+graphify-out/

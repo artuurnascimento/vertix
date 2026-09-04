@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { BIO_HOST, PUBLIC_LINK_HOSTS, ehHostBio } from './publicUrls'
+import { BIO_HOSTS, PUBLIC_LINK_HOSTS, ehHostBio } from './publicUrls'
 
 describe('ehHostBio', () => {
-  test('reconhece o host do link de bio', () => {
-    expect(ehHostBio(BIO_HOST)).toBe(true)
+  test('reconhece o domínio raiz e o www do link de bio', () => {
+    expect(ehHostBio('vertix.bio')).toBe(true)
+    expect(ehHostBio('www.vertix.bio')).toBe(true)
   })
 
   test('recusa os outros hosts públicos e o painel', () => {
@@ -14,13 +15,14 @@ describe('ehHostBio', () => {
   })
 
   test('não aceita subdomínio parecido nem sufixo de outro domínio', () => {
-    expect(ehHostBio('bio.vertix.studio.evil.com')).toBe(false)
-    expect(ehHostBio('xbio.vertix.studio')).toBe(false)
+    expect(ehHostBio('vertix.bio.evil.com')).toBe(false)
+    expect(ehHostBio('bio.vertix.studio')).toBe(false)
+    expect(ehHostBio('xvertix.bio')).toBe(false)
   })
 })
 
 describe('PUBLIC_LINK_HOSTS', () => {
-  test('inclui o bio, para o painel não rodar nele', () => {
-    expect(PUBLIC_LINK_HOSTS).toContain(BIO_HOST)
+  test('inclui os hosts do bio, para o painel não rodar neles', () => {
+    for (const host of BIO_HOSTS) expect(PUBLIC_LINK_HOSTS).toContain(host)
   })
 })

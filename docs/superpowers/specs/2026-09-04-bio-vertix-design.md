@@ -1,11 +1,11 @@
-# Link de bio da Vertix — `bio.vertix.studio`
+# Link de bio da Vertix — `vertix.bio`
 
 Data: 2026-09-04
 Status: aprovado no brainstorm, pronto para virar plano de implementação
 
 ## 1. Objetivo
 
-Publicar um link de bio da Vertix em `bio.vertix.studio`: uma página única, leve, com
+Publicar um link de bio da Vertix em `vertix.bio`: uma página única, leve, com
 atalhos rápidos para o que a Vertix vende, editável pelo painel administrativo e com
 medição de cliques por botão.
 
@@ -33,7 +33,7 @@ Deliberadamente não entram nesta versão, por não servirem ao objetivo:
 | Decisão | Escolha | Por quê |
 |---|---|---|
 | Estrutura da página | Isca em destaque | O Vertix Scan já é a máquina de lead e captura nome e WhatsApp |
-| Domínio | `bio.vertix.studio` | Curto, e o padrão de host público já existe no deploy |
+| Domínio | `vertix.bio` | Curto, e o padrão de host público já existe no deploy |
 | Hospedagem | Quarto host do deploy do vertix-admin | Acesso direto ao banco onde os botões vivem, sem proxy nem CORS, sem duplicar design |
 | Destino dos atalhos | Misto | Loja e Sistemas viram conversa; Landing page e Projetos precisam de contexto antes |
 | Edição do conteúdo | No painel, via banco | Campanha muda com frequência e não deve depender de deploy |
@@ -54,7 +54,7 @@ irmão do que já existe, aplicado à raiz.
 
 **Novo:** `src/pages/public/HostRoot.tsx`
 
-- Se o host for `bio.vertix.studio`, renderiza a página do bio.
+- Se o host for `vertix.bio`, renderiza a página do bio.
 - Em qualquer outro host, renderiza o login exatamente como hoje.
 
 A decisão não fica embutida no componente. Ela vira uma função pura em
@@ -74,8 +74,8 @@ resolver o domínio de produção.
 **Alterações:**
 
 - `src/App.tsx:110` — a rota `/` passa a apontar para `HostRoot` em vez de `Login`.
-- `src/lib/publicUrls.ts` — adicionar `BIO_PUBLIC_BASE = 'https://bio.vertix.studio'` e
-  incluir `bio.vertix.studio` em `PUBLIC_LINK_HOSTS`. Isso dá dois comportamentos certos
+- `src/lib/publicUrls.ts` — adicionar `BIO_PUBLIC_BASE = 'https://vertix.bio'` e
+  incluir `vertix.bio` em `PUBLIC_LINK_HOSTS`. Isso dá dois comportamentos certos
   de uma vez: o painel não tenta rodar nesse host, e a abertura animada da marca não
   aparece para o visitante, porque a condição em `src/App.tsx:56` já a suprime nos hosts
   públicos.
@@ -302,7 +302,7 @@ gerado. A suíte já roda com autenticação preparada e um trabalhador só.
 
 Fora do código, precisam acontecer para o link ficar no ar:
 
-1. Apontar `bio.vertix.studio` para o projeto na Vercel e emitir o certificado.
+1. Apontar `vertix.bio` para o projeto na Vercel e emitir o certificado.
 2. Aplicar a migração no banco de produção.
 3. Regenerar os tipos do banco.
 
