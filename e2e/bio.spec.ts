@@ -30,8 +30,13 @@ test.describe('página pública do bio', () => {
     const loja = page.getByRole('link', { name: /Loja Shopify/i })
     await expect(loja).toHaveAttribute('href', /wa\.me\/\d+\?text=/)
 
-    // O destaque nasce desligado (o Scan ainda não tem servidor publicado).
-    await expect(page.getByText('Sua loja aguenta um scan?')).toHaveCount(0)
+    // Nenhum botão exibido pode levar a lugar nenhum. A regra de esconder o
+    // que está desligado ou sem destino é coberta em bioLinks.test.ts; aqui
+    // não se afirma nada sobre um botão específico, que é conteúdo editável.
+    const semDestino = await page
+      .locator('main a[href=""], main a:not([href])')
+      .count()
+    expect(semDestino).toBe(0)
   })
 })
 
