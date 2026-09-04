@@ -113,7 +113,7 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
           </span>
         )}
         {/* Uma linha só: tamanho fluido pela largura da tela, sem quebra. */}
-        <span className="vx-scan-titulo mt-1.5 block font-kanit font-bold leading-[1.1] tracking-tight text-ink">
+        <span className="vx-scan-titulo mt-1 block font-kanit font-bold leading-[1.05] tracking-tight text-ink">
           {link.rotulo}
         </span>
         {link.descricao && (
@@ -121,7 +121,7 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
             {link.descricao}
           </span>
         )}
-        <span className="mt-2.5 flex items-center justify-between gap-2.5">
+        <span className="mt-2 flex items-center justify-between gap-2.5">
           <span className="vx-btn-roxo relative flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl px-4">
             <span className="whitespace-nowrap font-kanit text-[15px] font-extrabold uppercase tracking-[0.08em] text-white">
               {link.texto_botao?.trim() || 'Quero saber'}

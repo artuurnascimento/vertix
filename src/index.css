@@ -611,7 +611,8 @@ body {
    com teto no desktop. Sem quebra; o card corta qualquer sobra. */
 .vx-scan-titulo {
   white-space: nowrap;
-  font-size: clamp(15px, 4.55vw, 22px);
+  /* 5.3vw ≈ 19.9px a 375 de largura: o maior tamanho que cabe com folga. */
+  font-size: clamp(15px, 5.3vw, 24px);
 }
 
 
