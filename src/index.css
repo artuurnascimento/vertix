@@ -463,8 +463,8 @@ body {
    -------------------------------------------------------------------------- */
 
 .vx-bio-marca-simbolo {
-  width: 96px;
-  height: 118px;
+  width: 80px;
+  height: 98px;
 }
 
 .vx-bio-lamina-a {
@@ -480,8 +480,8 @@ body {
 }
 
 .vx-bio-marca-word {
-  margin-top: 4px;
-  font-size: 28px;
+  margin-top: 2px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 0.34em;
   /* Compensa o tracking do último caractere para centralizar de verdade. */
