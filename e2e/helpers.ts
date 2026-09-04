@@ -6,7 +6,8 @@ export const ADMIN_STATE_PATH = 'e2e/.auth/admin.json'
 
 /** Faz login pela UI e espera aterrissar no dashboard (home do admin). */
 export async function loginAsAdmin(page: Page): Promise<void> {
-  await page.goto('/login')
+  // A tela de login é a raiz "/" — "/login" só redireciona para cá.
+  await page.goto('/')
   await page.getByLabel('Email').fill(ADMIN_EMAIL)
   await page.getByLabel('Senha').fill(ADMIN_PASSWORD)
   await page.getByRole('button', { name: 'Entrar' }).click()

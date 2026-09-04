@@ -1,23 +1,32 @@
 /**
  * apps-proxy
  *
- * Proxy autenticado entre o painel e as APIs de serviço dos apps Shopify
- * próprios ("Vertix Recover" e "Vertix Reviews"). O navegador NUNCA conhece
- * os tokens de serviço — eles vivem apenas nos secrets desta function
- * (RECOVER_API_URL/RECOVER_SERVICE_TOKEN, REVIEWS_API_URL/REVIEWS_SERVICE_TOKEN).
+ * Proxy autenticado entre o painel e as APIs de serviço dos apps próprios
+ * ("Vertix Recover", "Vertix Reviews" e "Vertix Scan"). O navegador NUNCA
+ * conhece os tokens de serviço — eles vivem apenas nos secrets desta function
+ * (RECOVER_API_URL/RECOVER_SERVICE_TOKEN, REVIEWS_API_URL/REVIEWS_SERVICE_TOKEN,
+ * SCAN_API_URL/SCAN_SERVICE_TOKEN).
  *
- * Request: POST JSON { app: 'recover'|'reviews', method: 'GET'|'PATCH'|'POST',
+ * Request: POST JSON { app: 'recover'|'reviews'|'scan',
+ *                      method: 'GET'|'PATCH'|'POST',
  *                      path: string, body?: unknown }.
  * Exige JWT de usuário autenticado que seja membro do time (checado em
  * public.profiles com service role — mesmo mecanismo do sync-ad-metrics).
  *
- * Whitelist estrita de paths (qualquer outro → 400):
+ * Whitelist estrita de paths POR APP (qualquer outro → 400):
+ *
+ * recover/reviews (apps por loja):
  *   GET   /api/vertix/health
  *   GET   /api/vertix/shops
  *   GET   /api/vertix/shops/<shop>/stats        (query from/to permitida)
  *   GET   /api/vertix/shops/<shop>/settings
  *   PATCH /api/vertix/shops/<shop>/settings
  *   POST  /api/vertix/provision
+ *
+ * scan (captação de leads — sem conceito de loja provisionada):
+ *   GET   /api/vertix/health
+ *   GET   /api/vertix/stats
+ *   GET   /api/vertix/leads                     (query limit/offset permitida)
  *
  * App sem URL/token configurado → 503 com mensagem clara. A resposta do
  * backend (status + JSON) é devolvida como veio — o front decide como
@@ -26,7 +35,7 @@
 
 import { withCors } from '../_shared/cors.ts'
 
-type AppProduto = 'recover' | 'reviews'
+type AppProduto = 'recover' | 'reviews' | 'scan'
 type ProxyMethod = 'GET' | 'PATCH' | 'POST'
 
 interface RequestBody {
@@ -53,6 +62,11 @@ const APPS: Record<AppProduto, AppConfig> = {
     urlEnv: 'REVIEWS_API_URL',
     tokenEnv: 'REVIEWS_SERVICE_TOKEN',
   },
+  scan: {
+    label: 'Scan',
+    urlEnv: 'SCAN_API_URL',
+    tokenEnv: 'SCAN_SERVICE_TOKEN',
+  },
 }
 
 /** Timeout do backend do app — evita segurar a function em backend travado. */
@@ -78,13 +92,35 @@ interface AllowedRoute {
 }
 
 /**
- * Resolve o path pedido contra a whitelist. Devolve a rota permitida ou
- * null (path fora da lista, shop inválido ou query onde não é permitida).
+ * Resolve o path pedido contra a whitelist DO APP. Devolve a rota permitida
+ * ou null (path fora da lista do app, shop inválido ou query onde não é
+ * permitida). A whitelist é por app: rotas do Scan não chegam ao Recover/
+ * Reviews e vice-versa.
  */
-function matchRoute(pathname: string, search: string): AllowedRoute | null {
+function matchRoute(
+  app: AppProduto,
+  pathname: string,
+  search: string
+): AllowedRoute | null {
   if (search !== '' && !QUERY_RE.test(search)) return null
 
-  if (pathname === '/api/vertix/health' || pathname === '/api/vertix/shops') {
+  // Health é o único path comum a todos os backends.
+  if (pathname === '/api/vertix/health') {
+    return search === '' ? { methods: ['GET'], allowQuery: false } : null
+  }
+
+  // Scan (captação de leads): só stats + leads, ambos GET.
+  if (app === 'scan') {
+    if (pathname === '/api/vertix/stats') {
+      return search === '' ? { methods: ['GET'], allowQuery: false } : null
+    }
+    if (pathname === '/api/vertix/leads') {
+      return { methods: ['GET'], allowQuery: true }
+    }
+    return null
+  }
+
+  if (pathname === '/api/vertix/shops') {
     return search === '' ? { methods: ['GET'], allowQuery: false } : null
   }
 
@@ -171,8 +207,11 @@ Deno.serve(withCors(async (req) => {
   // -- Validação do payload do proxy ----------------------------------------
 
   const app = body.app as AppProduto
-  if (app !== 'recover' && app !== 'reviews') {
-    return jsonResponse({ error: "app inválido — use 'recover' ou 'reviews'." }, 400)
+  if (app !== 'recover' && app !== 'reviews' && app !== 'scan') {
+    return jsonResponse(
+      { error: "app inválido — use 'recover', 'reviews' ou 'scan'." },
+      400
+    )
   }
 
   const method = body.method as ProxyMethod
@@ -189,7 +228,7 @@ Deno.serve(withCors(async (req) => {
   const pathname = queryIndex === -1 ? body.path : body.path.slice(0, queryIndex)
   const search = queryIndex === -1 ? '' : body.path.slice(queryIndex)
 
-  const route = matchRoute(pathname, search)
+  const route = matchRoute(app, pathname, search)
   if (!route || !route.methods.includes(method)) {
     return jsonResponse({ error: 'Path não permitido.' }, 400)
   }

@@ -410,7 +410,7 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "label": "O que seria bom ter, mas pode vir depois, em uma segunda etapa?",
     "tipo": "textarea",
     "obrigatoria": false,
-    "ajuda": "Separar o essencial do 'seria bom ter' ajuda a lançar o sistema mais rápido."
+    "ajuda": "Separar o essencial do ''seria bom ter'' ajuda a lançar o sistema mais rápido."
   },
   {
     "id": "ferramentas_atuais",
@@ -666,7 +666,7 @@ insert into public.briefing_templates (tipo_servico, perguntas) values
     "label": "No seu site atual (se tiver), o que você quer manter e o que não aguenta mais ver?",
     "tipo": "textarea",
     "obrigatoria": false,
-    "ajuda": "Ex.: 'gosto das fotos, mas o menu é confuso' — ajuda a não perder o que já funciona."
+    "ajuda": "Ex.: ''gosto das fotos, mas o menu é confuso'' — ajuda a não perder o que já funciona."
   },
   {
     "id": "concorrentes",
