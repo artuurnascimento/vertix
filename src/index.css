@@ -614,46 +614,36 @@ body {
   font-size: clamp(15px, 4.55vw, 22px);
 }
 
-/* Botão de líquido violeta (LiquidButton). A moldura em degradê vem de um
-   ::before atrás do canvas; o próprio botão sobe um pouco no hover do card. */
-.vx-liquid-btn {
-  background: #0d0b1c;
+
+/* Botão roxo do destaque: degradê da marca, brilho fino no topo, halo
+   violeta que cresce no hover do card e um brilho que atravessa uma vez. */
+.vx-btn-roxo {
+  background: linear-gradient(135deg, #7c6cf6 0%, #6c5bf2 45%, #5546e0 100%);
   box-shadow:
-    0 0 0 1px rgba(169, 158, 247, 0.28),
-    0 18px 36px -16px rgba(85, 70, 224, 0.75),
-    0 3px 9px rgba(5, 3, 15, 0.5),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 14px 30px -12px rgba(108, 91, 242, 0.85);
   transition:
     transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 250ms ease;
+    box-shadow 250ms ease,
+    filter 250ms ease;
 }
 
-.group:hover .vx-liquid-btn {
+.group:hover .vx-btn-roxo {
   transform: translateY(-2px);
+  filter: brightness(1.08);
   box-shadow:
-    0 0 0 1px rgba(169, 158, 247, 0.45),
-    0 26px 48px -16px rgba(108, 91, 242, 0.85),
-    0 4px 11px rgba(5, 3, 15, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 20px 40px -12px rgba(108, 91, 242, 1);
 }
 
-.group:active .vx-liquid-btn {
+.group:active .vx-btn-roxo {
   transform: translateY(1px) scale(0.985);
 }
 
-/* Sem WebGL: o mesmo desenho em degradê parado. */
-.vx-liquid-btn--css {
-  background: linear-gradient(
-    to top,
-    #5546e0 0%,
-    #6c5bf2 52%,
-    #a99ef7 55%,
-    #141225 56%
-  );
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .group:hover .vx-liquid-btn {
+  .group:hover .vx-btn-roxo {
     transform: none;
   }
 }

@@ -21,7 +21,6 @@ import {
 import type { BioLink } from './bioLinks'
 import { registrarClique } from './bioData'
 import BioScanIlustracao from './BioScanIlustracao'
-import LiquidButton from '../ui/LiquidButton'
 
 /**
  * Um botão do link de bio, nos três formatos. O formato vem do banco, então a
@@ -123,15 +122,15 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
           </span>
         )}
         <span className="mt-2.5 flex items-center justify-between gap-2.5">
-          <LiquidButton className="h-[54px] min-w-0 flex-1">
-            <span className="whitespace-nowrap font-kanit text-[14px] font-extrabold uppercase tracking-[0.1em] text-[#ECE9FF] drop-shadow-[0_1px_10px_rgba(20,10,60,0.85)]">
+          <span className="vx-btn-roxo relative flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-2xl px-4">
+            <span className="whitespace-nowrap font-kanit text-[15px] font-extrabold uppercase tracking-[0.08em] text-white">
               {link.texto_botao?.trim() || 'Quero saber'}
             </span>
             <ArrowUpRight
-              className="h-[18px] w-[18px] shrink-0 text-[#ECE9FF] opacity-90 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              className="h-[18px] w-[18px] shrink-0 text-white transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               aria-hidden="true"
             />
-          </LiquidButton>
+          </span>
           <BioScanIlustracao />
         </span>
       </motion.a>
