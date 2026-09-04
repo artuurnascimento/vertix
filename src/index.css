@@ -455,43 +455,80 @@ body {
       border-box;
 }
 
-/* Quem anima é o desenho do ícone, não a caixa: os ícones são feitos de
-   traço, então o contorno se redesenha em laço. O atraso vem do card (a
-   variável --atraso-traco), para os quatro não desenharem juntos. */
+/* -----------------------------------------------------------------------------
+   Abertura do link de bio — tudo entra uma vez, em sequência, sem laço:
+   1. marca (símbolo se desenha, palavra sobe) — mesmos keyframes do splash;
+   2. botões, um a um (--entrada-atraso vem do card, pela ordem na tela);
+   3. ícones da grade se desenham um por vez (--atraso-traco).
+   -------------------------------------------------------------------------- */
+
+.vx-bio-marca-simbolo {
+  width: 96px;
+  height: 118px;
+}
+
+.vx-bio-lamina-a {
+  stroke-dasharray: 270;
+  stroke-dashoffset: 270;
+  animation: vx-splash-draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.15s forwards;
+}
+
+.vx-bio-lamina-b {
+  stroke-dasharray: 145;
+  stroke-dashoffset: 145;
+  animation: vx-splash-draw 0.75s cubic-bezier(0.65, 0, 0.35, 1) 0.5s forwards;
+}
+
+.vx-bio-marca-word {
+  margin-top: 4px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  /* Compensa o tracking do último caractere para centralizar de verdade. */
+  margin-right: -0.34em;
+  color: #f4f4f0;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: vx-splash-rise 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) 1.05s forwards;
+}
+
+/* Acento indigo só no "I" — regra do guia de marca. */
+.vx-bio-marca-i {
+  color: #6c5bf2;
+}
+
+/* Botões entram depois da marca, um por vez. */
+.vx-entrada {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: vx-splash-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--entrada-atraso, 1.35s);
+}
+
+/* Ícones da grade: o traço se desenha UMA vez, cada card na sua vez. */
 .vx-icone-traco svg {
   overflow: visible;
 }
 
 .vx-icone-traco svg > * {
   stroke-dasharray: 56;
-  animation: vx-traco-desenha 4s ease-in-out infinite;
-  animation-delay: var(--atraso-traco, 0s);
+  stroke-dashoffset: 56;
+  animation: vx-splash-draw 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation-delay: var(--atraso-traco, 1.9s);
 }
 
-/* O ícone passa a maior parte do ciclo inteiro: ele precisa ser reconhecível,
-   e um desenho que some metade do tempo não comunica nada. O traço se
-   redesenha rápido nas pontas e fica parado no meio. */
-@keyframes vx-traco-desenha {
-  0% {
-    stroke-dashoffset: 56;
-  }
-  18%,
-  82% {
-    stroke-dashoffset: 0;
-  }
-  100% {
-    stroke-dashoffset: -56;
-  }
-}
-
-/* Passagem do mouse: o desenho acelera. */
-.vx-borda-degrade:hover .vx-icone-traco svg > * {
-  animation-duration: 1.6s;
-}
-
+/* Sem movimento: tudo visível de imediato. */
 @media (prefers-reduced-motion: reduce) {
+  .vx-bio-lamina-a,
+  .vx-bio-lamina-b,
   .vx-icone-traco svg > * {
     animation: none;
-    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+  .vx-bio-marca-word,
+  .vx-entrada {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

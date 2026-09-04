@@ -1,5 +1,4 @@
 import { Mail } from 'lucide-react'
-import LogoMark from '../ui/LogoMark'
 import BioButton from './BioButton'
 import { agrupaPorFormato } from './bioLinks'
 import type { BioLink } from './bioLinks'
@@ -9,9 +8,6 @@ import type { BioLink } from './bioLinks'
  * Sem acesso a dados aqui de propósito — a página pública e a prévia do
  * console renderizam este mesmo componente com listas de origens diferentes.
  */
-
-export const BIO_FRASE =
-  'Lojas Shopify que vendem e sistemas que resolvem. Somos Shopify Partners.'
 
 const INSTAGRAM_URL = 'https://instagram.com/byvertix'
 const EMAIL_CONTATO = 'contato@vertix.studio'
@@ -44,30 +40,56 @@ interface BioConteudoProps {
 
 export default function BioConteudo({ links, inerte = false }: BioConteudoProps) {
   const { destaque, largos, grade } = agrupaPorFormato(links)
+  // Ordem de entrada na tela: destaque, depois largos, depois a grade.
+  const ordemDe = (link: BioLink) =>
+    [...destaque, ...largos, ...grade].findIndex((l) => l.id === link.id)
 
   return (
     <div className="flex flex-col items-center">
+      {/* Marca animada, a mesma abertura do painel: as lâminas do símbolo se
+          desenham subindo ao vértice e a palavra entra com o "I" em indigo. */}
       <header className="flex flex-col items-center text-center">
-        <LogoMark className="h-12 w-12" />
-        <h1 className="mt-3 font-kanit text-lg font-bold uppercase tracking-[0.08em] text-ink">
-          Vertix<span className="text-accent">✱</span>Studio
+        <svg
+          viewBox="0 0 132 162"
+          className="vx-bio-marca-simbolo"
+          fill="none"
+          aria-hidden="true"
+          style={{ overflow: 'visible' }}
+        >
+          <path
+            className="vx-bio-lamina-a"
+            d="M6 132 L66 14 L126 132"
+            stroke="#6C5BF2"
+            strokeWidth="26"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <path
+            className="vx-bio-lamina-b"
+            d="M34 150 L66 88 L98 150"
+            stroke="#F4F4F0"
+            strokeWidth="20"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            opacity="0.85"
+          />
+        </svg>
+        <h1 className="vx-bio-marca-word font-kanit">
+          VERT<span className="vx-bio-marca-i">I</span>X
         </h1>
-        <p className="mt-2 max-w-[17rem] text-sm font-light leading-snug text-muted">
-          {BIO_FRASE}
-        </p>
       </header>
 
-      <div className="mt-5 flex w-full flex-col gap-2.5">
+      <div className="mt-4 flex w-full flex-col gap-2.5">
         {destaque.map((link) => (
-          <BioButton key={link.id} link={link} inerte={inerte} />
+          <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
         ))}
         {largos.map((link) => (
-          <BioButton key={link.id} link={link} inerte={inerte} />
+          <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
         ))}
         {grade.length > 0 && (
           <div className="grid grid-cols-2 gap-2.5">
             {grade.map((link) => (
-              <BioButton key={link.id} link={link} inerte={inerte} />
+              <BioButton key={link.id} link={link} inerte={inerte} ordem={ordemDe(link)} />
             ))}
           </div>
         )}

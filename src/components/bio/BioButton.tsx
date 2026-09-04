@@ -59,9 +59,18 @@ interface BioButtonProps {
   link: BioLink
   /** Prévia do console: mostra o botão sem registrar clique nem navegar. */
   inerte?: boolean
+  /** Posição na sequência de entrada (0 = primeiro a aparecer). */
+  ordem?: number
 }
 
-export default function BioButton({ link, inerte = false }: BioButtonProps) {
+/** Quando a marca termina de entrar e os botões podem começar. */
+const ENTRADA_BASE_S = 1.35
+const ENTRADA_PASSO_S = 0.12
+/** Ícones da grade se desenham um por vez, depois de o card entrar. */
+const ICONE_BASE_S = 1.9
+const ICONE_PASSO_S = 0.35
+
+export default function BioButton({ link, inerte = false, ordem = 0 }: BioButtonProps) {
   const prefersReducedMotion = useReducedMotion()
   const href = destinoFinal(link)
 
@@ -83,12 +92,17 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
     ? {}
     : { whileHover: { y: -2 }, whileTap: { scale: 0.985 } }
 
+  const entrada = {
+    '--entrada-atraso': `${ENTRADA_BASE_S + ordem * ENTRADA_PASSO_S}s`,
+  } as CSSProperties
+
   if (link.formato === 'destaque') {
     return (
       <motion.a
         {...comum}
         {...animacao}
-        className="block rounded-2xl border border-accent bg-gradient-to-br from-[#241A5E] to-accent-2 p-4 text-left transition-shadow duration-200 hover:shadow-[0_16px_40px_-16px_rgba(108,91,242,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        style={entrada}
+        className="vx-entrada block rounded-2xl border border-accent bg-gradient-to-br from-[#241A5E] to-accent-2 p-4 text-left transition-shadow duration-200 hover:shadow-[0_16px_40px_-16px_rgba(108,91,242,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {link.chamada && (
           <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
@@ -116,7 +130,8 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
       <motion.a
         {...comum}
         {...animacao}
-        className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+        style={entrada}
+        className={`vx-entrada flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
           ehConversa
             ? 'border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15'
             : 'border-white/10 bg-surface-1 hover:bg-surface-2'
@@ -150,12 +165,15 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
     <motion.a
       {...comum}
       {...animacao}
-      className="vx-borda-degrade flex flex-col items-center gap-2.5 rounded-xl p-3.5 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      style={entrada}
+      className="vx-entrada vx-borda-degrade flex flex-col items-center gap-2.5 rounded-xl p-3.5 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span
         className="vx-icone-traco flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20"
         style={
-          { '--atraso-traco': `-${((link.posicao / 10) % 4) * 1}s` } as CSSProperties
+          {
+            '--atraso-traco': `${ICONE_BASE_S + ordem * ICONE_PASSO_S}s`,
+          } as CSSProperties
         }
       >
         <IconeDoLink nome={link.icone} className="h-5 w-5" />
