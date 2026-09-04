@@ -111,6 +111,8 @@ describe('bioLinkSchema', () => {
   const VALIDO: BioLinkFormValues = {
     rotulo: 'Loja Shopify',
     descricao: 'Do zero ou migração',
+    chamada: '',
+    texto_botao: '',
     icone: 'store',
     formato: 'grade',
     tipo_destino: 'whatsapp',
@@ -175,6 +177,8 @@ describe('bioLinkFormToPayload', () => {
     const payload = bioLinkFormToPayload({
       rotulo: 'Projetos',
       descricao: '',
+      chamada: '',
+      texto_botao: '',
       icone: '',
       formato: 'grade',
       tipo_destino: 'url',
@@ -183,6 +187,8 @@ describe('bioLinkFormToPayload', () => {
       ativo: true,
     })
     expect(payload.descricao).toBeNull()
+    expect(payload.chamada).toBeNull()
+    expect(payload.texto_botao).toBeNull()
     expect(payload.icone).toBeNull()
     expect(payload.mensagem).toBeNull()
     expect(payload.destino).toBe('https://www.vertix.studio')

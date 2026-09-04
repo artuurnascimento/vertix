@@ -17,6 +17,10 @@ export interface BioLink {
   id: string
   rotulo: string
   descricao: string | null
+  /** Linha curta acima do título — só o formato destaque usa. */
+  chamada?: string | null
+  /** Rótulo do botão dentro do card de destaque. */
+  texto_botao?: string | null
   icone: string | null
   formato: BioFormato
   tipo_destino: BioTipoDestino

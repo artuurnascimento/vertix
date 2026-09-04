@@ -74,6 +74,9 @@ export const bioLinkSchema = z
   .object({
     rotulo: z.string().trim().min(1, 'Informe o texto do botão.'),
     descricao: z.string().trim(),
+    // Só o formato destaque usa estes dois.
+    chamada: z.string().trim(),
+    texto_botao: z.string().trim(),
     icone: z.string().trim(),
     formato: z.enum(BIO_FORMATOS, { error: 'Selecione o formato.' }),
     tipo_destino: z.enum(BIO_TIPOS_DESTINO, {
@@ -124,6 +127,8 @@ export function bioLinkFormToPayload(valores: BioLinkFormValues) {
   return {
     rotulo: valores.rotulo,
     descricao: valores.descricao === '' ? null : valores.descricao,
+    chamada: valores.chamada === '' ? null : valores.chamada,
+    texto_botao: valores.texto_botao === '' ? null : valores.texto_botao,
     icone: valores.icone === '' ? null : valores.icone,
     formato: valores.formato,
     tipo_destino: valores.tipo_destino,

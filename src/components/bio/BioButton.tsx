@@ -75,16 +75,21 @@ export default function BioButton({ link, inerte = false }: BioButtonProps) {
         {...animacao}
         className="block rounded-2xl border border-accent bg-gradient-to-br from-[#241A5E] to-accent-2 p-5 text-left transition-shadow duration-200 hover:shadow-[0_16px_40px_-16px_rgba(108,91,242,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        {link.descricao && (
-          <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
-            {link.descricao}
+        {link.chamada && (
+          <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
+            {link.chamada}
           </span>
         )}
         <span className="mt-1.5 block text-xl font-bold leading-tight text-white">
           {link.rotulo}
         </span>
+        {link.descricao && (
+          <span className="mt-1.5 block text-sm font-light leading-snug text-white/80">
+            {link.descricao}
+          </span>
+        )}
         <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-bg">
-          Quero saber
+          {link.texto_botao?.trim() || 'Quero saber'}
           <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
         </span>
       </motion.a>

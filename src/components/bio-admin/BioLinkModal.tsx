@@ -43,6 +43,8 @@ const ICONES_SUGERIDOS = [
 const EMPTY_VALUES: BioLinkFormValues = {
   rotulo: '',
   descricao: '',
+  chamada: '',
+  texto_botao: '',
   icone: '',
   formato: 'grade',
   tipo_destino: 'url',
@@ -57,6 +59,8 @@ function valuesFromLink(link: BioLinkRow): BioLinkFormValues {
   return {
     rotulo: link.rotulo,
     descricao: link.descricao ?? '',
+    chamada: link.chamada ?? '',
+    texto_botao: link.texto_botao ?? '',
     icone: link.icone ?? '',
     formato,
     tipo_destino: tipo,
@@ -156,6 +160,7 @@ export default function BioLinkModal({
   }
 
   const ehConversa = values.tipo_destino === 'whatsapp'
+  const ehDestaque = values.formato === 'destaque'
 
   return createPortal(
     <AnimatePresence>
@@ -225,6 +230,31 @@ export default function BioLinkModal({
                   className={inputClass}
                 />
               </label>
+
+              {ehDestaque && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1.5">
+                    <span className={labelClass}>Chamada</span>
+                    <input
+                      type="text"
+                      value={values.chamada}
+                      onChange={(e) => setField('chamada', e.target.value)}
+                      placeholder="Grátis · 60 segundos"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className={labelClass}>Texto do botão interno</span>
+                    <input
+                      type="text"
+                      value={values.texto_botao}
+                      onChange={(e) => setField('texto_botao', e.target.value)}
+                      placeholder="Analisar minha loja"
+                      className={inputClass}
+                    />
+                  </label>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="flex flex-col gap-1.5">

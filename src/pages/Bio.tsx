@@ -44,6 +44,8 @@ function paraBioLink(row: BioLinkRow): BioLink {
     id: row.id,
     rotulo: row.rotulo,
     descricao: row.descricao,
+    chamada: row.chamada,
+    texto_botao: row.texto_botao,
     icone: row.icone,
     formato: row.formato as BioLink['formato'],
     tipo_destino: row.tipo_destino as BioLink['tipo_destino'],

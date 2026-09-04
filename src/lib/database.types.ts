@@ -349,6 +349,7 @@ export type Database = {
       bio_links: {
         Row: {
           ativo: boolean
+          chamada: string | null
           created_at: string
           descricao: string | null
           destino: string
@@ -360,11 +361,13 @@ export type Database = {
           posicao: number
           rotulo: string
           termina_em: string | null
+          texto_botao: string | null
           tipo_destino: string
           updated_at: string
         }
         Insert: {
           ativo?: boolean
+          chamada?: string | null
           created_at?: string
           descricao?: string | null
           destino?: string
@@ -376,11 +379,13 @@ export type Database = {
           posicao?: number
           rotulo: string
           termina_em?: string | null
+          texto_botao?: string | null
           tipo_destino: string
           updated_at?: string
         }
         Update: {
           ativo?: boolean
+          chamada?: string | null
           created_at?: string
           descricao?: string | null
           destino?: string
@@ -392,6 +397,7 @@ export type Database = {
           posicao?: number
           rotulo?: string
           termina_em?: string | null
+          texto_botao?: string | null
           tipo_destino?: string
           updated_at?: string
         }
