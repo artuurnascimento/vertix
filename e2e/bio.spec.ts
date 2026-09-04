@@ -64,13 +64,19 @@ test.describe.serial('módulo do link de bio (admin)', () => {
     // O modal precisa sumir de verdade: um overlay preso cobriria a tela.
     await expect(dialog).toBeHidden()
 
-    // Escopado na lista: a prévia ao lado renderiza o mesmo botão.
-    await expect(page.getByRole('list').getByText(BOTAO_NOME)).toBeVisible()
+    // Escopado na lista de botões: a prévia e o resumo de 30 dias mostram
+    // o mesmo nome.
+    await expect(
+      page.getByRole('list', { name: 'Botões do link de bio' }).getByText(BOTAO_NOME)
+    ).toBeVisible()
   })
 
   test('esconde o botão e ele some da página pública', async ({ page }) => {
     await page.goto('/admin/bio')
-    const linha = page.getByRole('listitem').filter({ hasText: BOTAO_NOME })
+    const linha = page
+      .getByRole('list', { name: 'Botões do link de bio' })
+      .getByRole('listitem')
+      .filter({ hasText: BOTAO_NOME })
     await linha.getByRole('button', { name: `Esconder ${BOTAO_NOME}` }).click()
     await expect(
       linha.getByRole('button', { name: `Mostrar ${BOTAO_NOME}` })
@@ -82,10 +88,15 @@ test.describe.serial('módulo do link de bio (admin)', () => {
 
   test('exclui o botão de teste', async ({ page }) => {
     await page.goto('/admin/bio')
-    const linha = page.getByRole('listitem').filter({ hasText: BOTAO_NOME })
+    const linha = page
+      .getByRole('list', { name: 'Botões do link de bio' })
+      .getByRole('listitem')
+      .filter({ hasText: BOTAO_NOME })
     await linha.getByRole('button', { name: `Excluir ${BOTAO_NOME}` }).click()
     // Exclusão em dois cliques: o primeiro arma a confirmação.
     await linha.getByRole('button', { name: /Confirmar|Excluir/ }).last().click()
-    await expect(page.getByRole('list').getByText(BOTAO_NOME)).toHaveCount(0)
+    await expect(
+      page.getByRole('list', { name: 'Botões do link de bio' }).getByText(BOTAO_NOME)
+    ).toHaveCount(0)
   })
 })

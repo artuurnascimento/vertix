@@ -200,7 +200,7 @@ export default function Bio() {
           )}
 
           {!isLoading && lista.length > 0 && (
-            <ul className="flex list-none flex-col gap-3 p-0">
+            <ul aria-label="Botões do link de bio" className="flex list-none flex-col gap-3 p-0">
               <AnimatePresence initial={false}>
                 {lista.map((link, i) => (
                   <motion.li
