@@ -126,7 +126,7 @@ export default function BioButton({ link, inerte = false, ordem = 0 }: BioButton
               sai pela direita enquanto outra entra pela esquerda. Grupo
               nomeado: o efeito é do botão, não do card inteiro. */}
           <span className="group/botao inline-flex min-w-0 shrink items-center">
-            <span className="whitespace-nowrap rounded-full bg-accent px-4 py-3 font-kanit text-[14px] font-extrabold tracking-[0.01em] text-white transition-colors duration-500 ease-in-out group-hover/botao:bg-[#241A5E] group-hover/botao:text-[#A99EF7]">
+            <span className="whitespace-nowrap rounded-full bg-accent px-4 py-3 font-kanit text-[15px] font-medium tracking-[0.01em] text-white transition-colors duration-500 ease-in-out group-hover/botao:bg-[#241A5E] group-hover/botao:text-[#A99EF7]">
               {link.texto_botao?.trim() || 'Quero saber'}
             </span>
             <span className="relative flex h-[40px] w-[40px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent text-white transition-colors duration-500 ease-in-out group-hover/botao:bg-[#241A5E] group-hover/botao:text-[#A99EF7]">
