@@ -16,6 +16,7 @@ import type { Tables } from '../lib/database.types'
 import { BIO_PUBLIC_BASE } from '../lib/publicUrls'
 import ConfirmDeleteButton from '../components/finance/ConfirmDeleteButton'
 import BioLinkModal from '../components/bio-admin/BioLinkModal'
+import BioPainelResumo from '../components/bio-admin/BioPainelResumo'
 import BioConteudo from '../components/bio/BioConteudo'
 import { linksVisiveis } from '../components/bio/bioLinks'
 import type { BioLink } from '../components/bio/bioLinks'
@@ -167,6 +168,10 @@ export default function Bio() {
             Novo botão
           </button>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <BioPainelResumo botoes={lista.map((l) => ({ id: l.id, rotulo: l.rotulo }))} />
       </div>
 
       <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_340px]">
