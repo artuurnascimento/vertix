@@ -51,8 +51,12 @@ export interface Lead {
   name: string
   whatsapp: string
   status: LeadStatus
-  /** Token assinado pelo worker no unlock; sem ele o link do relatório não abre. */
+  /** Token assinado pelo worker no unlock (link longo, compatibilidade). */
   report_token: string | null
+  /** Código curto do relatório — base do link enviado no WhatsApp. */
+  report_code: string | null
+  /** Primeira abertura do relatório pelo cliente; null = ainda não leu. */
+  relatorio_aberto_em: string | null
   created_at: string
 }
 

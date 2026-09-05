@@ -79,10 +79,16 @@ const reportBase = (
 ).replace(/\/+$/, '')
 
 /**
- * Relatório completo no site do Scan. Exige o token gravado no lead pelo
- * worker: é o link que vai no WhatsApp do cliente. Sem token, não há link.
+ * Link do relatório para o WhatsApp do cliente. Prefere o código curto
+ * (`/r/<code>`, ~41 chars, e o worker registra a leitura); cai no link longo
+ * com token para os leads criados antes do código existir.
  */
-export function reportUrl(analysisId: string, token: string | null): string | null {
+export function reportUrl(
+  analysisId: string,
+  token: string | null,
+  code?: string | null
+): string | null {
+  if (code) return `${reportBase}/r/${encodeURIComponent(code)}`
   if (!token) return null
   return `${reportBase}/relatorio/${analysisId}?token=${encodeURIComponent(token)}`
 }
@@ -107,6 +113,7 @@ export function whatsappLinkForLead(lead: {
   name: string
   whatsapp: string
   report_token?: string | null
+  report_code?: string | null
   analyses: {
     id?: string
     domain: string
@@ -124,7 +131,9 @@ export function whatsappLinkForLead(lead: {
     ? `${abertura} O ponto que mais está custando venda é ${problema}.`
     : `${abertura} Tem alguns pontos que estão custando venda.`
   // O relatório completo é entregue aqui, pelo link assinado — não no site.
-  const link = lead.analyses?.id ? reportUrl(lead.analyses.id, lead.report_token ?? null) : null
+  const link = lead.analyses?.id
+    ? reportUrl(lead.analyses.id, lead.report_token ?? null, lead.report_code ?? null)
+    : null
   const mensagem = link
     ? `${corpo} Seu relatório completo está aqui: ${link} Posso te mostrar como resolver?`
     : `${corpo} Posso te mostrar como resolver?`

@@ -26,8 +26,10 @@ export interface ScanLead {
   score: number
   status: string
   criado_em: string
-  /** Link do relatório assinado — o que vai no WhatsApp do cliente. */
+  /** Link do relatório — o que vai no WhatsApp do cliente. */
   relatorio_url: string | null
+  /** Quando o cliente abriu o relatório; null = ainda não leu. */
+  relatorio_aberto_em: string | null
 }
 
 export interface ScanLeadsResponse {
@@ -72,15 +74,18 @@ interface LinhaLead {
   status: string
   created_at: string
   report_token: string | null
+  report_code: string | null
+  relatorio_aberto_em: string | null
   analyses: { id: string; url: string | null; domain: string | null; score: number | null } | null
 }
 
 export async function fetchScanLeads(offset: number): Promise<ScanLeadsResponse> {
   const { data, count, error } = await raioxSupabase
     .from('leads')
-    .select('id, name, whatsapp, status, created_at, report_token, analyses(id, url, domain, score)', {
-      count: 'exact',
-    })
+    .select(
+      'id, name, whatsapp, status, created_at, report_token, report_code, relatorio_aberto_em, analyses(id, url, domain, score)',
+      { count: 'exact' }
+    )
     .order('created_at', { ascending: false })
     .range(offset, offset + SCAN_PAGE_SIZE - 1)
   if (error) throw new Error(error.message)
@@ -94,7 +99,8 @@ export async function fetchScanLeads(offset: number): Promise<ScanLeadsResponse>
     score: l.analyses?.score ?? 0,
     status: l.status,
     criado_em: l.created_at,
-    relatorio_url: l.analyses ? reportUrl(l.analyses.id, l.report_token) : null,
+    relatorio_url: l.analyses ? reportUrl(l.analyses.id, l.report_token, l.report_code) : null,
+    relatorio_aberto_em: l.relatorio_aberto_em,
   }))
   return { total: count ?? leads.length, leads }
 }

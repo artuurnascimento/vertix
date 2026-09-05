@@ -68,6 +68,20 @@ export default function ScanLeadsTable({ leads }: ScanLeadsTableProps) {
                   {formatRelativeTime(lead.criado_em)}
                 </span>
 
+                {/* Leitura do relatório: o melhor momento para chamar é logo depois. */}
+                {lead.relatorio_aberto_em ? (
+                  <span
+                    className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300"
+                    title={`Relatório aberto em ${new Date(lead.relatorio_aberto_em).toLocaleString('pt-BR')}`}
+                  >
+                    leu {formatRelativeTime(lead.relatorio_aberto_em)}
+                  </span>
+                ) : (
+                  <span className="inline-flex rounded-full border border-white/10 px-2.5 py-0.5 text-[11px] font-light text-muted">
+                    não abriu
+                  </span>
+                )}
+
                 {waLink && (
                   <a
                     href={waLink}
