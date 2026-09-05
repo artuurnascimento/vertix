@@ -1,13 +1,14 @@
-import { callAppsProxy } from '../lojas/appsProxy'
+import { raioxSupabase } from '../leadsRaiox/raioxSupabase'
+import { reportUrl } from '../leadsRaiox/raioxData'
 
 /**
- * Cliente tipado das rotas do Vertix Scan na edge function apps-proxy —
- * a ferramenta pública de análise de lojas que funciona como braço de
- * captação de leads. O token de serviço (SCAN_SERVICE_TOKEN) vive só nos
- * secrets da function; aqui trafega apenas o JWT do usuário logado.
+ * Dados do Vertix Scan lidos DIRETO do banco, com o client autenticado do
+ * painel. As tabelas `analyses` e `leads` moram no mesmo projeto Supabase
+ * (migração 20260905100000), então não é preciso passar pela edge function
+ * apps-proxy nem manter SCAN_API_URL/SCAN_SERVICE_TOKEN.
  */
 
-/** GET /api/vertix/stats */
+/** Métricas do topo da página. */
 export interface ScanStats {
   analises_total: number
   analises_7d: number
@@ -15,7 +16,7 @@ export interface ScanStats {
   leads_7d: number
 }
 
-/** Item de GET /api/vertix/leads */
+/** Lead na tabela da página. */
 export interface ScanLead {
   id: string
   nome: string
@@ -25,7 +26,7 @@ export interface ScanLead {
   score: number
   status: string
   criado_em: string
-  /** Link do relatório com token — presente quando o worker tem WEB_URL. */
+  /** Link do relatório assinado — o que vai no WhatsApp do cliente. */
   relatorio_url: string | null
 }
 
@@ -34,23 +35,68 @@ export interface ScanLeadsResponse {
   leads: ScanLead[]
 }
 
-/** Tamanho da página da tabela de leads (limit/offset do backend). */
+/** Tamanho da página da tabela de leads. */
 export const SCAN_PAGE_SIZE = 50
 
-export function fetchScanStats(): Promise<ScanStats> {
-  return callAppsProxy<ScanStats>({
-    app: 'scan',
-    method: 'GET',
-    path: '/api/vertix/stats',
-  })
+const DIAS_JANELA = 7
+const MS_POR_DIA = 24 * 60 * 60 * 1000
+
+function desde(dias: number): string {
+  return new Date(Date.now() - dias * MS_POR_DIA).toISOString()
 }
 
-export function fetchScanLeads(offset: number): Promise<ScanLeadsResponse> {
-  return callAppsProxy<ScanLeadsResponse>({
-    app: 'scan',
-    method: 'GET',
-    path: `/api/vertix/leads?limit=${SCAN_PAGE_SIZE}&offset=${offset}`,
-  })
+/** Conta linhas sem trazê-las (head + count exato). */
+async function contar(tabela: string, desdeIso?: string): Promise<number> {
+  let q = raioxSupabase.from(tabela).select('id', { count: 'exact', head: true })
+  if (desdeIso) q = q.gte('created_at', desdeIso)
+  const { count, error } = await q
+  if (error) throw new Error(error.message)
+  return count ?? 0
+}
+
+export async function fetchScanStats(): Promise<ScanStats> {
+  const corte = desde(DIAS_JANELA)
+  const [analises_total, analises_7d, leads_total, leads_7d] = await Promise.all([
+    contar('analyses'),
+    contar('analyses', corte),
+    contar('leads'),
+    contar('leads', corte),
+  ])
+  return { analises_total, analises_7d, leads_total, leads_7d }
+}
+
+interface LinhaLead {
+  id: string
+  name: string
+  whatsapp: string
+  status: string
+  created_at: string
+  report_token: string | null
+  analyses: { id: string; url: string | null; domain: string | null; score: number | null } | null
+}
+
+export async function fetchScanLeads(offset: number): Promise<ScanLeadsResponse> {
+  const { data, count, error } = await raioxSupabase
+    .from('leads')
+    .select('id, name, whatsapp, status, created_at, report_token, analyses(id, url, domain, score)', {
+      count: 'exact',
+    })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + SCAN_PAGE_SIZE - 1)
+  if (error) throw new Error(error.message)
+
+  const leads = ((data ?? []) as unknown as LinhaLead[]).map((l) => ({
+    id: l.id,
+    nome: l.name,
+    whatsapp: l.whatsapp,
+    loja_url: l.analyses?.url ?? '',
+    dominio: l.analyses?.domain ?? '',
+    score: l.analyses?.score ?? 0,
+    status: l.status,
+    criado_em: l.created_at,
+    relatorio_url: l.analyses ? reportUrl(l.analyses.id, l.report_token) : null,
+  }))
+  return { total: count ?? leads.length, leads }
 }
 
 /**
