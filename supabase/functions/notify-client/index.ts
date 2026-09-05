@@ -298,7 +298,8 @@ async function sendEmail(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Vertix <nao-responda@vertix.studio>',
+      from: 'Vertix <no-reply@vertix.studio>',
+      reply_to: 'contato@vertix.studio',
       to: [to],
       subject,
       html,
