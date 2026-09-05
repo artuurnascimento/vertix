@@ -77,9 +77,13 @@ const reportBase = (
   (import.meta.env.VITE_RAIOX_REPORT_URL as string | undefined) ?? ''
 ).replace(/\/+$/, '')
 
-/** Relatório completo (pós-desbloqueio) no front público do raiox. */
-export function reportUrl(analysisId: string): string {
-  return `${reportBase}/relatorio/${analysisId}`
+/**
+ * Relatório completo no site do Scan. Exige o token gravado no lead pelo
+ * worker: é o link que vai no WhatsApp do cliente. Sem token, não há link.
+ */
+export function reportUrl(analysisId: string, token: string | null): string | null {
+  if (!token) return null
+  return `${reportBase}/relatorio/${analysisId}?token=${encodeURIComponent(token)}`
 }
 
 /** Teaser público da análise (mesma base do relatório, rota /analise). */
@@ -101,7 +105,9 @@ export function formatScore(score: number | null): string {
 export function whatsappLinkForLead(lead: {
   name: string
   whatsapp: string
+  report_token?: string | null
   analyses: {
+    id?: string
     domain: string
     score: number | null
     light_result: LightResultResumo | null
@@ -113,9 +119,14 @@ export function whatsappLinkForLead(lead: {
   const problema = lead.analyses?.light_result?.free_problems?.[0]?.title
 
   const abertura = `Oi ${primeiroNome}! Aqui é da Vertix. Vi a análise da ${dominio} — nota ${nota}.`
-  const mensagem = problema
-    ? `${abertura} O ponto que mais está custando venda é ${problema}. Posso te mostrar como resolver?`
-    : `${abertura} Tem alguns pontos que estão custando venda. Posso te mostrar como resolver?`
+  const corpo = problema
+    ? `${abertura} O ponto que mais está custando venda é ${problema}.`
+    : `${abertura} Tem alguns pontos que estão custando venda.`
+  // O relatório completo é entregue aqui, pelo link assinado — não no site.
+  const link = lead.analyses?.id ? reportUrl(lead.analyses.id, lead.report_token ?? null) : null
+  const mensagem = link
+    ? `${corpo} Seu relatório completo está aqui: ${link} Posso te mostrar como resolver?`
+    : `${corpo} Posso te mostrar como resolver?`
 
   return buildWhatsAppLink(lead.whatsapp, mensagem)
 }

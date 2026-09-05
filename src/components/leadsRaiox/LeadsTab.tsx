@@ -102,9 +102,9 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
                 />
 
                 <div className="flex items-center gap-2">
-                  {lead.analyses && (
+                  {lead.analyses && reportUrl(lead.analyses.id, lead.report_token) && (
                     <a
-                      href={reportUrl(lead.analyses.id)}
+                      href={reportUrl(lead.analyses.id, lead.report_token) ?? undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
