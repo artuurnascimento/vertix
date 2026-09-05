@@ -1,13 +1,25 @@
 /**
  * payment-reminders
  *
- * Sem input (disparada por cron/Scheduled Function). Busca receivables
- * pendentes com vencimento = hoje+3 ou vencidas (< hoje), envia email de
- * lembrete via Resend (mesmo padrão de notify-briefing-submitted) ao email
- * do cliente com descrição/valor/payment_link (se houver). Retorna contagem.
+ * Sem input (disparada por cron/Scheduled Function). Envia lembrete de
+ * cobrança via Resend ao email do cliente, com descrição/valor/payment_link.
+ *
+ * CONTROLE DE REENVIO (corrigido em 2026-09-05): antes o filtro era só
+ * `pendente AND (vencida OR vence em 3 dias)`, sem registrar nada — logo toda
+ * cobrança vencida era relembrada TODO DIA, indefinidamente. Agora:
+ *   - aviso 3 dias antes: uma vez (lembretes_enviados = 0);
+ *   - após o vencimento: no máximo a cada REENVIO_MIN_DIAS dias;
+ *   - teto de MAX_LEMBRETES por cobrança.
+ * Cada envio grava `ultimo_lembrete_em` e incrementa `lembretes_enviados`.
  *
  * Sem RESEND_API_KEY configurada, loga e responde 200 (no-op gracioso).
  */
+
+/** Intervalo mínimo entre dois lembretes da MESMA cobrança. */
+const REENVIO_MIN_DIAS = 7
+/** Teto de lembretes por cobrança — depois disso, cobrança é no braço. */
+const MAX_LEMBRETES = 4
+const MS_POR_DIA = 24 * 60 * 60 * 1000
 
 interface ReceivableWithClient {
   id: string
@@ -15,7 +27,21 @@ interface ReceivableWithClient {
   valor: number
   vencimento: string
   payment_link: string | null
+  ultimo_lembrete_em: string | null
+  lembretes_enviados: number | null
   clients: { nome: string; email: string | null } | null
+}
+
+/** Decide se esta cobrança merece um lembrete hoje. Pura — sem rede. */
+export function deveLembrar(
+  r: Pick<ReceivableWithClient, 'ultimo_lembrete_em' | 'lembretes_enviados'>,
+  agora: Date
+): boolean {
+  const enviados = r.lembretes_enviados ?? 0
+  if (enviados >= MAX_LEMBRETES) return false
+  if (!r.ultimo_lembrete_em) return true
+  const desde = agora.getTime() - new Date(r.ultimo_lembrete_em).getTime()
+  return desde >= REENVIO_MIN_DIAS * MS_POR_DIA
 }
 
 /** Comparação em tempo constante — não vaza o segredo por timing. */
@@ -128,7 +154,8 @@ Deno.serve(async (req) => {
 
   const receivablesRes = await fetch(
     `${supabaseUrl}/rest/v1/receivables?${filtro}` +
-      '&select=id,descricao,valor,vencimento,payment_link,clients(nome,email)',
+      '&select=id,descricao,valor,vencimento,payment_link,ultimo_lembrete_em,' +
+      'lembretes_enviados,clients(nome,email)',
     {
       headers: {
         apikey: serviceRoleKey,
@@ -143,10 +170,17 @@ Deno.serve(async (req) => {
 
   const receivables = (await receivablesRes.json()) as ReceivableWithClient[]
   let enviados = 0
+  let ignorados = 0
 
   for (const r of receivables) {
     const email = r.clients?.email
     if (!email) continue
+
+    // Guarda contra o reenvio diário: respeita intervalo e teto.
+    if (!deveLembrar(r, hoje)) {
+      ignorados += 1
+      continue
+    }
 
     const clienteNome = r.clients?.nome ?? 'Cliente'
     const valorFormatado = formatMoney(r.valor)
@@ -183,8 +217,32 @@ Deno.serve(async (req) => {
       continue
     }
 
+    // Registro do envio ANTES de seguir: se isto falhar, é melhor não reenviar
+    // amanhã do que arriscar o loop diário que motivou esta correção.
+    const marcaRes = await fetch(`${supabaseUrl}/rest/v1/receivables?id=eq.${r.id}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        ultimo_lembrete_em: new Date().toISOString(),
+        lembretes_enviados: (r.lembretes_enviados ?? 0) + 1,
+      }),
+    })
+    if (!marcaRes.ok) {
+      console.error('[payment-reminders] Falha ao marcar lembrete do receivable', r.id, marcaRes.status)
+    }
+
     enviados += 1
   }
 
-  return jsonResponse({ ok: true, enviados, total_candidatas: receivables.length })
+  return jsonResponse({
+    ok: true,
+    enviados,
+    ignorados,
+    total_candidatas: receivables.length,
+  })
 })
