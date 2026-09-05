@@ -73,8 +73,9 @@ export async function updateLeadStatus(
 // Links
 // ---------------------------------------------------------------------------
 
+// Site público do Scan. A env é só um override; o padrão já é o domínio real.
 const reportBase = (
-  (import.meta.env.VITE_RAIOX_REPORT_URL as string | undefined) ?? ''
+  (import.meta.env.VITE_RAIOX_REPORT_URL as string | undefined) ?? 'https://scan.vertix.studio'
 ).replace(/\/+$/, '')
 
 /**

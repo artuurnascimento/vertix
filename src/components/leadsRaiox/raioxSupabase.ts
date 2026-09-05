@@ -1,23 +1,18 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../../lib/supabase'
 
 /**
- * Client Supabase do projeto Raio-X — projeto PRÓPRIO, separado do Supabase
- * do admin (src/lib/supabase.ts). Nunca misture os dois: as tabelas
- * analyses/leads moram só no projeto do raiox.
+ * Client do módulo Raio-X.
  *
- * Mesmo padrão do client do admin: não lançamos erro no import (derrubaria o
- * app com tela branca). A página checa `raioxConfigMissing` e renderiza um
- * aviso claro de configuração.
+ * As tabelas `analyses` e `leads` foram trazidas para o MESMO projeto Supabase
+ * do painel (migração 20260905100000). As policies são `to authenticated` com
+ * `public.is_team_member()`, então elas exigem a SESSÃO da equipe: um client
+ * anônimo separado não enxergaria linha nenhuma.
+ *
+ * Por isso reusamos o client principal, já autenticado. As envs
+ * VITE_RAIOX_SUPABASE_URL/ANON_KEY deixaram de ser necessárias e um segundo
+ * client no mesmo domínio ainda brigaria pelo storage de auth.
  */
+export const raioxSupabase = supabase
 
-const raioxUrl = import.meta.env.VITE_RAIOX_SUPABASE_URL as string | undefined
-const raioxAnonKey = import.meta.env.VITE_RAIOX_SUPABASE_ANON_KEY as
-  | string
-  | undefined
-
-export const raioxConfigMissing = !raioxUrl || !raioxAnonKey
-
-export const raioxSupabase = createClient(
-  raioxUrl ?? 'https://placeholder.supabase.co',
-  raioxAnonKey ?? 'placeholder-anon-key'
-)
+/** Mantido por compatibilidade: não há mais configuração própria para faltar. */
+export const raioxConfigMissing = false
