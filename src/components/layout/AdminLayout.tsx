@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
+  Briefcase,
   CalendarDays,
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  Cog,
   FileSignature,
   FileText,
   KanbanSquare,
@@ -13,13 +15,16 @@ import {
   LayoutDashboard,
   LifeBuoy,
   LogOut,
+  Magnet,
   Megaphone,
+  Package,
   Plus,
   Radar,
   ScanSearch,
   Settings,
   Store,
   Users,
+  Workflow,
   Wallet,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -32,10 +37,12 @@ import { useAuth } from '../../lib/auth'
 const NAV_GROUPS = [
   {
     titulo: null,
+    icone: null,
     itens: [{ to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true }],
   },
   {
     titulo: 'Comercial',
+    icone: Briefcase,
     itens: [
       { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
       { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
@@ -45,6 +52,7 @@ const NAV_GROUPS = [
   },
   {
     titulo: 'Operação',
+    icone: Workflow,
     itens: [
       { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
       { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays, end: false },
@@ -54,6 +62,7 @@ const NAV_GROUPS = [
   },
   {
     titulo: 'Captação',
+    icone: Magnet,
     itens: [
       { to: '/admin/scan', label: 'Vertix Scan', icon: Radar, end: false },
       { to: '/admin/leads-raiox', label: 'Leads Raio-X', icon: ScanSearch, end: false },
@@ -63,10 +72,12 @@ const NAV_GROUPS = [
   },
   {
     titulo: 'Produtos',
+    icone: Package,
     itens: [{ to: '/admin/lojas', label: 'Lojas', icon: Store, end: false }],
   },
   {
     titulo: 'Sistema',
+    icone: Cog,
     itens: [
       { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
       { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
@@ -188,13 +199,16 @@ export default function AdminLayout() {
                   aria-label={
                     aberto ? `Recolher ${grupo.titulo}` : `Abrir ${grupo.titulo}`
                   }
-                  className="mb-1 mt-4 hidden w-full items-center gap-1.5 rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted/60 transition-colors duration-150 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent md:flex"
+                  className="mb-1 mt-4 hidden w-full items-center gap-2 rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent transition-colors duration-150 hover:text-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent md:flex"
                 >
                   <ChevronDown
                     className={`h-3 w-3 shrink-0 transition-transform duration-200 ${
                       aberto ? '' : '-rotate-90'
                     }`}
                   />
+                  {grupo.icone && (
+                    <grupo.icone className="h-3.5 w-3.5 shrink-0" />
+                  )}
                   {grupo.titulo}
                 </button>
               )}

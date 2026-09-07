@@ -34,6 +34,10 @@ export interface ScanLead {
   relatorio_url: string | null
   /** Quando o cliente abriu o relatório; null = ainda não leu. */
   relatorio_aberto_em: string | null
+  /** Id da análise, para reprocessar quando a profunda falha. */
+  analysis_id: string | null
+  /** Status da análise: 'failed' libera o botão de reprocessar. */
+  analysis_status: string | null
 }
 
 export interface ScanLeadsResponse {
@@ -77,7 +81,13 @@ interface LinhaLead {
   report_token: string | null
   report_code: string | null
   relatorio_aberto_em: string | null
-  analyses: { id: string; url: string | null; domain: string | null; score: number | null } | null
+  analyses: {
+    id: string
+    url: string | null
+    domain: string | null
+    score: number | null
+    status: string | null
+  } | null
 }
 
 export async function fetchScanLeads(
@@ -87,7 +97,7 @@ export async function fetchScanLeads(
   let q = raioxSupabase
     .from('leads')
     .select(
-      'id, name, whatsapp, status, created_at, report_token, report_code, relatorio_aberto_em, analyses(id, url, domain, score)',
+      'id, name, whatsapp, status, created_at, report_token, report_code, relatorio_aberto_em, analyses(id, url, domain, score, status)',
       { count: 'exact' }
     )
   if (periodo) {
@@ -111,6 +121,8 @@ export async function fetchScanLeads(
     criado_em: l.created_at,
     relatorio_url: l.analyses ? reportUrl(l.analyses.id, l.report_token, l.report_code) : null,
     relatorio_aberto_em: l.relatorio_aberto_em,
+    analysis_id: l.analyses?.id ?? null,
+    analysis_status: l.analyses?.status ?? null,
   }))
   return { total: count ?? leads.length, leads }
 }

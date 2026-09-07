@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { MessageCircle, Trash2, Users } from 'lucide-react'
+import { MessageCircle, RotateCcw, Trash2, Users } from 'lucide-react'
 import { formatRelativeTime } from '../../lib/format'
 import ScoreBadge from '../leadsRaiox/ScoreBadge'
 import { mensagemFollowUp, scanStatusMeta, whatsappLink } from './scanProxy'
@@ -16,9 +16,18 @@ interface ScanLeadsTableProps {
   /** Exclui o lead (e a análise dele); a página confirma e recarrega. */
   onExcluir?: (lead: ScanLead) => void
   excluindoId?: string | null
+  /** Manda a análise de volta para a fila do worker (só quando falhou). */
+  onReprocessar?: (lead: ScanLead) => void
+  reprocessandoId?: string | null
 }
 
-export default function ScanLeadsTable({ leads, onExcluir, excluindoId = null }: ScanLeadsTableProps) {
+export default function ScanLeadsTable({
+  leads,
+  onExcluir,
+  excluindoId = null,
+  onReprocessar,
+  reprocessandoId = null,
+}: ScanLeadsTableProps) {
   const prefersReducedMotion = useReducedMotion()
 
   if (leads.length === 0) {
@@ -95,6 +104,18 @@ export default function ScanLeadsTable({ leads, onExcluir, excluindoId = null }:
                     <MessageCircle className="h-3.5 w-3.5" />
                     {lead.relatorio_url ? 'Enviar relatório' : 'WhatsApp'}
                   </a>
+                )}
+                {onReprocessar && lead.analysis_status === 'failed' && (
+                  <button
+                    type="button"
+                    onClick={() => onReprocessar(lead)}
+                    disabled={reprocessandoId === lead.id}
+                    title="A análise falhou — mandar de volta para a fila"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 px-3 py-1.5 text-xs font-medium text-amber-200 transition-colors duration-150 hover:bg-amber-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    {reprocessandoId === lead.id ? 'Enviando…' : 'Reprocessar'}
+                  </button>
                 )}
                 {onExcluir && (
                   <button

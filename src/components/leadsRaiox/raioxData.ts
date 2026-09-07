@@ -75,6 +75,18 @@ export async function deleteLead(id: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+/**
+ * Devolve a análise profunda para a fila do worker (RPC restrita à equipe).
+ * Devolve false quando não havia o que reprocessar (já pronta ou já na fila).
+ */
+export async function reprocessarAnalise(analysisId: string): Promise<boolean> {
+  const { data, error } = await raioxSupabase.rpc('raiox_reprocessar_analise', {
+    p_analysis_id: analysisId,
+  })
+  if (error) throw new Error(error.message)
+  return Boolean(data)
+}
+
 /** Apaga TODOS os leads e análises do Vertix Scan (RPC restrita à equipe). */
 export async function zerarRaiox(): Promise<{ leads: number; analises: number }> {
   const { data, error } = await raioxSupabase.rpc('raiox_zerar_tudo')

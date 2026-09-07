@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteLead, zerarRaiox } from '../components/leadsRaiox/raioxData'
+import {
+  deleteLead,
+  reprocessarAnalise,
+  zerarRaiox,
+} from '../components/leadsRaiox/raioxData'
 import type { ScanLead } from '../components/scan/scanProxy'
 import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
 import Toast, { useToast } from '../components/ui/Toast'
@@ -75,6 +79,21 @@ export default function VertixScan() {
     },
   })
   const confirmarExclusao = (lead: ScanLead) => setLeadParaExcluir(lead)
+
+  // "Reprocessar": marca a análise como pendente; o worker pega em até 1 min.
+  const reprocessarMutation = useMutation({
+    mutationFn: (lead: ScanLead) => reprocessarAnalise(lead.analysis_id ?? ''),
+    onSuccess: (voltou, lead) => {
+      refetch()
+      mostrar(
+        voltou
+          ? { texto: `Análise de ${lead.dominio} de volta na fila.` }
+          : { texto: 'Essa análise já está na fila ou concluída.', tipo: 'erro' }
+      )
+    },
+    onError: () =>
+      mostrar({ texto: 'Não deu para reprocessar. Tente de novo.', tipo: 'erro' }),
+  })
 
   const [zerarAberto, setZerarAberto] = useState(false)
   const zerarMutation = useMutation({
@@ -242,7 +261,7 @@ export default function VertixScan() {
 
             {leads.data && (
               <>
-                <ScanLeadsTable leads={leadsOrdenados} onExcluir={confirmarExclusao} excluindoId={excluirMutation.isPending ? (excluirMutation.variables ?? null) : null} />
+                <ScanLeadsTable leads={leadsOrdenados} onExcluir={confirmarExclusao} excluindoId={excluirMutation.isPending ? (excluirMutation.variables ?? null) : null} onReprocessar={(lead) => reprocessarMutation.mutate(lead)} reprocessandoId={reprocessarMutation.isPending ? (reprocessarMutation.variables?.id ?? null) : null} />
 
                 {total > SCAN_PAGE_SIZE && (
                   <div className="mt-4 flex items-center justify-between">

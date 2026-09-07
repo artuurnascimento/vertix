@@ -1,0 +1,43 @@
+name: CI
+
+# Disparado pelo GitHub Actions a cada push e em todo pull request.
+# Roda lint, tipos, testes e build — a rede que faltava, já que até aqui
+# nada rodava sozinho antes de publicar. Não acessa banco nem segredos:
+# a build usa envs públicas de placeholder.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verificar:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos
+        run: npx tsc --noEmit -p tsconfig.app.json
+
+      - name: Testes
+        run: npm test
+
+      # A build precisa das envs públicas do Vite; valores de placeholder
+      # bastam para compilar (nada é chamado em tempo de build).
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://exemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-ci
