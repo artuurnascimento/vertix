@@ -45,7 +45,7 @@ export interface MesResumido {
 const FUSO = 'America/Sao_Paulo'
 
 /** "2026-09" a partir de um ISO, no fuso de São Paulo (e não em UTC). */
-function chaveDoMes(iso: string): string | null {
+export function chaveMes(iso: string): string | null {
   const data = new Date(iso)
   if (Number.isNaN(data.getTime())) return null
   const partes = new Intl.DateTimeFormat('en-CA', {
@@ -59,7 +59,7 @@ function chaveDoMes(iso: string): string | null {
 }
 
 /** "set/26" a partir de "2026-09". */
-function rotuloDoMes(chave: string): string {
+export function rotuloMes(chave: string): string {
   const [ano, mes] = chave.split('-')
   const data = new Date(Number(ano), Number(mes) - 1, 1)
   const nome = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
@@ -80,7 +80,7 @@ export function resumirPorMes(
 ): MesResumido[] {
   const contagem = new Map<string, { visitas: number; cliques: number }>()
   for (const evento of eventos) {
-    const chave = chaveDoMes(evento.created_at)
+    const chave = chaveMes(evento.created_at)
     if (!chave) continue
     const atual = contagem.get(chave) ?? { visitas: 0, cliques: 0 }
     if (evento.tipo === 'visita') atual.visitas += 1
@@ -88,7 +88,7 @@ export function resumirPorMes(
     contagem.set(chave, atual)
   }
 
-  const hoje = chaveDoMes(agora.toISOString())
+  const hoje = chaveMes(agora.toISOString())
   const chaves: string[] = []
   if (hoje) {
     const [ano, mes] = hoje.split('-').map(Number)
@@ -113,7 +113,7 @@ export function resumirPorMes(
       }
       return {
         mes: chave,
-        rotulo: rotuloDoMes(chave),
+        rotulo: rotuloMes(chave),
         visitas,
         cliques,
         taxa: taxa(cliques, visitas),

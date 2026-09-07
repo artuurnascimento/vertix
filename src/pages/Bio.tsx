@@ -87,6 +87,7 @@ export default function Bio() {
 
   const { toast, mostrar } = useToast()
   const [zerarAberto, setZerarAberto] = useState(false)
+  const [aba, setAba] = useState<'botoes' | 'metricas'>('botoes')
 
   /** Apaga visitas e cliques (bio_events) para limpar números de teste. */
   const zerarMetricas = useMutation({
@@ -200,11 +201,49 @@ export default function Bio() {
         </div>
       </div>
 
-      <div className="mt-8">
-        <BioPainelResumo botoes={lista.map((l) => ({ id: l.id, rotulo: l.rotulo }))} />
+      {/* Abas: editar os botões ou olhar as métricas, sem misturar as duas coisas. */}
+      <div
+        role="tablist"
+        aria-label="Seções do link de bio"
+        className="mt-8 inline-flex rounded-xl border border-white/10 bg-surface-1 p-1"
+      >
+        {(
+          [
+            { id: 'botoes', rotulo: 'Botões' },
+            { id: 'metricas', rotulo: 'Métricas' },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={aba === t.id}
+            onClick={() => setAba(t.id)}
+            className={[
+              'min-h-10 rounded-lg px-5 text-sm font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent',
+              aba === t.id
+                ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                : 'text-muted hover:text-ink',
+            ].join(' ')}
+          >
+            {t.rotulo}
+          </button>
+        ))}
       </div>
 
-      <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_340px]">
+      {aba === 'metricas' && (
+        <div className="mt-8">
+          <BioPainelResumo
+            botoes={lista.map((l) => ({ id: l.id, rotulo: l.rotulo }))}
+          />
+        </div>
+      )}
+
+      <div
+        className={`mt-8 gap-8 xl:grid-cols-[1fr_340px] ${
+          aba === 'botoes' ? 'grid' : 'hidden'
+        }`}
+      >
         <div>
           {isLoading && (
             <div className="space-y-3">
