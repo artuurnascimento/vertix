@@ -475,6 +475,107 @@ export type Database = {
           },
         ]
       }
+      checkouts: {
+        Row: {
+          ativo: boolean
+          bump_produto_id: string | null
+          bump_texto: string | null
+          bump_titulo: string | null
+          created_at: string
+          cronometro_ate: string | null
+          downsell_produto_id: string | null
+          downsell_texto: string | null
+          downsell_titulo: string | null
+          garantia_dias: number | null
+          garantia_texto: string | null
+          id: string
+          produto_id: string
+          prova: Json
+          slug: string
+          subtitulo: string | null
+          titulo: string
+          updated_at: string
+          upsell_produto_id: string | null
+          upsell_texto: string | null
+          upsell_titulo: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          bump_produto_id?: string | null
+          bump_texto?: string | null
+          bump_titulo?: string | null
+          created_at?: string
+          cronometro_ate?: string | null
+          downsell_produto_id?: string | null
+          downsell_texto?: string | null
+          downsell_titulo?: string | null
+          garantia_dias?: number | null
+          garantia_texto?: string | null
+          id?: string
+          produto_id: string
+          prova?: Json
+          slug: string
+          subtitulo?: string | null
+          titulo: string
+          updated_at?: string
+          upsell_produto_id?: string | null
+          upsell_texto?: string | null
+          upsell_titulo?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          bump_produto_id?: string | null
+          bump_texto?: string | null
+          bump_titulo?: string | null
+          created_at?: string
+          cronometro_ate?: string | null
+          downsell_produto_id?: string | null
+          downsell_texto?: string | null
+          downsell_titulo?: string | null
+          garantia_dias?: number | null
+          garantia_texto?: string | null
+          id?: string
+          produto_id?: string
+          prova?: Json
+          slug?: string
+          subtitulo?: string | null
+          titulo?: string
+          updated_at?: string
+          upsell_produto_id?: string | null
+          upsell_texto?: string | null
+          upsell_titulo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkouts_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_bump_produto_id_fkey"
+            columns: ["bump_produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_upsell_produto_id_fkey"
+            columns: ["upsell_produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_downsell_produto_id_fkey"
+            columns: ["downsell_produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -573,6 +674,53 @@ export type Database = {
             columns: ["proposal_id"]
             isOneToOne: false
             referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cupons: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          limite_uso: number | null
+          produto_id: string | null
+          tipo: string
+          usos: number
+          validade: string | null
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          limite_uso?: number | null
+          produto_id?: string | null
+          tipo: string
+          usos?: number
+          validade?: string | null
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          limite_uso?: number | null
+          produto_id?: string | null
+          tipo?: string
+          usos?: number
+          validade?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cupons_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]
@@ -906,6 +1054,139 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pedidos: {
+        Row: {
+          checkout_id: string
+          cliente_documento: string | null
+          cliente_email: string
+          cliente_nome: string
+          cliente_whatsapp: string | null
+          created_at: string
+          cupom_id: string | null
+          desconto_centavos: number
+          id: string
+          itens: Json
+          mp_card_id: string | null
+          mp_customer_id: string | null
+          mp_payment_id: string | null
+          origem: string | null
+          plano_code: string | null
+          receivable_id: string | null
+          status: string
+          subtotal_centavos: number
+          total_centavos: number
+          updated_at: string
+        }
+        Insert: {
+          checkout_id: string
+          cliente_documento?: string | null
+          cliente_email: string
+          cliente_nome: string
+          cliente_whatsapp?: string | null
+          created_at?: string
+          cupom_id?: string | null
+          desconto_centavos?: number
+          id?: string
+          itens?: Json
+          mp_card_id?: string | null
+          mp_customer_id?: string | null
+          mp_payment_id?: string | null
+          origem?: string | null
+          plano_code?: string | null
+          receivable_id?: string | null
+          status?: string
+          subtotal_centavos?: number
+          total_centavos?: number
+          updated_at?: string
+        }
+        Update: {
+          checkout_id?: string
+          cliente_documento?: string | null
+          cliente_email?: string
+          cliente_nome?: string
+          cliente_whatsapp?: string | null
+          created_at?: string
+          cupom_id?: string | null
+          desconto_centavos?: number
+          id?: string
+          itens?: Json
+          mp_card_id?: string | null
+          mp_customer_id?: string | null
+          mp_payment_id?: string | null
+          origem?: string | null
+          plano_code?: string | null
+          receivable_id?: string | null
+          status?: string
+          subtotal_centavos?: number
+          total_centavos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_checkout_id_fkey"
+            columns: ["checkout_id"]
+            isOneToOne: false
+            referencedRelation: "checkouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cupom_id_fkey"
+            columns: ["cupom_id"]
+            isOneToOne: false
+            referencedRelation: "cupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          entrega: string
+          id: string
+          nome: string
+          preco_ancora_centavos: number | null
+          preco_centavos: number
+          slug: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          entrega?: string
+          id?: string
+          nome: string
+          preco_ancora_centavos?: number | null
+          preco_centavos: number
+          slug: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          entrega?: string
+          id?: string
+          nome?: string
+          preco_ancora_centavos?: number | null
+          preco_centavos?: number
+          slug?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1685,7 +1966,9 @@ export type Database = {
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
       get_contract_by_token: { Args: { p_token: string }; Returns: Json }
       get_nps_by_token: { Args: { p_token: string }; Returns: Json }
+      get_checkout_info: { Args: { p_slug: string }; Returns: Json }
       get_payment_info: { Args: { p_token: string }; Returns: Json }
+      get_pedido_info: { Args: { p_pedido_id: string }; Returns: Json }
       get_portal_ads: { Args: { p_token: string }; Returns: Json }
       get_portal_by_token: { Args: { t: string }; Returns: Json }
       get_portal_files: { Args: { p_token: string }; Returns: Json }

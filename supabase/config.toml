@@ -411,3 +411,24 @@ verify_jwt = false
 
 [functions.payment-reminders]
 verify_jwt = false
+
+# Checkout próprio (páginas públicas /c/:slug e obrigado). Chamadas pelo
+# navegador de quem ainda não é usuário do painel — não há JWT para verificar.
+# O gate real de cada uma:
+#   checkout-info    → o pedido_id (uuid v4, não adivinhável) do próprio pedido
+#   checkout-pagar   → nenhum: é o formulário público; o VALOR é resolvido no
+#                      servidor pelo slug, e o corpo nunca informa preço
+#   checkout-upsell  → o pedido tem de existir, estar PAGO e ter cartão salvo,
+#                      e o produto tem de ser o upsell/downsell daquele checkout
+#   cupom-validar    → só devolve desconto; quem decide o valor é a checkout-pagar
+[functions.checkout-info]
+verify_jwt = false
+
+[functions.checkout-pagar]
+verify_jwt = false
+
+[functions.checkout-upsell]
+verify_jwt = false
+
+[functions.cupom-validar]
+verify_jwt = false

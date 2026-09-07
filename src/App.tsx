@@ -35,6 +35,11 @@ const Portal = lazy(() => import('./pages/public/Portal'))
 const ContractSign = lazy(() => import('./pages/public/ContractSign'))
 const NpsSurvey = lazy(() => import('./pages/public/NpsSurvey'))
 const PagarPage = lazy(() => import('./pages/public/PagarPage'))
+const CheckoutPage = lazy(() => import('./pages/public/CheckoutPage'))
+const UpsellPage = lazy(() => import('./pages/public/UpsellPage'))
+const ObrigadoPage = lazy(() => import('./pages/public/ObrigadoPage'))
+const Produtos = lazy(() => import('./pages/Produtos'))
+const Checkouts = lazy(() => import('./pages/Checkouts'))
 
 const SPLASH_SESSION_KEY = 'vx-splash-shown'
 
@@ -90,6 +95,11 @@ export default function App() {
       <Route path="/contrato/:token" element={<ContractSign />} />
       <Route path="/nps/:token" element={<NpsSurvey />} />
       <Route path="/pagar/:token" element={<PagarPage />} />
+      {/* Checkout de produto (slug público) e as duas telas do pós-venda.
+          Rotas de 2+ segmentos: não conflitam com o /:token do HostToken. */}
+      <Route path="/c/:slug" element={<CheckoutPage />} />
+      <Route path="/c/:slug/upsell/:pedidoId" element={<UpsellPage />} />
+      <Route path="/c/:slug/obrigado/:pedidoId" element={<ObrigadoPage />} />
       {/* Link de bio: rota longa válida em qualquer host (a raiz de
           vertix.bio cai aqui pelo HostRoot, lá embaixo). */}
       <Route path="/bio" element={<BioRoute />} />
@@ -104,6 +114,8 @@ export default function App() {
           <Route path="agenda" element={<Agenda />} />
           <Route path="briefings" element={<Briefings />} />
           <Route path="propostas" element={<Propostas />} />
+          <Route path="produtos" element={<Produtos />} />
+          <Route path="checkouts" element={<Checkouts />} />
           <Route path="financeiro" element={<Financeiro />} />
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="contratos" element={<Contratos />} />

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
+  Boxes,
   Briefcase,
   CalendarDays,
   ChevronDown,
@@ -22,6 +23,7 @@ import {
   Radar,
   ScanSearch,
   Settings,
+  ShoppingCart,
   Store,
   Users,
   Workflow,
@@ -73,7 +75,11 @@ const NAV_GROUPS = [
   {
     titulo: 'Produtos',
     icone: Package,
-    itens: [{ to: '/admin/lojas', label: 'Lojas', icon: Store, end: false }],
+    itens: [
+      { to: '/admin/lojas', label: 'Lojas', icon: Store, end: false },
+      { to: '/admin/produtos', label: 'Produtos', icon: Boxes, end: false },
+      { to: '/admin/checkouts', label: 'Checkouts', icon: ShoppingCart, end: false },
+    ],
   },
   {
     titulo: 'Sistema',
@@ -95,6 +101,8 @@ const SECTION_TITLES: Record<string, string> = {
   '/admin/financeiro': 'Financeiro',
   '/admin/trafego': 'Tráfego',
   '/admin/lojas': 'Lojas',
+  '/admin/produtos': 'Produtos',
+  '/admin/checkouts': 'Checkouts',
   '/admin/leads-raiox': 'Leads Raio-X',
   '/admin/scan': 'Vertix Scan',
   '/admin/bio': 'Link de bio',
