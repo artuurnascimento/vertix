@@ -1661,6 +1661,7 @@ export type Database = {
       }
       _scan_nudges: { Args: never; Returns: number }
       approve_project_stage: { Args: { p_token: string }; Returns: Json }
+      bio_zerar_eventos: { Args: never; Returns: number }
       create_lead: {
         Args: {
           p_email: string

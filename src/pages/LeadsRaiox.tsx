@@ -6,6 +6,8 @@ import AbandonosTab from '../components/leadsRaiox/AbandonosTab'
 import { STATUS_LEAD_META } from '../components/leadsRaiox/LeadStatusPicker'
 import { fetchLeads, zerarRaiox } from '../components/leadsRaiox/raioxData'
 import { raioxConfigMissing } from '../components/leadsRaiox/raioxSupabase'
+import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
+import Toast, { useToast } from '../components/ui/Toast'
 import { LEAD_STATUSES, type LeadStatus } from '../components/leadsRaiox/raioxTypes'
 
 /**
@@ -58,21 +60,17 @@ export default function LeadsRaiox() {
     queryClient.invalidateQueries({ queryKey: ['apps-proxy', 'scan'] })
   }
 
+  const { toast, mostrar } = useToast()
+  const [zerarAberto, setZerarAberto] = useState(false)
   const zerarMutation = useMutation({
     mutationFn: zerarRaiox,
     onSuccess: ({ leads: apagados, analises }) => {
+      setZerarAberto(false)
       refetch()
-      window.alert(`Pronto: ${apagados} lead(s) e ${analises} análise(s) apagados.`)
+      mostrar({ texto: `${apagados} lead(s) e ${analises} análise(s) apagados.` })
     },
   })
-
-  const confirmarZerar = () => {
-    const total = leads?.length ?? 0
-    const digitado = window.prompt(
-      `Isso apaga TODOS os ${total} lead(s) e TODAS as análises do Vertix Scan, sem volta.\nDigite ZERAR para confirmar.`
-    )
-    if (digitado?.trim().toUpperCase() === 'ZERAR') zerarMutation.mutate()
-  }
+  const confirmarZerar = () => setZerarAberto(true)
 
   return (
     <div>
@@ -249,6 +247,31 @@ export default function LeadsRaiox() {
           </div>
         </>
       )}
+
+      <ConfirmacaoModal
+        open={zerarAberto}
+        titulo="Zerar o Vertix Scan?"
+        descricao={
+          <>
+            Isso apaga{' '}
+            <span className="font-medium text-ink">
+              todos os {leads?.length ?? 0} lead(s)
+            </span>{' '}
+            e <span className="font-medium text-ink">todas as análises</span>,
+            inclusive as abandonadas. Não dá para desfazer.
+          </>
+        }
+        rotuloConfirmar="Zerar tudo"
+        palavraDeConfirmacao="ZERAR"
+        isPending={zerarMutation.isPending}
+        erro={
+          zerarMutation.isError ? (zerarMutation.error as Error).message : null
+        }
+        onConfirm={() => zerarMutation.mutate()}
+        onClose={() => setZerarAberto(false)}
+      />
+
+      <Toast mensagem={toast} />
     </div>
   )
 }

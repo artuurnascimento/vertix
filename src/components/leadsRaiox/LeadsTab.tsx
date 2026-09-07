@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink, MessageCircle, Users, Trash2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import ConfirmacaoModal from '../ui/ConfirmacaoModal'
+import Toast, { useToast } from '../ui/Toast'
 import { formatRelativeTime } from '../../lib/format'
 import { deleteLead, reportUrl, updateLeadStatus, whatsappLinkForLead } from './raioxData'
 import type { LeadComAnalise, LeadStatus } from './raioxTypes'
@@ -39,11 +42,20 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
     },
   })
 
-  const confirmarExclusao = (lead: LeadComAnalise) => {
-    const quem = `${lead.name} (${lead.analyses?.domain ?? 'sem domínio'})`
-    if (window.confirm(`Excluir o lead ${quem} e a análise dele? Não dá para desfazer.`)) {
-      excluirMutation.mutate(lead.id)
-    }
+  const [leadParaExcluir, setLeadParaExcluir] = useState<LeadComAnalise | null>(
+    null
+  )
+  const { toast, mostrar } = useToast()
+  const confirmarExclusao = (lead: LeadComAnalise) => setLeadParaExcluir(lead)
+  const excluir = () => {
+    if (!leadParaExcluir) return
+    const quem = leadParaExcluir.name
+    excluirMutation.mutate(leadParaExcluir.id, {
+      onSuccess: () => {
+        setLeadParaExcluir(null)
+        mostrar({ texto: `Lead ${quem} excluído.` })
+      },
+    })
   }
 
   const termo = search.trim().toLowerCase()
@@ -165,6 +177,28 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
           )
         })}
       </AnimatePresence>
+
+      <ConfirmacaoModal
+        open={leadParaExcluir != null}
+        titulo="Excluir lead?"
+        descricao={
+          <>
+            <span className="font-medium text-ink">{leadParaExcluir?.name}</span>{' '}
+            ({leadParaExcluir?.analyses?.domain ?? 'sem domínio'}) e a análise
+            dele serão removidos permanentemente.
+          </>
+        }
+        rotuloConfirmar="Excluir"
+        isPending={excluirMutation.isPending}
+        erro={
+          excluirMutation.isError
+            ? (excluirMutation.error as Error).message
+            : null
+        }
+        onConfirm={excluir}
+        onClose={() => setLeadParaExcluir(null)}
+      />
+      <Toast mensagem={toast} />
     </ul>
   )
 }

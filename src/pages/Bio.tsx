@@ -10,7 +10,10 @@ import {
   Link2,
   Pencil,
   Plus,
+  Trash2,
 } from 'lucide-react'
+import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
+import Toast, { useToast } from '../components/ui/Toast'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { BIO_PUBLIC_BASE } from '../lib/publicUrls'
@@ -81,6 +84,23 @@ export default function Bio() {
     // A página pública lê por outra chave; mantém as duas em dia.
     await queryClient.invalidateQueries({ queryKey: ['bio-links'] })
   }
+
+  const { toast, mostrar } = useToast()
+  const [zerarAberto, setZerarAberto] = useState(false)
+
+  /** Apaga visitas e cliques (bio_events) para limpar números de teste. */
+  const zerarMetricas = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('bio_zerar_eventos')
+      if (error) throw new Error(error.message)
+      return Number(data ?? 0)
+    },
+    onSuccess: async (apagados) => {
+      setZerarAberto(false)
+      await queryClient.invalidateQueries({ queryKey: ['bio-eventos'] })
+      mostrar({ texto: `${apagados} evento(s) apagados. Métricas zeradas.` })
+    },
+  })
 
   const alternarAtivo = useMutation({
     mutationFn: async (link: BioLinkRow) => {
@@ -161,6 +181,14 @@ export default function Bio() {
             <ExternalLink className="h-4 w-4" />
             Abrir página
           </a>
+          <button
+            type="button"
+            onClick={() => setZerarAberto(true)}
+            className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 font-kanit text-sm font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <Trash2 className="h-4 w-4" />
+            Zerar métricas
+          </button>
           <button
             type="button"
             onClick={abrirNovo}
@@ -322,6 +350,32 @@ export default function Bio() {
         proximaPosicao={proximaPosicao}
         onClose={() => setModalOpen(false)}
       />
+
+      <ConfirmacaoModal
+        open={zerarAberto}
+        titulo="Zerar as métricas do link de bio?"
+        descricao={
+          <>
+            Isso apaga{' '}
+            <span className="font-medium text-ink">
+              todas as visitas e cliques já registrados
+            </span>
+            . Os botões continuam como estão. Não dá para desfazer.
+          </>
+        }
+        rotuloConfirmar="Zerar métricas"
+        palavraDeConfirmacao="ZERAR"
+        isPending={zerarMetricas.isPending}
+        erro={
+          zerarMetricas.isError
+            ? (zerarMetricas.error as Error).message
+            : null
+        }
+        onConfirm={() => zerarMetricas.mutate()}
+        onClose={() => setZerarAberto(false)}
+      />
+
+      <Toast mensagem={toast} />
     </div>
   )
 }

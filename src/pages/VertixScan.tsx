@@ -3,6 +3,8 @@ import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from 'luc
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteLead, zerarRaiox } from '../components/leadsRaiox/raioxData'
 import type { ScanLead } from '../components/scan/scanProxy'
+import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
+import Toast, { useToast } from '../components/ui/Toast'
 import { isNaoConfigurado } from '../components/lojas/appsProxy'
 import ScanLeadsTable from '../components/scan/ScanLeadsTable'
 import {
@@ -50,29 +52,30 @@ export default function VertixScan() {
     queryClient.invalidateQueries({ queryKey: ['raiox-abandonos'] })
   }
 
+  const { toast, mostrar } = useToast()
+
+  const [leadParaExcluir, setLeadParaExcluir] = useState<ScanLead | null>(null)
   const excluirMutation = useMutation({
     mutationFn: (id: string) => deleteLead(id),
-    onSuccess: refetch,
+    onSuccess: () => {
+      const quem = leadParaExcluir?.nome ?? 'Lead'
+      setLeadParaExcluir(null)
+      refetch()
+      mostrar({ texto: `Lead ${quem} excluído.` })
+    },
   })
-  const confirmarExclusao = (lead: ScanLead) => {
-    if (window.confirm(`Excluir o lead ${lead.nome} (${lead.dominio || 'sem domínio'}) e a análise dele? Não dá para desfazer.`)) {
-      excluirMutation.mutate(lead.id)
-    }
-  }
+  const confirmarExclusao = (lead: ScanLead) => setLeadParaExcluir(lead)
 
+  const [zerarAberto, setZerarAberto] = useState(false)
   const zerarMutation = useMutation({
     mutationFn: zerarRaiox,
     onSuccess: ({ leads: apagados, analises }) => {
+      setZerarAberto(false)
       refetch()
-      window.alert(`Pronto: ${apagados} lead(s) e ${analises} análise(s) apagados.`)
+      mostrar({ texto: `${apagados} lead(s) e ${analises} análise(s) apagados.` })
     },
   })
-  const confirmarZerar = () => {
-    const digitado = window.prompt(
-      `Isso apaga TODOS os ${stats.data?.leads_total ?? 0} lead(s) e TODAS as ${stats.data?.analises_total ?? 0} análise(s) do Vertix Scan, sem volta.\nDigite ZERAR para confirmar.`
-    )
-    if (digitado?.trim().toUpperCase() === 'ZERAR') zerarMutation.mutate()
-  }
+  const confirmarZerar = () => setZerarAberto(true)
 
   // 503 do proxy = SCAN_API_URL/SCAN_SERVICE_TOKEN ausentes nos secrets.
   const naoConfigurado =
@@ -239,6 +242,57 @@ export default function VertixScan() {
           </div>
         </>
       )}
+
+      <ConfirmacaoModal
+        open={leadParaExcluir != null}
+        titulo="Excluir lead?"
+        descricao={
+          <>
+            <span className="font-medium text-ink">{leadParaExcluir?.nome}</span>{' '}
+            ({leadParaExcluir?.dominio || 'sem domínio'}) e a análise dele serão
+            removidos permanentemente.
+          </>
+        }
+        rotuloConfirmar="Excluir"
+        isPending={excluirMutation.isPending}
+        erro={
+          excluirMutation.isError
+            ? (excluirMutation.error as Error).message
+            : null
+        }
+        onConfirm={() =>
+          leadParaExcluir && excluirMutation.mutate(leadParaExcluir.id)
+        }
+        onClose={() => setLeadParaExcluir(null)}
+      />
+
+      <ConfirmacaoModal
+        open={zerarAberto}
+        titulo="Zerar o Vertix Scan?"
+        descricao={
+          <>
+            Isso apaga{' '}
+            <span className="font-medium text-ink">
+              todos os {num(stats.data?.leads_total ?? 0)} lead(s)
+            </span>{' '}
+            e{' '}
+            <span className="font-medium text-ink">
+              todas as {num(stats.data?.analises_total ?? 0)} análise(s)
+            </span>
+            , inclusive as abandonadas. Não dá para desfazer.
+          </>
+        }
+        rotuloConfirmar="Zerar tudo"
+        palavraDeConfirmacao="ZERAR"
+        isPending={zerarMutation.isPending}
+        erro={
+          zerarMutation.isError ? (zerarMutation.error as Error).message : null
+        }
+        onConfirm={() => zerarMutation.mutate()}
+        onClose={() => setZerarAberto(false)}
+      />
+
+      <Toast mensagem={toast} />
     </div>
   )
 }
