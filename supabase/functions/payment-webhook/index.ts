@@ -130,13 +130,13 @@ async function entregarCompraDoScan(
   }
 
   const workerUrl = Deno.env.get('SCAN_WORKER_URL')
-  // Mesma direção do apps-proxy (admin → rotas /api/vertix/* do worker), então
-  // o token é o mesmo: SCAN_SERVICE_TOKEN, que já está configurado e em uso.
-  // VERTIX_SERVICE_TOKEN fica como alternativa para quem preferir separar —
-  // exigir um segredo novo aqui só criaria mais um jeito de esquecer de
-  // configurar e descobrir o esquecimento com a primeira venda perdida.
+  // VERTIX_SERVICE_TOKEN é o nome certo desta direção (admin → rotas
+  // /api/vertix/* do worker) e tem precedência. SCAN_SERVICE_TOKEN fica só
+  // como alternativa, e NUNCA na frente: numa venda real ele estava ausente
+  // aqui — o token saiu indefinido, a chamada ao worker nem foi tentada, e o
+  // cliente ficou 18 minutos pago sem receber o plano.
   const vertixToken =
-    Deno.env.get('SCAN_SERVICE_TOKEN') ?? Deno.env.get('VERTIX_SERVICE_TOKEN')
+    Deno.env.get('VERTIX_SERVICE_TOKEN') ?? Deno.env.get('SCAN_SERVICE_TOKEN')
   if (!workerUrl || !vertixToken) {
     console.error(
       '[payment-webhook] SCAN_WORKER_URL/SCAN_SERVICE_TOKEN ausentes — ' +
