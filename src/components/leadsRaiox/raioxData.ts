@@ -126,6 +126,15 @@ export function teaserUrl(analysisId: string): string {
   return `${reportBase}/analise/${analysisId}`
 }
 
+/**
+ * Página do Plano de Correção entregue ao comprador (mesma base do
+ * relatório, rota /plano). Usada pela visão de vendas do Vertix Scan para a
+ * equipe ver exatamente o que o cliente recebeu.
+ */
+export function planoUrl(code: string): string {
+  return `${reportBase}/plano/${encodeURIComponent(code)}`
+}
+
 /** "7,2" — score com uma casa, vírgula pt-BR. Null vira "—". */
 export function formatScore(score: number | null): string {
   if (score === null || Number.isNaN(score)) return '—'

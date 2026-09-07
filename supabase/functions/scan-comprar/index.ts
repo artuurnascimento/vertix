@@ -1,0 +1,520 @@
+/**
+ * scan-comprar
+ *
+ * Venda automática do Plano de Correção do Vertix Scan. Chamada pelo WORKER do
+ * Scan (servidor a servidor), nunca pelo navegador — por isso não usa withCors.
+ *
+ * Recebe os dados do comprador e cria, de uma vez, o que antes era digitado à
+ * mão no Financeiro: cliente (origem 'scan'), projeto, recebível pendente e a
+ * linha em raiox_compras que amarra os três à análise. Devolve o link do nosso
+ * próprio checkout (/pagar/:payment_token) — o Mercado Pago só processa.
+ *
+ * Autenticação: header `x-vertix-token` comparado em tempo constante com a env
+ * SCAN_INBOUND_TOKEN. Sem a env, responde 503 (endpoint desativado), no mesmo
+ * espírito do apps-proxy quando um app não está configurado.
+ *
+ * SCAN_INBOUND_TOKEN é deliberadamente SEPARADA de SCAN_SERVICE_TOKEN, que o
+ * apps-proxy usa no sentido contrário (painel → worker). Fossem a mesma, quem
+ * tivesse o token de saída poderia criar cliente, projeto e cobrança aqui
+ * dentro. Direções opostas, segredos opostos.
+ *
+ * Idempotência: a análise que já tem compra recebe de volta a MESMA compra e o
+ * MESMO payment_url. Dois cliques no botão não geram dois clientes. A checagem
+ * por leitura cobre o caso normal; o empate real (dois POSTs simultâneos) é
+ * barrado pelo índice único parcial raiox_compras_analysis_ativa_key, e o
+ * segundo insert cai no mesmo caminho de "já existe".
+ *
+ * Criação parcial: se algo falha no meio, esta função DESFAZ o que criou
+ * (recebível → projeto → cliente, e o cliente só quando foi criado agora) e
+ * responde erro. O motivo de preferir desfazer a registrar pela metade: essas
+ * linhas aparecem no Financeiro e no CRM da equipe, e um cliente fantasma sem
+ * cobrança é ruído que alguém vai ter de limpar à mão; o comprador, por outro
+ * lado, só precisa clicar de novo. O rollback é "melhor esforço" — se ele
+ * próprio falhar, o log diz exatamente quais ids ficaram órfãos.
+ *
+ * NUNCA loga o valor de SCAN_INBOUND_TOKEN nem a service role key.
+ */
+
+/**
+ * Corpo aceito do worker. `compra_id` e `plano_code` NÃO entram aqui de
+ * propósito: quem cria a linha de raiox_compras e sorteia o plano_code é esta
+ * function, que é quem tem o recebível, o rollback e o índice de unicidade.
+ * Se o worker mandar esses campos, eles são ignorados — corpo vindo de fora não
+ * dita chave. Não acrescente-os a esta interface sem mudar esse contrato.
+ */
+interface RequestBody {
+  analysis_id?: string
+  nome?: string
+  email?: string
+  whatsapp?: string
+  dominio?: string
+  valor_centavos?: number
+}
+
+interface CompraRecord {
+  id: string
+  receivable_id: string | null
+  plano_code: string | null
+  status: string
+}
+
+interface ReceivableRecord {
+  id: string
+  payment_token: string
+}
+
+/** Domínio público oficial dos links de pagamento enviados a clientes. */
+const PAGAR_PUBLIC_BASE = 'https://pay.vertix.studio'
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Validação de e-mail deliberadamente frouxa: só garante forma mínima, porque
+// o e-mail vira o identificador do cliente e o destino do recibo.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Teto de sanidade para o valor. O worker é confiável (tem o token), mas um bug
+// dele não pode virar uma cobrança de seis dígitos na cara de um cliente.
+const VALOR_MAXIMO_CENTAVOS = 5_000_000
+
+/** Projeto do Plano de Correção: o Scan analisa loja, logo e-commerce. */
+const TIPO_SERVICO = 'ecommerce'
+
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+/** Comparação em tempo constante — não vaza o segredo por timing. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
+/**
+ * Código do plano: 12 caracteres base64url, mesmo formato do report_code do
+ * Scan. 9 bytes aleatórios dão exatamente 12 chars sem padding (72 bits).
+ */
+function gerarPlanoCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(9))
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replaceAll('=', '')
+}
+
+/**
+ * Centavos → string decimal para a coluna numeric(12,2). Feito com aritmética
+ * inteira de propósito: dividir por 100 em float e serializar já produziu
+ * centavo a menos em sistema de cobrança.
+ */
+function centavosParaReais(centavos: number): string {
+  const reais = Math.trunc(centavos / 100)
+  const resto = centavos % 100
+  return `${reais}.${String(resto).padStart(2, '0')}`
+}
+
+/** Data de hoje em YYYY-MM-DD (UTC, igual ao resto das functions). */
+function hojeISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+Deno.serve(async (req) => {
+  const scanToken = Deno.env.get('SCAN_INBOUND_TOKEN')
+  if (!scanToken) {
+    console.error('[scan-comprar] SCAN_INBOUND_TOKEN não configurado.')
+    return jsonResponse({ error: 'endpoint_desativado' }, 503)
+  }
+  if (!safeEqual(req.headers.get('x-vertix-token') ?? '', scanToken)) {
+    return jsonResponse({ error: 'nao_autorizado' }, 401)
+  }
+
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'method_not_allowed' }, 405)
+  }
+
+  let body: RequestBody
+  try {
+    body = await req.json()
+  } catch {
+    return jsonResponse({ error: 'payload_invalido' }, 400)
+  }
+
+  // ------------------------------------------------------------------------
+  // Validação da entrada
+  // ------------------------------------------------------------------------
+
+  const analysisId = body.analysis_id
+  if (!analysisId || !UUID_RE.test(analysisId)) {
+    return jsonResponse({ error: 'analysis_id_invalido' }, 400)
+  }
+
+  const nome = (body.nome ?? '').trim()
+  if (!nome) {
+    return jsonResponse({ error: 'nome_obrigatorio' }, 400)
+  }
+
+  const email = (body.email ?? '').trim().toLowerCase()
+  if (!EMAIL_RE.test(email)) {
+    return jsonResponse({ error: 'email_invalido' }, 400)
+  }
+
+  const whatsapp = (body.whatsapp ?? '').trim()
+  if (!whatsapp) {
+    return jsonResponse({ error: 'whatsapp_obrigatorio' }, 400)
+  }
+
+  const dominio = (body.dominio ?? '').trim()
+  if (!dominio) {
+    return jsonResponse({ error: 'dominio_obrigatorio' }, 400)
+  }
+
+  const valorCentavos = body.valor_centavos
+  if (
+    typeof valorCentavos !== 'number' ||
+    !Number.isInteger(valorCentavos) ||
+    valorCentavos <= 0 ||
+    valorCentavos > VALOR_MAXIMO_CENTAVOS
+  ) {
+    return jsonResponse({ error: 'valor_centavos_invalido' }, 400)
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('[scan-comprar] Env do Supabase ausente.')
+    return jsonResponse({ error: 'env_supabase_ausente' }, 500)
+  }
+
+  const restBase = `${supabaseUrl}/rest/v1`
+  const authHeaders = {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+  }
+  const writeHeaders = {
+    ...authHeaders,
+    'Content-Type': 'application/json',
+    Prefer: 'return=representation',
+  }
+
+  // ------------------------------------------------------------------------
+  // Helpers de acesso ao banco (PostgREST com service role — ignora RLS)
+  // ------------------------------------------------------------------------
+
+  /** Monta a resposta final a partir de uma compra já existente/criada. */
+  async function responderCompra(compra: CompraRecord): Promise<Response> {
+    let paymentUrl: string | null = null
+
+    if (compra.receivable_id) {
+      const res = await fetch(
+        `${restBase}/receivables?id=eq.${compra.receivable_id}` +
+          '&select=id,payment_token',
+        { headers: authHeaders }
+      )
+      if (res.ok) {
+        const linhas = (await res.json()) as ReceivableRecord[]
+        if (linhas[0]) {
+          paymentUrl = `${PAGAR_PUBLIC_BASE}/pagar/${linhas[0].payment_token}`
+        }
+      } else {
+        console.error(
+          '[scan-comprar] Falha ao buscar recebível da compra:',
+          res.status
+        )
+      }
+    }
+
+    return jsonResponse({
+      compra_id: compra.id,
+      receivable_id: compra.receivable_id,
+      plano_code: compra.plano_code,
+      payment_url: paymentUrl,
+    })
+  }
+
+  /**
+   * Busca a compra VIVA desta análise, se houver. O filtro de status é o mesmo
+   * do índice único parcial raiox_compras_analysis_ativa_key — cancelada ou
+   * reembolsada não conta, e o lead pode comprar de novo.
+   */
+  async function buscarCompraExistente(): Promise<CompraRecord | null> {
+    const res = await fetch(
+      `${restBase}/raiox_compras?analysis_id=eq.${analysisId}` +
+        '&status=in.(aguardando_pagamento,pago)' +
+        '&select=id,receivable_id,plano_code,status&limit=1',
+      { headers: authHeaders }
+    )
+    if (!res.ok) {
+      console.error('[scan-comprar] Falha ao consultar compras:', res.status)
+      return null
+    }
+    const linhas = (await res.json()) as CompraRecord[]
+    return linhas[0] ?? null
+  }
+
+  /**
+   * Lead que originou a análise, para o painel conseguir ir da compra de volta
+   * a quem a gerou. Uma análise pode ter mais de um lead (ver
+   * public.raiox_excluir_lead), então prefere o que casa com o e-mail do
+   * comprador — é ele quem está pagando — e cai no mais recente quando nenhum
+   * casa (lead anterior a 2026-09-05 tem email NULL e nunca casaria).
+   *
+   * NUNCA lança e nunca bloqueia: qualquer falha vira null e a venda segue.
+   */
+  async function buscarLeadDaAnalise(): Promise<string | null> {
+    try {
+      const res = await fetch(
+        `${restBase}/leads?analysis_id=eq.${analysisId}` +
+          '&select=id,email&order=created_at.desc&limit=10',
+        { headers: authHeaders }
+      )
+      if (!res.ok) {
+        console.error('[scan-comprar] Falha ao buscar lead da análise:', res.status)
+        return null
+      }
+      const leads = (await res.json()) as Array<{
+        id: string
+        email: string | null
+      }>
+      const porEmail = leads.find(
+        (lead) => lead.email?.trim().toLowerCase() === email
+      )
+      return (porEmail ?? leads[0])?.id ?? null
+    } catch (erro) {
+      console.error('[scan-comprar] Erro ao buscar lead da análise:', erro)
+      return null
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 1. Idempotência: análise que já comprou recebe a mesma compra de volta
+  // ------------------------------------------------------------------------
+
+  const existente = await buscarCompraExistente()
+  if (existente) {
+    return responderCompra(existente)
+  }
+
+  // ------------------------------------------------------------------------
+  // Rollback do que for criado daqui para baixo
+  // ------------------------------------------------------------------------
+
+  let clienteCriadoId: string | null = null
+  let projetoCriadoId: string | null = null
+  let recebivelCriadoId: string | null = null
+
+  async function apagar(tabela: string, id: string): Promise<void> {
+    const res = await fetch(`${restBase}/${tabela}?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { ...authHeaders, Prefer: 'return=minimal' },
+    })
+    if (!res.ok) {
+      console.error(
+        `[scan-comprar] ROLLBACK INCOMPLETO — ${tabela} ${id} não foi apagado`,
+        res.status
+      )
+    }
+  }
+
+  /** Desfaz na ordem inversa da criação. Cliente reaproveitado não é tocado. */
+  async function desfazer(): Promise<void> {
+    if (recebivelCriadoId) await apagar('receivables', recebivelCriadoId)
+    if (projetoCriadoId) await apagar('projects', projetoCriadoId)
+    if (clienteCriadoId) await apagar('clients', clienteCriadoId)
+  }
+
+  async function falhar(
+    motivo: string,
+    status: number,
+    detalhe?: string
+  ): Promise<Response> {
+    if (detalhe) console.error(`[scan-comprar] ${motivo}:`, detalhe)
+    await desfazer()
+    return jsonResponse({ error: motivo }, status)
+  }
+
+  // ------------------------------------------------------------------------
+  // 2. Cliente — reaproveita por e-mail, senão cria com origem 'scan'
+  // ------------------------------------------------------------------------
+  // O casamento é por e-mail exato em minúsculas. Cliente antigo cadastrado
+  // com maiúsculas não casa e vira um segundo cadastro — preferível a unir
+  // duas pessoas diferentes por engano num registro financeiro.
+
+  let clientId: string
+
+  const clienteRes = await fetch(
+    `${restBase}/clients?email=eq.${encodeURIComponent(email)}` +
+      '&select=id&limit=1',
+    { headers: authHeaders }
+  )
+  if (!clienteRes.ok) {
+    return falhar('falha_ao_buscar_cliente', 502, String(clienteRes.status))
+  }
+  const clientesExistentes = (await clienteRes.json()) as Array<{ id: string }>
+
+  if (clientesExistentes[0]) {
+    clientId = clientesExistentes[0].id
+  } else {
+    const novoClienteRes = await fetch(`${restBase}/clients`, {
+      method: 'POST',
+      headers: writeHeaders,
+      body: JSON.stringify({
+        nome,
+        email,
+        telefone: whatsapp,
+        origem: 'scan',
+      }),
+    })
+    if (!novoClienteRes.ok) {
+      return falhar(
+        'falha_ao_criar_cliente',
+        502,
+        `${novoClienteRes.status} ${await novoClienteRes.text()}`
+      )
+    }
+    const criados = (await novoClienteRes.json()) as Array<{ id: string }>
+    if (!criados[0]) {
+      return falhar('falha_ao_criar_cliente', 502, 'resposta sem linha')
+    }
+    clientId = criados[0].id
+    clienteCriadoId = clientId
+  }
+
+  // ------------------------------------------------------------------------
+  // 3. Projeto
+  // ------------------------------------------------------------------------
+
+  const projetoRes = await fetch(`${restBase}/projects`, {
+    method: 'POST',
+    headers: writeHeaders,
+    body: JSON.stringify({
+      client_id: clientId,
+      nome: `Plano de Correção — ${dominio}`,
+      tipo_servico: TIPO_SERVICO,
+      origem: 'scan',
+    }),
+  })
+  if (!projetoRes.ok) {
+    return falhar(
+      'falha_ao_criar_projeto',
+      502,
+      `${projetoRes.status} ${await projetoRes.text()}`
+    )
+  }
+  const projetos = (await projetoRes.json()) as Array<{ id: string }>
+  if (!projetos[0]) {
+    return falhar('falha_ao_criar_projeto', 502, 'resposta sem linha')
+  }
+  projetoCriadoId = projetos[0].id
+  const projectId = projetos[0].id
+
+  // ------------------------------------------------------------------------
+  // 4. Recebível — vence hoje, pendente até o webhook do Mercado Pago
+  // ------------------------------------------------------------------------
+  // O payment_token é gerado AQUI em vez de deixar o default do banco para que
+  // `payment_link` já entre preenchido no MESMO insert. Assim a linha nasce
+  // completa: a equipe vê o link no Financeiro sem precisar clicar em "Gerar
+  // link", e não existe janela em que a cobrança esteja no banco sem link.
+  // (O e-mail automático "nova cobrança" não se aplica aqui — a migration
+  // 20260907160000 exclui origem 'scan' do trigger notify_client_parcela_criada,
+  // porque o comprador está olhando o checkout neste exato instante.)
+
+  const paymentToken = crypto.randomUUID()
+  const paymentUrl = `${PAGAR_PUBLIC_BASE}/pagar/${paymentToken}`
+
+  const recebivelRes = await fetch(`${restBase}/receivables`, {
+    method: 'POST',
+    headers: writeHeaders,
+    body: JSON.stringify({
+      project_id: projectId,
+      client_id: clientId,
+      descricao: `Plano de Correção — ${dominio}`,
+      valor: centavosParaReais(valorCentavos),
+      vencimento: hojeISO(),
+      status: 'pendente',
+      origem: 'scan',
+      payment_token: paymentToken,
+      payment_link: paymentUrl,
+    }),
+  })
+  if (!recebivelRes.ok) {
+    return falhar(
+      'falha_ao_criar_recebivel',
+      502,
+      `${recebivelRes.status} ${await recebivelRes.text()}`
+    )
+  }
+  const recebiveis = (await recebivelRes.json()) as ReceivableRecord[]
+  const recebivel = recebiveis[0]
+  if (!recebivel) {
+    return falhar('falha_ao_criar_recebivel', 502, 'resposta sem linha')
+  }
+  recebivelCriadoId = recebivel.id
+
+  // ------------------------------------------------------------------------
+  // 5. Compra — amarra análise, lead, cliente, projeto e recebível
+  // ------------------------------------------------------------------------
+  // O lead é vínculo de painel, não pré-requisito da venda: o worker só chega
+  // aqui depois de já ter validado que existe lead com contato, então não
+  // achar um é corrida rara — e a entrega do plano não depende deste campo,
+  // porque o worker resolve o lead por analysis_id na hora de mandar o e-mail.
+  // Por isso `lead_id` null é resultado aceitável, nunca erro.
+
+  const leadId = await buscarLeadDaAnalise()
+
+  const compraRes = await fetch(`${restBase}/raiox_compras`, {
+    method: 'POST',
+    headers: writeHeaders,
+    body: JSON.stringify({
+      analysis_id: analysisId,
+      lead_id: leadId,
+      client_id: clientId,
+      project_id: projectId,
+      receivable_id: recebivel.id,
+      valor_centavos: valorCentavos,
+      status: 'aguardando_pagamento',
+      plano_code: gerarPlanoCode(),
+    }),
+  })
+
+  if (!compraRes.ok) {
+    const detalhe = await compraRes.text()
+
+    // 23505 = violação de unicidade. Na prática só o índice parcial por
+    // analysis_id: outra requisição simultânea ganhou a corrida. Desfaz o que
+    // esta criou e devolve a compra da outra — o comprador vê um link só.
+    if (compraRes.status === 409 && detalhe.includes('23505')) {
+      await desfazer()
+      const vencedora = await buscarCompraExistente()
+      if (vencedora) {
+        return responderCompra(vencedora)
+      }
+      return jsonResponse({ error: 'falha_ao_registrar_compra' }, 502)
+    }
+
+    return falhar(
+      'falha_ao_registrar_compra',
+      502,
+      `${compraRes.status} ${detalhe}`
+    )
+  }
+
+  const compras = (await compraRes.json()) as CompraRecord[]
+  const compra = compras[0]
+  if (!compra) {
+    return falhar('falha_ao_registrar_compra', 502, 'resposta sem linha')
+  }
+
+  return jsonResponse({
+    compra_id: compra.id,
+    receivable_id: recebivel.id,
+    plano_code: compra.plano_code,
+    payment_url: paymentUrl,
+  })
+})

@@ -391,6 +391,12 @@ verify_jwt = false
 [functions.payment-webhook]
 verify_jwt = false
 
+# Chamada pelo worker do Scan (servidor a servidor, sem sessão de usuário): o
+# gate real é o header x-vertix-token, comparado em tempo constante com
+# SCAN_INBOUND_TOKEN dentro da function.
+[functions.scan-comprar]
+verify_jwt = false
+
 # Functions internas (triggers/cron do banco): o gate real é o header
 # x-edge-secret validado contra EDGE_SHARED_SECRET dentro de cada function.
 # A anon key deixou de ser aceita como credencial (é pública).

@@ -13,6 +13,11 @@
  * Cada envio grava `ultimo_lembrete_em` e incrementa `lembretes_enviados`.
  *
  * Sem RESEND_API_KEY configurada, loga e responde 200 (no-op gracioso).
+ *
+ * NÃO cobra as vendas do Vertix Scan (receivables.origem = 'scan'): quatro
+ * "Lembrete de pagamento" por um checkout de produto que a pessoa abandonou é
+ * linguagem de cobrança de dívida por algo que ela nunca se comprometeu a
+ * pagar. A recuperação desses casos é uma sequência de venda no worker do Scan.
  */
 
 /** Intervalo mínimo entre dois lembretes da MESMA cobrança. */
@@ -148,9 +153,18 @@ Deno.serve(async (req) => {
     .toISOString()
     .slice(0, 10)
 
-  // Vencidas (< hoje) OU vencendo em exatamente hoje+3.
+  // Vencidas (< hoje) OU vencendo em exatamente hoje+3 — e nunca as vendas do
+  // Vertix Scan (origem 'scan').
+  //
+  // ATENÇÃO ao segundo `or`: ele NÃO pode virar `origem=not.eq.scan`. `origem`
+  // é NULL em todo recebível de agência, e `NOT (NULL = 'scan')` é NULL, o que
+  // descartaria em silêncio justamente as cobranças que esta rotina existe para
+  // lembrar. `origem.is.null` segura a agência; `origem.neq.scan` segura
+  // qualquer origem futura.
   const filtro =
-    `status=eq.pendente&or=(vencimento.lt.${hojeStr},vencimento.eq.${emTresDias})`
+    'status=eq.pendente' +
+    `&and=(or(vencimento.lt.${hojeStr},vencimento.eq.${emTresDias}),` +
+    'or(origem.is.null,origem.neq.scan))'
 
   const receivablesRes = await fetch(
     `${supabaseUrl}/rest/v1/receivables?${filtro}` +

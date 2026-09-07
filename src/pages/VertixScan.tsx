@@ -11,6 +11,9 @@ import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
 import Toast, { useToast } from '../components/ui/Toast'
 import { isNaoConfigurado } from '../components/lojas/appsProxy'
 import ScanLeadsTable from '../components/scan/ScanLeadsTable'
+import ScanVendasTab from '../components/scan/ScanVendasTab'
+import ScanAbas from '../components/scan/ScanAbas'
+import type { AbaKey } from '../components/scan/ScanAbas'
 import FiltroPeriodo from '../components/ui/FiltroPeriodo'
 import { rotuloDoPeriodo } from '../lib/periodo'
 import type { Periodo } from '../lib/periodo'
@@ -36,8 +39,10 @@ function num(value: number): string {
 export default function VertixScan() {
   const queryClient = useQueryClient()
   const [pagina, setPagina] = useState(0)
-  // Período do filtro: vale para os números e para a lista de leads.
+  // Período do filtro: vale para os números, para os leads e para as vendas.
   const [periodo, setPeriodo] = useState<Periodo>('30d')
+  // Duas leituras do mesmo funil: quem chegou (leads) e quem comprou (vendas).
+  const [aba, setAba] = useState<AbaKey>('leads')
 
   const trocarPeriodo = (novo: Periodo) => {
     setPeriodo(novo)
@@ -193,108 +198,125 @@ export default function VertixScan() {
             className="mt-8"
           />
 
-          {/* Cards de stats */}
-          {stats.isLoading && (
-            <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="h-20 animate-pulse rounded-xl bg-surface-1" />
-              ))}
+          {/* Abas Leads | Vendas — o filtro de período vale para as duas. */}
+          <ScanAbas valor={aba} onChange={setAba} className="mt-6" />
+
+          {aba === 'vendas' && (
+            <div className="mt-8">
+              <ScanVendasTab
+                periodo={periodo}
+                rotuloPeriodo={rotuloPeriodo}
+                leadsPeriodo={leadsPeriodo}
+              />
             </div>
           )}
 
-          {stats.isError && (
-            <div className="mt-8 rounded-xl border border-red-400/25 bg-red-400/10 px-6 py-8 text-center">
-              <p className="text-sm font-light text-red-100/90">
-                Backend do Vertix Scan não respondeu — métricas indisponíveis.
-              </p>
-            </div>
-          )}
-
-          {stats.data && (
-            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
-              {cards.map((card) => (
-                <div
-                  key={card.label}
-                  className="rounded-xl border border-white/5 bg-surface-1 px-4 py-3"
-                >
-                  <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
-                    {card.label}
-                  </p>
-                  <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
-                    {num(card.valor ?? 0)}
-                  </p>
-                </div>
-              ))}
-              <div className="rounded-xl border border-accent/25 bg-accent/10 px-4 py-3">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
-                  Análises que viraram lead
-                </p>
-                <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
-                  {conversao}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Tabela de leads */}
-          <div className="mt-8">
-            {leads.isLoading && (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="h-20 animate-pulse rounded-xl bg-surface-1"
-                    style={{ opacity: 1 - i * 0.3 }}
-                  />
+          {aba === 'leads' && (
+            <>
+            {/* Cards de stats */}
+            {stats.isLoading && (
+              <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {Array.from({ length: 4 }, (_, i) => (
+                  <div key={i} className="h-20 animate-pulse rounded-xl bg-surface-1" />
                 ))}
               </div>
             )}
 
-            {leads.isError && (
-              <div className="rounded-xl border border-red-400/25 bg-red-400/10 px-6 py-8 text-center">
+            {stats.isError && (
+              <div className="mt-8 rounded-xl border border-red-400/25 bg-red-400/10 px-6 py-8 text-center">
                 <p className="text-sm font-light text-red-100/90">
-                  Não deu para carregar os leads do Vertix Scan. Tente
-                  atualizar.
+                  Backend do Vertix Scan não respondeu — métricas indisponíveis.
                 </p>
               </div>
             )}
 
-            {leads.data && (
-              <>
-                <ScanLeadsTable leads={leadsOrdenados} onExcluir={confirmarExclusao} excluindoId={excluirMutation.isPending ? (excluirMutation.variables ?? null) : null} onReprocessar={(lead) => reprocessarMutation.mutate(lead)} reprocessandoId={reprocessarMutation.isPending ? (reprocessarMutation.variables?.id ?? null) : null} />
-
-                {total > SCAN_PAGE_SIZE && (
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-xs font-light text-muted">
-                      {inicio}–{fim} de {num(total)} leads
+            {stats.data && (
+              <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
+                {cards.map((card) => (
+                  <div
+                    key={card.label}
+                    className="rounded-xl border border-white/5 bg-surface-1 px-4 py-3"
+                  >
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                      {card.label}
                     </p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPagina((p) => Math.max(0, p - 1))}
-                        disabled={pagina === 0 || leads.isFetching}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                        Anteriores
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPagina((p) => Math.min(totalPaginas - 1, p + 1))
-                        }
-                        disabled={pagina >= totalPaginas - 1 || leads.isFetching}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Próximos
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
+                      {num(card.valor ?? 0)}
+                    </p>
                   </div>
-                )}
-              </>
+                ))}
+                <div className="rounded-xl border border-accent/25 bg-accent/10 px-4 py-3">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                    Análises que viraram lead
+                  </p>
+                  <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
+                    {conversao}
+                  </p>
+                </div>
+              </div>
             )}
-          </div>
+
+            {/* Tabela de leads */}
+            <div className="mt-8">
+              {leads.isLoading && (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="h-20 animate-pulse rounded-xl bg-surface-1"
+                      style={{ opacity: 1 - i * 0.3 }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {leads.isError && (
+                <div className="rounded-xl border border-red-400/25 bg-red-400/10 px-6 py-8 text-center">
+                  <p className="text-sm font-light text-red-100/90">
+                    Não deu para carregar os leads do Vertix Scan. Tente
+                    atualizar.
+                  </p>
+                </div>
+              )}
+
+              {leads.data && (
+                <>
+                  <ScanLeadsTable leads={leadsOrdenados} onExcluir={confirmarExclusao} excluindoId={excluirMutation.isPending ? (excluirMutation.variables ?? null) : null} onReprocessar={(lead) => reprocessarMutation.mutate(lead)} reprocessandoId={reprocessarMutation.isPending ? (reprocessarMutation.variables?.id ?? null) : null} />
+
+                  {total > SCAN_PAGE_SIZE && (
+                    <div className="mt-4 flex items-center justify-between">
+                      <p className="text-xs font-light text-muted">
+                        {inicio}–{fim} de {num(total)} leads
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPagina((p) => Math.max(0, p - 1))}
+                          disabled={pagina === 0 || leads.isFetching}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          Anteriores
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPagina((p) => Math.min(totalPaginas - 1, p + 1))
+                          }
+                          disabled={pagina >= totalPaginas - 1 || leads.isFetching}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Próximos
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            </>
+          )}
         </>
       )}
 
