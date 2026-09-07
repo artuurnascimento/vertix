@@ -199,17 +199,17 @@ export default function AdminLayout() {
                   aria-label={
                     aberto ? `Recolher ${grupo.titulo}` : `Abrir ${grupo.titulo}`
                   }
-                  className="mb-1 mt-4 hidden w-full items-center gap-2 rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent transition-colors duration-150 hover:text-accent-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent md:flex"
+                  className="group relative mt-3 hidden w-full items-center gap-3 rounded-xl border border-accent/25 bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-all duration-200 hover:border-accent/50 hover:bg-accent/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent md:flex"
                 >
+                  {grupo.icone && (
+                    <grupo.icone className="h-5 w-5 shrink-0" />
+                  )}
+                  {grupo.titulo}
                   <ChevronDown
-                    className={`h-3 w-3 shrink-0 transition-transform duration-200 ${
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
                       aberto ? '' : '-rotate-90'
                     }`}
                   />
-                  {grupo.icone && (
-                    <grupo.icone className="h-3.5 w-3.5 shrink-0" />
-                  )}
-                  {grupo.titulo}
                 </button>
               )}
               {grupo.titulo && <span aria-hidden="true" className="mt-3 h-px bg-white/5 md:hidden" />}
