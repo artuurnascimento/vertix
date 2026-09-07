@@ -1,5 +1,7 @@
 import { raioxSupabase } from '../leadsRaiox/raioxSupabase'
 import { reportUrl } from '../leadsRaiox/raioxData'
+import { intervaloDoPeriodo } from '../../lib/periodo'
+import type { Intervalo, Periodo } from '../../lib/periodo'
 
 /**
  * Dados do Vertix Scan lidos DIRETO do banco, com o client autenticado do
@@ -10,10 +12,12 @@ import { reportUrl } from '../leadsRaiox/raioxData'
 
 /** Métricas do topo da página. */
 export interface ScanStats {
+  /** Todo o histórico, sem filtro. */
   analises_total: number
-  analises_7d: number
   leads_total: number
-  leads_7d: number
+  /** Dentro do período escolhido no filtro. */
+  analises_periodo: number
+  leads_periodo: number
 }
 
 /** Lead na tabela da página. */
@@ -40,31 +44,28 @@ export interface ScanLeadsResponse {
 /** Tamanho da página da tabela de leads. */
 export const SCAN_PAGE_SIZE = 50
 
-const DIAS_JANELA = 7
-const MS_POR_DIA = 24 * 60 * 60 * 1000
-
-function desde(dias: number): string {
-  return new Date(Date.now() - dias * MS_POR_DIA).toISOString()
-}
-
 /** Conta linhas sem trazê-las (head + count exato). */
-async function contar(tabela: string, desdeIso?: string): Promise<number> {
+async function contar(tabela: string, intervalo?: Intervalo): Promise<number> {
   let q = raioxSupabase.from(tabela).select('id', { count: 'exact', head: true })
-  if (desdeIso) q = q.gte('created_at', desdeIso)
+  if (intervalo) {
+    q = q.gte('created_at', intervalo.desde)
+    if (intervalo.ate) q = q.lt('created_at', intervalo.ate)
+  }
   const { count, error } = await q
   if (error) throw new Error(error.message)
   return count ?? 0
 }
 
-export async function fetchScanStats(): Promise<ScanStats> {
-  const corte = desde(DIAS_JANELA)
-  const [analises_total, analises_7d, leads_total, leads_7d] = await Promise.all([
-    contar('analyses'),
-    contar('analyses', corte),
-    contar('leads'),
-    contar('leads', corte),
-  ])
-  return { analises_total, analises_7d, leads_total, leads_7d }
+export async function fetchScanStats(periodo: Periodo): Promise<ScanStats> {
+  const intervalo = intervaloDoPeriodo(periodo)
+  const [analises_total, analises_periodo, leads_total, leads_periodo] =
+    await Promise.all([
+      contar('analyses'),
+      contar('analyses', intervalo),
+      contar('leads'),
+      contar('leads', intervalo),
+    ])
+  return { analises_total, leads_total, analises_periodo, leads_periodo }
 }
 
 interface LinhaLead {
@@ -79,13 +80,22 @@ interface LinhaLead {
   analyses: { id: string; url: string | null; domain: string | null; score: number | null } | null
 }
 
-export async function fetchScanLeads(offset: number): Promise<ScanLeadsResponse> {
-  const { data, count, error } = await raioxSupabase
+export async function fetchScanLeads(
+  offset: number,
+  periodo?: Periodo
+): Promise<ScanLeadsResponse> {
+  let q = raioxSupabase
     .from('leads')
     .select(
       'id, name, whatsapp, status, created_at, report_token, report_code, relatorio_aberto_em, analyses(id, url, domain, score)',
       { count: 'exact' }
     )
+  if (periodo) {
+    const intervalo = intervaloDoPeriodo(periodo)
+    q = q.gte('created_at', intervalo.desde)
+    if (intervalo.ate) q = q.lt('created_at', intervalo.ate)
+  }
+  const { data, count, error } = await q
     .order('created_at', { ascending: false })
     .range(offset, offset + SCAN_PAGE_SIZE - 1)
   if (error) throw new Error(error.message)

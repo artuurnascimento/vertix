@@ -7,6 +7,9 @@
  * como em src/components/trafego/adMetrics.ts.
  */
 
+export { chaveMes, rotuloMes } from '../../lib/periodo'
+import { chaveMes, rotuloMes } from '../../lib/periodo'
+
 export interface EventoBio {
   tipo: string
   link_id: string | null
@@ -40,32 +43,6 @@ export interface MesResumido {
   cliques: number
   /** Cliques por visita no mês, em %. Null sem visitas. */
   taxa: number | null
-}
-
-const FUSO = 'America/Sao_Paulo'
-
-/** "2026-09" a partir de um ISO, no fuso de São Paulo (e não em UTC). */
-export function chaveMes(iso: string): string | null {
-  const data = new Date(iso)
-  if (Number.isNaN(data.getTime())) return null
-  const partes = new Intl.DateTimeFormat('en-CA', {
-    timeZone: FUSO,
-    year: 'numeric',
-    month: '2-digit',
-  }).formatToParts(data)
-  const ano = partes.find((p) => p.type === 'year')?.value
-  const mes = partes.find((p) => p.type === 'month')?.value
-  return ano && mes ? `${ano}-${mes}` : null
-}
-
-/** "set/26" a partir de "2026-09". */
-export function rotuloMes(chave: string): string {
-  const [ano, mes] = chave.split('-')
-  const data = new Date(Number(ano), Number(mes) - 1, 1)
-  const nome = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
-    .format(data)
-    .replace('.', '')
-  return `${nome}/${ano.slice(2)}`
 }
 
 /**

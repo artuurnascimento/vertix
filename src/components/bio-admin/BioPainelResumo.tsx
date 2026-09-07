@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import {
-  chaveMes,
-  formatarPercentual,
-  resumirBio,
-  resumirPorMes,
-} from './bioResumo'
+import { formatarPercentual, resumirBio } from './bioResumo'
 import type { EventoBio } from './bioResumo'
+import FiltroPeriodo from '../ui/FiltroPeriodo'
+import {
+  dentroDoPeriodo,
+  intervaloDoPeriodo,
+  rotuloDoPeriodo,
+} from '../../lib/periodo'
+import type { Periodo } from '../../lib/periodo'
 
 /**
  * Métricas do link de bio com filtro de período: quantas visitas, quantos
@@ -17,16 +19,6 @@ import type { EventoBio } from './bioResumo'
 
 /** Janela buscada de uma vez; cada filtro recorta dela em memória. */
 const DIAS_HISTORICO = 365
-const MESES_NO_FILTRO = 6
-
-const PERIODOS = [
-  { id: '7d', rotulo: '7 dias', dias: 7 },
-  { id: '30d', rotulo: '30 dias', dias: 30 },
-  { id: '90d', rotulo: '90 dias', dias: 90 },
-  { id: '365d', rotulo: '12 meses', dias: 365 },
-] as const
-
-type PeriodoId = (typeof PERIODOS)[number]['id']
 
 interface BioStatsProps {
   botoes: Array<{ id: string; rotulo: string }>
@@ -51,7 +43,7 @@ function Numero({ valor, rotulo }: { valor: string; rotulo: string }) {
 
 export default function BioStats({ botoes }: BioStatsProps) {
   // Filtro: um dos períodos corridos ou um mês fechado ("2026-09").
-  const [filtro, setFiltro] = useState<PeriodoId | string>('30d')
+  const [periodo, setPeriodo] = useState<Periodo>('30d')
 
   const { data: eventos, isLoading } = useQuery({
     queryKey: ['bio-eventos', DIAS_HISTORICO],
@@ -71,59 +63,16 @@ export default function BioStats({ botoes }: BioStatsProps) {
     return <div className="h-28 animate-pulse rounded-xl bg-surface-1" />
   }
 
-  const todos = eventos ?? []
-  const meses = resumirPorMes(todos, MESES_NO_FILTRO)
-  const periodo = PERIODOS.find((p) => p.id === filtro)
-
-  const doPeriodo = periodo
-    ? todos.filter((e) => e.created_at >= desdeISO(periodo.dias))
-    : todos.filter((e) => chaveMes(e.created_at) === filtro)
-
+  const intervalo = intervaloDoPeriodo(periodo)
+  const doPeriodo = (eventos ?? []).filter((e) =>
+    dentroDoPeriodo(e.created_at, intervalo)
+  )
   const resumo = resumirBio(doPeriodo, botoes)
-  const rotuloPeriodo =
-    periodo?.rotulo ?? meses.find((m) => m.mes === filtro)?.rotulo ?? 'período'
-
-  const chipClass = (ativo: boolean) =>
-    [
-      'inline-flex min-h-9 touch-manipulation items-center rounded-lg border px-3 py-1.5 text-xs font-medium capitalize transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent',
-      ativo
-        ? 'border-accent/60 bg-accent/15 text-ink'
-        : 'border-white/10 text-muted hover:bg-white/5 hover:text-ink',
-    ].join(' ')
+  const rotuloPeriodo = rotuloDoPeriodo(periodo)
 
   return (
     <section aria-label="Métricas do link de bio">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-xs font-medium uppercase tracking-widest text-muted">
-          Período
-        </span>
-        {PERIODOS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setFiltro(p.id)}
-            aria-pressed={filtro === p.id}
-            className={chipClass(filtro === p.id)}
-          >
-            {p.rotulo}
-          </button>
-        ))}
-
-        <span aria-hidden className="mx-1 h-5 w-px bg-white/10" />
-
-        {meses.map((m) => (
-          <button
-            key={m.mes}
-            type="button"
-            onClick={() => setFiltro(m.mes)}
-            aria-pressed={filtro === m.mes}
-            title={`${m.cliques} clique(s) em ${m.rotulo}`}
-            className={chipClass(filtro === m.mes)}
-          >
-            {m.rotulo}
-          </button>
-        ))}
-      </div>
+      <FiltroPeriodo valor={periodo} onChange={setPeriodo} />
 
       <div className="mt-4 grid grid-cols-3 gap-3">
         <Numero

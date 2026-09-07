@@ -7,6 +7,9 @@ import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
 import Toast, { useToast } from '../components/ui/Toast'
 import { isNaoConfigurado } from '../components/lojas/appsProxy'
 import ScanLeadsTable from '../components/scan/ScanLeadsTable'
+import FiltroPeriodo from '../components/ui/FiltroPeriodo'
+import { rotuloDoPeriodo } from '../lib/periodo'
+import type { Periodo } from '../lib/periodo'
 import {
   SCAN_PAGE_SIZE,
   fetchScanLeads,
@@ -29,21 +32,28 @@ function num(value: number): string {
 export default function VertixScan() {
   const queryClient = useQueryClient()
   const [pagina, setPagina] = useState(0)
+  // Período do filtro: vale para os números e para a lista de leads.
+  const [periodo, setPeriodo] = useState<Periodo>('30d')
+
+  const trocarPeriodo = (novo: Periodo) => {
+    setPeriodo(novo)
+    setPagina(0)
+  }
 
   const stats = useQuery({
-    queryKey: ['apps-proxy', 'scan', 'stats'],
+    queryKey: ['apps-proxy', 'scan', 'stats', periodo],
     staleTime: STALE_TIME_MS,
     retry: false,
     refetchOnWindowFocus: false,
-    queryFn: fetchScanStats,
+    queryFn: () => fetchScanStats(periodo),
   })
 
   const leads = useQuery({
-    queryKey: ['apps-proxy', 'scan', 'leads', pagina],
+    queryKey: ['apps-proxy', 'scan', 'leads', periodo, pagina],
     staleTime: STALE_TIME_MS,
     retry: false,
     refetchOnWindowFocus: false,
-    queryFn: () => fetchScanLeads(pagina * SCAN_PAGE_SIZE),
+    queryFn: () => fetchScanLeads(pagina * SCAN_PAGE_SIZE, periodo),
   })
 
   const refetch = () => {
@@ -81,11 +91,23 @@ export default function VertixScan() {
   const naoConfigurado =
     isNaoConfigurado(stats.error) || isNaoConfigurado(leads.error)
 
+  const rotuloPeriodo = rotuloDoPeriodo(periodo)
+  const analisesPeriodo = stats.data?.analises_periodo ?? 0
+  const leadsPeriodo = stats.data?.leads_periodo ?? 0
+  // Conversão: de cada análise feita, quantas viraram lead no período.
+  const conversao =
+    analisesPeriodo > 0
+      ? `${((leadsPeriodo / analisesPeriodo) * 100).toLocaleString('pt-BR', {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        })}%`
+      : '—'
+
   const cards = [
-    { label: 'Análises (total)', valor: stats.data?.analises_total },
-    { label: 'Análises (7d)', valor: stats.data?.analises_7d },
-    { label: 'Leads (total)', valor: stats.data?.leads_total },
-    { label: 'Leads (7d)', valor: stats.data?.leads_7d },
+    { label: `Análises · ${rotuloPeriodo}`, valor: stats.data?.analises_periodo },
+    { label: `Leads · ${rotuloPeriodo}`, valor: stats.data?.leads_periodo },
+    { label: 'Análises no total', valor: stats.data?.analises_total },
+    { label: 'Leads no total', valor: stats.data?.leads_total },
   ]
 
   const total = leads.data?.total ?? 0
@@ -146,6 +168,12 @@ export default function VertixScan() {
 
       {!naoConfigurado && (
         <>
+          <FiltroPeriodo
+            valor={periodo}
+            onChange={trocarPeriodo}
+            className="mt-8"
+          />
+
           {/* Cards de stats */}
           {stats.isLoading && (
             <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -164,7 +192,7 @@ export default function VertixScan() {
           )}
 
           {stats.data && (
-            <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
               {cards.map((card) => (
                 <div
                   key={card.label}
@@ -178,6 +206,14 @@ export default function VertixScan() {
                   </p>
                 </div>
               ))}
+              <div className="rounded-xl border border-accent/25 bg-accent/10 px-4 py-3">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                  Análises que viraram lead
+                </p>
+                <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
+                  {conversao}
+                </p>
+              </div>
             </div>
           )}
 
