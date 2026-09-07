@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   FileSignature,
@@ -102,10 +104,38 @@ const ATALHOS = [
   { to: '/admin/propostas', label: 'Nova proposta' },
 ] as const
 
+/** Grupos fechados pela pessoa, guardados entre sessões. */
+const CHAVE_GRUPOS = 'vertix-admin:grupos-fechados'
+
+function lerGruposFechados(): string[] {
+  try {
+    const bruto = localStorage.getItem(CHAVE_GRUPOS)
+    const lista: unknown = bruto ? JSON.parse(bruto) : []
+    return Array.isArray(lista) ? lista.filter((x) => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const [fechados, setFechados] = useState<string[]>(lerGruposFechados)
+
+  const alternarGrupo = (titulo: string) => {
+    setFechados((atual) => {
+      const novo = atual.includes(titulo)
+        ? atual.filter((t) => t !== titulo)
+        : [...atual, titulo]
+      try {
+        localStorage.setItem(CHAVE_GRUPOS, JSON.stringify(novo))
+      } catch {
+        // Modo privado restrito: só não guarda a preferência.
+      }
+      return novo
+    })
+  }
 
   const sectionTitle =
     Object.entries(SECTION_TITLES).find(([path]) =>
@@ -139,12 +169,34 @@ export default function AdminLayout() {
           aria-label="Navegação principal"
           className="mt-4 flex flex-1 flex-col gap-1 px-2 md:px-3"
         >
-          {NAV_GROUPS.map((grupo) => (
+          {NAV_GROUPS.map((grupo) => {
+            // O grupo da página aberta nunca fica escondido.
+            const temRotaAtiva = grupo.itens.some(({ to, end }) =>
+              end ? location.pathname === to : location.pathname.startsWith(to)
+            )
+            const aberto =
+              grupo.titulo == null ||
+              temRotaAtiva ||
+              !fechados.includes(grupo.titulo)
+            return (
             <div key={grupo.titulo ?? 'inicio'} className="flex flex-col gap-1">
               {grupo.titulo && (
-                <p className="mb-1 mt-4 hidden px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted/60 md:block">
+                <button
+                  type="button"
+                  onClick={() => alternarGrupo(grupo.titulo)}
+                  aria-expanded={aberto}
+                  aria-label={
+                    aberto ? `Recolher ${grupo.titulo}` : `Abrir ${grupo.titulo}`
+                  }
+                  className="mb-1 mt-4 hidden w-full items-center gap-1.5 rounded-lg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted/60 transition-colors duration-150 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent md:flex"
+                >
+                  <ChevronDown
+                    className={`h-3 w-3 shrink-0 transition-transform duration-200 ${
+                      aberto ? '' : '-rotate-90'
+                    }`}
+                  />
                   {grupo.titulo}
-                </p>
+                </button>
               )}
               {grupo.titulo && <span aria-hidden="true" className="mt-3 h-px bg-white/5 md:hidden" />}
           {grupo.itens.map(({ to, label, icon: Icon, end }) => (
@@ -156,6 +208,9 @@ export default function AdminLayout() {
               className={({ isActive }) =>
                 [
                   'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                  // Grupo recolhido some só na barra larga; na estreita (só
+                  // ícones) não há título para reabrir, então tudo continua.
+                  aberto ? '' : 'md:hidden',
                   isActive
                     ? 'bg-gradient-to-r from-accent to-accent-2 text-white shadow-[0_4px_24px_rgba(108,91,242,0.4)]'
                     : 'text-muted hover:bg-white/5 hover:text-ink',
@@ -181,7 +236,8 @@ export default function AdminLayout() {
             </NavLink>
           ))}
             </div>
-          ))}
+            )
+          })}
         </nav>
 
         {/* Atalhos rápidos */}

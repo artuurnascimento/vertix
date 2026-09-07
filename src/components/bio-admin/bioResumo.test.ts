@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { formatarPercentual, resumirBio, taxa } from './bioResumo'
+import {
+  formatarPercentual,
+  resumirBio,
+  resumirPorMes,
+  taxa,
+} from './bioResumo'
 import type { EventoBio } from './bioResumo'
 
 const BOTOES = [
@@ -97,6 +102,49 @@ describe('resumirBio', () => {
     )
     expect(resumo.cliques).toBe(2)
     expect(resumo.botoes.find((b) => b.id === 'zap')?.cliques).toBe(1)
+  })
+})
+
+describe('resumirPorMes', () => {
+  const AGORA = new Date('2026-09-15T12:00:00Z')
+  const em = (iso: string, tipo = 'clique'): EventoBio => ({
+    tipo,
+    link_id: 'zap',
+    created_at: iso,
+  })
+
+  test('separa por mês, do mais recente ao mais antigo', () => {
+    const meses = resumirPorMes(
+      [
+        em('2026-09-10T10:00:00Z'),
+        em('2026-09-02T10:00:00Z'),
+        em('2026-08-20T10:00:00Z'),
+        em('2026-09-05T10:00:00Z', 'visita'),
+      ],
+      3,
+      AGORA
+    )
+    expect(meses.map((m) => m.mes)).toEqual(['2026-09', '2026-08', '2026-07'])
+    expect(meses[0]).toMatchObject({ cliques: 2, visitas: 1, rotulo: 'set/26' })
+    expect(meses[1].cliques).toBe(1)
+  })
+
+  test('mês sem evento continua na lista, zerado', () => {
+    const meses = resumirPorMes([], 2, AGORA)
+    expect(meses).toHaveLength(2)
+    expect(meses.every((m) => m.cliques === 0 && m.taxa === null)).toBe(true)
+  })
+
+  test('vira o mês no fuso de São Paulo, não em UTC', () => {
+    // 1º de setembro 00:30 UTC ainda é 31 de agosto em Brasília.
+    const meses = resumirPorMes([em('2026-09-01T00:30:00Z')], 2, AGORA)
+    expect(meses.find((m) => m.mes === '2026-08')?.cliques).toBe(1)
+    expect(meses.find((m) => m.mes === '2026-09')?.cliques).toBe(0)
+  })
+
+  test('mês antigo com evento não some da lista', () => {
+    const meses = resumirPorMes([em('2026-01-10T10:00:00Z')], 2, AGORA)
+    expect(meses.map((m) => m.mes)).toContain('2026-01')
   })
 })
 
