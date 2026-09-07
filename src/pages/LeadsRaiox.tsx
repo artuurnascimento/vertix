@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { AlertTriangle, RefreshCw, Search } from 'lucide-react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import LeadsTab from '../components/leadsRaiox/LeadsTab'
 import AbandonosTab from '../components/leadsRaiox/AbandonosTab'
 import { STATUS_LEAD_META } from '../components/leadsRaiox/LeadStatusPicker'
-import { fetchLeads } from '../components/leadsRaiox/raioxData'
+import { fetchLeads, zerarRaiox } from '../components/leadsRaiox/raioxData'
 import { raioxConfigMissing } from '../components/leadsRaiox/raioxSupabase'
 import { LEAD_STATUSES, type LeadStatus } from '../components/leadsRaiox/raioxTypes'
 
@@ -55,6 +55,23 @@ export default function LeadsRaiox() {
   const refetch = () => {
     queryClient.invalidateQueries({ queryKey: ['raiox-leads'] })
     queryClient.invalidateQueries({ queryKey: ['raiox-abandonos'] })
+    queryClient.invalidateQueries({ queryKey: ['apps-proxy', 'scan'] })
+  }
+
+  const zerarMutation = useMutation({
+    mutationFn: zerarRaiox,
+    onSuccess: ({ leads: apagados, analises }) => {
+      refetch()
+      window.alert(`Pronto: ${apagados} lead(s) e ${analises} análise(s) apagados.`)
+    },
+  })
+
+  const confirmarZerar = () => {
+    const total = leads?.length ?? 0
+    const digitado = window.prompt(
+      `Isso apaga TODOS os ${total} lead(s) e TODAS as análises do Vertix Scan, sem volta.\nDigite ZERAR para confirmar.`
+    )
+    if (digitado?.trim().toUpperCase() === 'ZERAR') zerarMutation.mutate()
   }
 
   return (
@@ -94,6 +111,15 @@ export default function LeadsRaiox() {
           >
             <RefreshCw className="h-4 w-4" />
             Atualizar
+          </button>
+          <button
+            type="button"
+            onClick={confirmarZerar}
+            disabled={zerarMutation.isPending || (leads?.length ?? 0) === 0}
+            className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 font-kanit text-sm font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-40"
+          >
+            <Trash2 className="h-4 w-4" />
+            Zerar tudo
           </button>
         </div>
       </div>

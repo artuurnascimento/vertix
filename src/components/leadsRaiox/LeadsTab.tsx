@@ -1,8 +1,8 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ExternalLink, MessageCircle, Users } from 'lucide-react'
+import { ExternalLink, MessageCircle, Users, Trash2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatRelativeTime } from '../../lib/format'
-import { reportUrl, updateLeadStatus, whatsappLinkForLead } from './raioxData'
+import { deleteLead, reportUrl, updateLeadStatus, whatsappLinkForLead } from './raioxData'
 import type { LeadComAnalise, LeadStatus } from './raioxTypes'
 import LeadStatusPicker from './LeadStatusPicker'
 import ScoreBadge from './ScoreBadge'
@@ -29,6 +29,22 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['raiox-leads'] }),
   })
+
+  const excluirMutation = useMutation({
+    mutationFn: (id: string) => deleteLead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['raiox-leads'] })
+      queryClient.invalidateQueries({ queryKey: ['raiox-abandonos'] })
+      queryClient.invalidateQueries({ queryKey: ['apps-proxy', 'scan'] })
+    },
+  })
+
+  const confirmarExclusao = (lead: LeadComAnalise) => {
+    const quem = `${lead.name} (${lead.analyses?.domain ?? 'sem domínio'})`
+    if (window.confirm(`Excluir o lead ${quem} e a análise dele? Não dá para desfazer.`)) {
+      excluirMutation.mutate(lead.id)
+    }
+  }
 
   const termo = search.trim().toLowerCase()
   const visiveis = leads.filter((lead) => {
@@ -126,6 +142,16 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
                       WhatsApp
                     </a>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => confirmarExclusao(lead)}
+                    disabled={excluirMutation.isPending && excluirMutation.variables === lead.id}
+                    title="Excluir lead e análise"
+                    aria-label={`Excluir ${lead.name}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
 

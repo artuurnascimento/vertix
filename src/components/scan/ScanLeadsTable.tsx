@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { MessageCircle, Users } from 'lucide-react'
+import { MessageCircle, Trash2, Users } from 'lucide-react'
 import { formatRelativeTime } from '../../lib/format'
 import ScoreBadge from '../leadsRaiox/ScoreBadge'
 import { mensagemFollowUp, scanStatusMeta, whatsappLink } from './scanProxy'
@@ -13,9 +13,12 @@ import type { ScanLead } from './scanProxy'
 
 interface ScanLeadsTableProps {
   leads: ScanLead[]
+  /** Exclui o lead (e a análise dele); a página confirma e recarrega. */
+  onExcluir?: (lead: ScanLead) => void
+  excluindoId?: string | null
 }
 
-export default function ScanLeadsTable({ leads }: ScanLeadsTableProps) {
+export default function ScanLeadsTable({ leads, onExcluir, excluindoId = null }: ScanLeadsTableProps) {
   const prefersReducedMotion = useReducedMotion()
 
   if (leads.length === 0) {
@@ -92,6 +95,18 @@ export default function ScanLeadsTable({ leads }: ScanLeadsTableProps) {
                     <MessageCircle className="h-3.5 w-3.5" />
                     {lead.relatorio_url ? 'Enviar relatório' : 'WhatsApp'}
                   </a>
+                )}
+                {onExcluir && (
+                  <button
+                    type="button"
+                    onClick={() => onExcluir(lead)}
+                    disabled={excluindoId === lead.id}
+                    title="Excluir lead e análise"
+                    aria-label={`Excluir ${lead.nome}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs font-medium text-muted transition-colors duration-150 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </div>
             </motion.li>

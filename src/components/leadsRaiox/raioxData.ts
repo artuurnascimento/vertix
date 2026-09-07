@@ -69,6 +69,22 @@ export async function updateLeadStatus(
   if (error) throw new Error(error.message)
 }
 
+/** Exclui o lead e a análise dele (RPC restrita à equipe). */
+export async function deleteLead(id: string): Promise<void> {
+  const { error } = await raioxSupabase.rpc('raiox_excluir_lead', { p_lead_id: id })
+  if (error) throw new Error(error.message)
+}
+
+/** Apaga TODOS os leads e análises do Vertix Scan (RPC restrita à equipe). */
+export async function zerarRaiox(): Promise<{ leads: number; analises: number }> {
+  const { data, error } = await raioxSupabase.rpc('raiox_zerar_tudo')
+  if (error) throw new Error(error.message)
+  const linha = (Array.isArray(data) ? data[0] : data) as
+    | { leads_apagados: number; analises_apagadas: number }
+    | undefined
+  return { leads: Number(linha?.leads_apagados ?? 0), analises: Number(linha?.analises_apagadas ?? 0) }
+}
+
 // ---------------------------------------------------------------------------
 // Links
 // ---------------------------------------------------------------------------

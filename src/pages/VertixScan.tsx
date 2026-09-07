@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { deleteLead, zerarRaiox } from '../components/leadsRaiox/raioxData'
+import type { ScanLead } from '../components/scan/scanProxy'
 import { isNaoConfigurado } from '../components/lojas/appsProxy'
 import ScanLeadsTable from '../components/scan/ScanLeadsTable'
 import {
@@ -44,6 +46,32 @@ export default function VertixScan() {
 
   const refetch = () => {
     queryClient.invalidateQueries({ queryKey: ['apps-proxy', 'scan'] })
+    queryClient.invalidateQueries({ queryKey: ['raiox-leads'] })
+    queryClient.invalidateQueries({ queryKey: ['raiox-abandonos'] })
+  }
+
+  const excluirMutation = useMutation({
+    mutationFn: (id: string) => deleteLead(id),
+    onSuccess: refetch,
+  })
+  const confirmarExclusao = (lead: ScanLead) => {
+    if (window.confirm(`Excluir o lead ${lead.nome} (${lead.dominio || 'sem domínio'}) e a análise dele? Não dá para desfazer.`)) {
+      excluirMutation.mutate(lead.id)
+    }
+  }
+
+  const zerarMutation = useMutation({
+    mutationFn: zerarRaiox,
+    onSuccess: ({ leads: apagados, analises }) => {
+      refetch()
+      window.alert(`Pronto: ${apagados} lead(s) e ${analises} análise(s) apagados.`)
+    },
+  })
+  const confirmarZerar = () => {
+    const digitado = window.prompt(
+      `Isso apaga TODOS os ${stats.data?.leads_total ?? 0} lead(s) e TODAS as ${stats.data?.analises_total ?? 0} análise(s) do Vertix Scan, sem volta.\nDigite ZERAR para confirmar.`
+    )
+    if (digitado?.trim().toUpperCase() === 'ZERAR') zerarMutation.mutate()
   }
 
   // 503 do proxy = SCAN_API_URL/SCAN_SERVICE_TOKEN ausentes nos secrets.
@@ -79,14 +107,25 @@ export default function VertixScan() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={refetch}
-          className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 font-kanit text-sm font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={refetch}
+            className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 font-kanit text-sm font-medium text-muted transition-colors duration-150 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </button>
+          <button
+            type="button"
+            onClick={confirmarZerar}
+            disabled={zerarMutation.isPending || (stats.data?.leads_total ?? 0) + (stats.data?.analises_total ?? 0) === 0}
+            className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 font-kanit text-sm font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-40"
+          >
+            <Trash2 className="h-4 w-4" />
+            Zerar tudo
+          </button>
+        </div>
       </div>
 
       {naoConfigurado && (
@@ -164,7 +203,7 @@ export default function VertixScan() {
 
             {leads.data && (
               <>
-                <ScanLeadsTable leads={leadsOrdenados} />
+                <ScanLeadsTable leads={leadsOrdenados} onExcluir={confirmarExclusao} excluindoId={excluirMutation.isPending ? (excluirMutation.variables ?? null) : null} />
 
                 {total > SCAN_PAGE_SIZE && (
                   <div className="mt-4 flex items-center justify-between">

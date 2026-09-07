@@ -26,23 +26,50 @@ import QuickSearch from './QuickSearch'
 import NotificationBell from './NotificationBell'
 import { useAuth } from '../../lib/auth'
 
-const NAV_ITEMS = [
-  { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true },
-  { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
-  { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
-  { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays, end: false },
-  { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
-  { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
-  { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
-  { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
-  { to: '/admin/trafego', label: 'Tráfego', icon: Megaphone, end: false },
-  { to: '/admin/lojas', label: 'Lojas', icon: Store, end: false },
-  { to: '/admin/leads-raiox', label: 'Leads Raio-X', icon: ScanSearch, end: false },
-  { to: '/admin/scan', label: 'Vertix Scan', icon: Radar, end: false },
-  { to: '/admin/bio', label: 'Link de bio', icon: Link2, end: false },
-  { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
-  { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
-  { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
+/* Menu por categoria: cada grupo tem um título pequeno e seus itens. */
+const NAV_GROUPS = [
+  {
+    titulo: null,
+    itens: [{ to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true }],
+  },
+  {
+    titulo: 'Comercial',
+    itens: [
+      { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
+      { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
+      { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
+      { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
+    ],
+  },
+  {
+    titulo: 'Operação',
+    itens: [
+      { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
+      { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays, end: false },
+      { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
+      { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
+    ],
+  },
+  {
+    titulo: 'Captação',
+    itens: [
+      { to: '/admin/scan', label: 'Vertix Scan', icon: Radar, end: false },
+      { to: '/admin/leads-raiox', label: 'Leads Raio-X', icon: ScanSearch, end: false },
+      { to: '/admin/trafego', label: 'Tráfego', icon: Megaphone, end: false },
+      { to: '/admin/bio', label: 'Link de bio', icon: Link2, end: false },
+    ],
+  },
+  {
+    titulo: 'Produtos',
+    itens: [{ to: '/admin/lojas', label: 'Lojas', icon: Store, end: false }],
+  },
+  {
+    titulo: 'Sistema',
+    itens: [
+      { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
+      { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
+    ],
+  },
 ] as const
 
 const SECTION_TITLES: Record<string, string> = {
@@ -112,7 +139,15 @@ export default function AdminLayout() {
           aria-label="Navegação principal"
           className="mt-4 flex flex-1 flex-col gap-1 px-2 md:px-3"
         >
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+          {NAV_GROUPS.map((grupo) => (
+            <div key={grupo.titulo ?? 'inicio'} className="flex flex-col gap-1">
+              {grupo.titulo && (
+                <p className="mb-1 mt-4 hidden px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted/60 md:block">
+                  {grupo.titulo}
+                </p>
+              )}
+              {grupo.titulo && <span aria-hidden="true" className="mt-3 h-px bg-white/5 md:hidden" />}
+          {grupo.itens.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -144,6 +179,8 @@ export default function AdminLayout() {
                 </>
               )}
             </NavLink>
+          ))}
+            </div>
           ))}
         </nav>
 
