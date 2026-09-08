@@ -1,7 +1,11 @@
 interface Props {
   className?: string
-  /** Altura do símbolo em px — o lockup inteiro escala junto. */
-  symbolSize?: number
+  /**
+   * Altura do símbolo. Número vira px; string aceita qualquer medida CSS,
+   * inclusive `clamp()` — é assim que o cabeçalho encolhe no celular sem
+   * precisar de duas cópias do lockup no DOM.
+   */
+  symbolSize?: number | string
 }
 
 /**
@@ -9,21 +13,33 @@ interface Props {
  * Vertix Scan: símbolo ∧ duplo com gradiente, wordmark VERTIX em peso forte,
  * divisor fino em accent e a palavra do produto leve e bem espaçada.
  *
+ * Todas as medidas internas são em `em`, relativas ao tamanho do símbolo:
+ * mudar um valor escala o conjunto inteiro mantendo as proporções. Antes eram
+ * px calculados em JS, o que impedia usar `clamp()` e deixava a marca grande
+ * demais no celular.
+ *
  * Recriado aqui em vez de importado do Scan porque são repositórios
  * diferentes; os ids do gradiente levam prefixo `vxc-` para não colidirem
  * caso os dois lockups apareçam algum dia na mesma página.
  */
-export default function VertixCheckoutLogo({ className = '', symbolSize = 46 }: Props) {
+export default function VertixCheckoutLogo({
+  className = '',
+  symbolSize = 'clamp(26px, 7vw, 46px)',
+}: Props) {
+  const altura = typeof symbolSize === 'number' ? `${symbolSize}px` : symbolSize
+
   return (
     <span
-      className={`inline-flex items-center gap-3 ${className}`}
+      // O fontSize do container é a "altura do símbolo": tudo dentro é em.
+      style={{ fontSize: altura }}
+      className={`inline-flex items-center gap-[0.28em] ${className}`}
       role="img"
       aria-label="Vertix Checkout"
     >
       <svg
         viewBox="0 0 132 162"
         // Os caps arredondados excedem o viewBox: sem isso as pontas clipam.
-        style={{ height: symbolSize, overflow: 'visible' }}
+        style={{ height: '1em', width: 'auto', overflow: 'visible' }}
         fill="none"
         aria-hidden="true"
       >
@@ -71,23 +87,23 @@ export default function VertixCheckoutLogo({ className = '', symbolSize = 46 }: 
         />
       </svg>
 
-      <span className="inline-flex items-center" style={{ gap: symbolSize * 0.32 }}>
+      <span className="inline-flex items-center gap-[0.3em]">
         <span
-          className="font-kanit font-bold uppercase text-ink"
-          style={{ fontSize: symbolSize * 0.62, letterSpacing: '0.08em' }}
+          className="font-kanit font-bold uppercase leading-none text-ink"
+          style={{ fontSize: '0.6em', letterSpacing: '0.08em' }}
         >
           VERTIX
         </span>
         <span
           aria-hidden="true"
           className="bg-accent/70"
-          style={{ width: 1.5, height: symbolSize * 0.58 }}
+          style={{ width: '0.03em', minWidth: 1, height: '0.56em' }}
         />
         <span
-          className="font-kanit font-light uppercase text-ink"
+          className="font-kanit font-light uppercase leading-none text-ink"
           style={{
-            fontSize: symbolSize * 0.44,
-            letterSpacing: '0.42em',
+            fontSize: '0.42em',
+            letterSpacing: '0.38em',
             // Compensa o espaço que o letter-spacing acrescenta depois da
             // última letra, para o lockup não parecer deslocado à esquerda.
             textIndent: '0.1em',

@@ -19,7 +19,7 @@ export default function CabecalhoCheckout({ titulo, subtitulo }: Props) {
 
   return (
     <header className="flex flex-col items-center text-center">
-      <VertixCheckoutLogo symbolSize={46} />
+      <VertixCheckoutLogo />
 
       {titulo && (
         <h1 className="mt-7 max-w-2xl text-balance text-[26px] font-bold leading-[1.15] tracking-tight text-ink sm:text-4xl">
