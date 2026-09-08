@@ -43,6 +43,11 @@ export interface Checkout {
   prova: unknown
   garantia_dias: number | null
   garantia_texto: string | null
+  /**
+   * Percentual abatido do total quando o cliente paga no Pix. `null` = o
+   * método de pagamento não mexe no preço.
+   */
+  desconto_pix_percentual: number | null
   /** Instante absoluto do fim do cronômetro (ISO) ou null. */
   cronometro_ate: string | null
   ativo: boolean
@@ -56,7 +61,7 @@ export type CheckoutPayload = Omit<
 > & { prova: Prova }
 
 const COLUNAS =
-  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, garantia_dias, garantia_texto, cronometro_ate, ativo, created_at, updated_at'
+  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, ativo, created_at, updated_at'
 
 function ehRegistro(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor)

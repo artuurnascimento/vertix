@@ -23,6 +23,7 @@ import {
 import type { CheckoutFormValues } from './checkoutForm'
 import { atualizarCheckout, criarCheckout } from './checkoutsData'
 import type { Checkout } from './checkoutsData'
+import DescontoPixBloco from './DescontoPixBloco'
 import OfertaBloco from './OfertaBloco'
 import ProvaEditor from './ProvaEditor'
 import GarantiaCronometroBloco from './GarantiaCronometroBloco'
@@ -240,6 +241,13 @@ export default function CheckoutFormModal({
           onProdutoId={(v) => setCampo('downsellProdutoId', v)}
           onTitulo={(v) => setCampo('downsellTitulo', v)}
           onTexto={(v) => setCampo('downsellTexto', v)}
+        />
+
+        <DescontoPixBloco
+          percentual={values.descontoPixPercentual}
+          precoPrincipalCentavos={principal?.preco_centavos ?? null}
+          erro={erros.descontoPixPercentual}
+          onChange={(v) => setCampo('descontoPixPercentual', v)}
         />
 
         <ProvaEditor

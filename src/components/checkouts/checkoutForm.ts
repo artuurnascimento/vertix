@@ -28,6 +28,8 @@ export interface CheckoutFormValues {
   /** Texto do input numérico; '' = sem garantia declarada. */
   garantiaDias: string
   garantiaTexto: string
+  /** Texto do input numérico; '' = o Pix não muda o preço. */
+  descontoPixPercentual: string
   /** Valor de <input type="datetime-local">; '' = sem cronômetro. */
   cronometroAte: string
   ativo: boolean
@@ -51,6 +53,7 @@ export const EMPTY_CHECKOUT: CheckoutFormValues = {
   selos: [],
   garantiaDias: '',
   garantiaTexto: '',
+  descontoPixPercentual: '',
   cronometroAte: '',
   ativo: true,
 }
@@ -130,6 +133,21 @@ const idOpcional = z.union([z.uuid(), z.literal('')])
 const inteiroOpcional = (valor: string): boolean =>
   valor.trim() === '' || /^\d+$/.test(valor.trim())
 
+/**
+ * Teto do desconto por método. Existe porque o desconto sai da economia da
+ * TAXA do Pix, e nenhuma taxa chega perto disso: acima daqui o número quase
+ * sempre é um dígito a mais digitado sem querer, e quem paga a diferença é a
+ * margem da venda.
+ */
+export const DESCONTO_PIX_MAXIMO = 90
+
+export function percentualPixValido(valor: string): boolean {
+  const limpo = valor.trim()
+  if (limpo === '') return true
+  if (!/^\d+$/.test(limpo)) return false
+  return Number(limpo) <= DESCONTO_PIX_MAXIMO
+}
+
 export const checkoutSchema = z
   .object({
     produtoId: z.uuid('Escolha o produto principal.'),
@@ -162,6 +180,12 @@ export const checkoutSchema = z
       .string()
       .refine(inteiroOpcional, 'Informe os dias de garantia em número inteiro.'),
     garantiaTexto: z.string(),
+    descontoPixPercentual: z
+      .string()
+      .refine(
+        percentualPixValido,
+        `Informe um percentual inteiro de 0 a ${DESCONTO_PIX_MAXIMO}, ou deixe vazio.`
+      ),
     cronometroAte: z
       .string()
       .refine(
@@ -210,6 +234,7 @@ export function checkoutFormToPayload(
   values: CheckoutFormValues
 ): CheckoutPayload {
   const dias = values.garantiaDias.trim()
+  const descontoPix = values.descontoPixPercentual.trim()
   return {
     produto_id: values.produtoId,
     slug: values.slug.trim().toLowerCase(),
@@ -227,6 +252,7 @@ export function checkoutFormToPayload(
     prova: limparProva(values.depoimentos, values.selos),
     garantia_dias: dias === '' ? null : Number(dias),
     garantia_texto: limpo(values.garantiaTexto),
+    desconto_pix_percentual: descontoPix === '' ? null : Number(descontoPix),
     cronometro_ate: campoDataHoraParaIso(values.cronometroAte),
     ativo: values.ativo,
   }
@@ -253,6 +279,11 @@ export function checkoutToFormValues(checkout: Checkout): CheckoutFormValues {
     garantiaDias:
       checkout.garantia_dias === null ? '' : String(checkout.garantia_dias),
     garantiaTexto: checkout.garantia_texto ?? '',
+    descontoPixPercentual:
+      checkout.desconto_pix_percentual === null ||
+      checkout.desconto_pix_percentual === undefined
+        ? ''
+        : String(checkout.desconto_pix_percentual),
     cronometroAte: isoParaCampoDataHora(checkout.cronometro_ate),
     ativo: checkout.ativo,
   }

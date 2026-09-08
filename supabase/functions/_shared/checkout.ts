@@ -8,6 +8,10 @@
  * diferente para o cliente ver "R$ 48,50" na tela e ser cobrado "R$ 48,51" —
  * o tipo de divergência que vira chargeback e some da vista em teste.
  *
+ * A conta inteira mora em calcularTotais(), inclusive a ORDEM em que os
+ * descontos se aplicam — (produto + bump) → cupom → desconto do método —, que
+ * muda o valor final e por isso precisa ser a mesma na tela e na cobrança.
+ *
  * O que este módulo NUNCA faz:
  *   • aceitar valor vindo do navegador — preço só sai de `produtos`;
  *   • logar token de cartão, CVV, documento do cliente ou MP_ACCESS_TOKEN.
@@ -37,6 +41,12 @@ export interface CheckoutRow {
   bump_produto_id: string | null
   upsell_produto_id: string | null
   downsell_produto_id: string | null
+  /**
+   * Pontos percentuais de desconto quando o pagamento é por Pix.
+   * NULL (nunca configurado) e 0 (configurado e desligado) valem a mesma
+   * coisa na conta. Ver a migration 20260908200000 para por que só Pix.
+   */
+  desconto_pix_percentual: number | null
   ativo: boolean
 }
 
@@ -228,7 +238,7 @@ export async function carregarOferta(
 ): Promise<OfertaResolvida | null> {
   const checkouts = await db.select<CheckoutRow>(
     `checkouts?slug=eq.${encodeURIComponent(slug)}&ativo=is.true` +
-      '&select=id,slug,titulo,produto_id,bump_produto_id,upsell_produto_id,downsell_produto_id,ativo' +
+      '&select=id,slug,titulo,produto_id,bump_produto_id,upsell_produto_id,downsell_produto_id,desconto_pix_percentual,ativo' +
       '&limit=1'
   )
   const checkout = checkouts[0]
@@ -362,6 +372,143 @@ export async function avaliarCupom(
     cupom,
     desconto_centavos: desconto,
     mensagem: 'Cupom aplicado.',
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Desconto por método de pagamento
+// ---------------------------------------------------------------------------
+
+/**
+ * Único método que ganha desconto hoje. É o `payment_method_id` do Mercado
+ * Pago para Pix — de propósito: assim a MESMA string que decide o desconto é a
+ * que vai no corpo da cobrança, e não existe estado em que o servidor conceda
+ * desconto de Pix a uma transação que o gateway processou como cartão.
+ */
+export const METODO_PIX = 'pix'
+
+/**
+ * Teto do percentual, igual ao check da coluna (migration 20260908200000).
+ * Repetido aqui porque o banco protege contra configuração ruim e este módulo
+ * protege contra a coluna já ter sido gravada antes do check existir — o
+ * cálculo do dinheiro não pode depender de o banco ter sido migrado na ordem.
+ */
+export const DESCONTO_METODO_PERCENTUAL_MAXIMO = 90
+
+/**
+ * Normaliza o método vindo de fora. O navegador manda 'PIX', 'pix ' ou
+ * 'Pix' conforme o componente; nenhuma dessas variações pode virar um desconto
+ * a mais nem a menos.
+ */
+export function normalizarMetodo(bruto: string | null | undefined): string {
+  return (bruto ?? '').trim().toLowerCase()
+}
+
+/**
+ * Desconto do método, em centavos, sobre `baseCentavos`.
+ *
+ * `baseCentavos` é o subtotal JÁ DESCONTADO DO CUPOM — ver calcularTotais(),
+ * que é onde a ordem mora e o único lugar que deveria chamar esta função em
+ * regime.
+ *
+ * Aritmética inteira e `Math.floor` pelo mesmo motivo de calcularDesconto():
+ * arredondar para baixo faz o desconto ser, no pior caso, um centavo MENOR do
+ * que o cliente esperaria — a direção segura, a que não quebra a conciliação
+ * com o extrato do Mercado Pago.
+ *
+ * O clamp final é a parte que não pode sumir num refactor: o desconto nunca
+ * derruba a cobrança abaixo de VALOR_MINIMO_CENTAVOS. Sem ele, uma oferta com
+ * cupom agressivo e Pix de 90% produziria um total que o MP recusa DEPOIS de o
+ * cliente ter preenchido o formulário — e como esta mesma função alimenta a
+ * prévia da tela e a cobrança, o valor clampado é o mesmo nos dois lados.
+ */
+export function calcularDescontoMetodo(
+  checkout: Pick<CheckoutRow, 'desconto_pix_percentual'>,
+  metodo: string | null | undefined,
+  baseCentavos: number
+): number {
+  if (normalizarMetodo(metodo) !== METODO_PIX) return 0
+
+  const bruto = checkout.desconto_pix_percentual
+  if (typeof bruto !== 'number' || !Number.isFinite(bruto) || bruto <= 0) {
+    return 0
+  }
+
+  const percentual = Math.min(
+    Math.trunc(bruto),
+    DESCONTO_METODO_PERCENTUAL_MAXIMO
+  )
+  const desconto = Math.floor((baseCentavos * percentual) / 100)
+  const maximo = Math.max(0, baseCentavos - VALOR_MINIMO_CENTAVOS)
+
+  return Math.max(0, Math.min(desconto, maximo))
+}
+
+// ---------------------------------------------------------------------------
+// Totais — a ordem em que os descontos se aplicam
+// ---------------------------------------------------------------------------
+
+export interface Totais {
+  /** produto + bump marcado. Nunca vem do navegador. */
+  subtotal_centavos: number
+  desconto_cupom_centavos: number
+  desconto_metodo_centavos: number
+  /**
+   * Soma dos dois. É o número gravado em `pedidos.desconto_centavos` e o que
+   * mantém a identidade que todo leitor assume: total = subtotal − desconto.
+   */
+  desconto_centavos: number
+  total_centavos: number
+}
+
+/**
+ * ORDEM DE APLICAÇÃO — a decisão mais importante deste módulo:
+ *
+ *     (produto + bump)  →  cupom  →  desconto do método
+ *
+ * O desconto do método incide sobre o subtotal JÁ DESCONTADO DO CUPOM, nunca
+ * sobre o subtotal cheio.
+ *
+ * A ordem MUDA O VALOR FINAL sempre que o cupom é do tipo `fixo`. Com
+ * R$ 197 + bump R$ 97 (29400), cupom fixo de R$ 50 (5000) e Pix de 10%:
+ *
+ *     cupom → método:   29400 − 5000 = 24400;  10% de 24400 = 2440  →  21960
+ *     método → cupom:   29400 − 2940 = 26460;  − 5000              →  21460
+ *
+ * Cinco reais de diferença na mesma venda. Por isso a ordem vive aqui, numa
+ * função só, e não repetida na tela e na cobrança: a prévia que o cliente vê
+ * em `cupom-validar` e o valor que a `checkout-pagar` manda ao Mercado Pago
+ * saem desta mesma chamada. Duas implementações da mesma regra divergiriam no
+ * primeiro cupom fixo e a divergência apareceria como chargeback, não como
+ * teste vermelho.
+ *
+ * Por que o cupom vem primeiro: ele é o desconto que o cliente CONQUISTOU
+ * (campanha, indicação, recuperação de carrinho) e o desconto do método é um
+ * incentivo nosso, oferecido depois de o preço já estar formado. Aplicar o
+ * cupom sobre um preço já reduzido pelo Pix entregaria menos do que o cupom
+ * promete — "10% off" que vale menos que 10% do preço anunciado é a reclamação
+ * que ninguém quer responder.
+ */
+export function calcularTotais(
+  checkout: Pick<CheckoutRow, 'desconto_pix_percentual'>,
+  subtotalCentavos: number,
+  descontoCupomCentavos: number,
+  metodo: string | null | undefined
+): Totais {
+  const cupom = Math.max(
+    0,
+    Math.min(descontoCupomCentavos, subtotalCentavos)
+  )
+  const aposCupom = subtotalCentavos - cupom
+
+  const metodoCentavos = calcularDescontoMetodo(checkout, metodo, aposCupom)
+
+  return {
+    subtotal_centavos: subtotalCentavos,
+    desconto_cupom_centavos: cupom,
+    desconto_metodo_centavos: metodoCentavos,
+    desconto_centavos: cupom + metodoCentavos,
+    total_centavos: aposCupom - metodoCentavos,
   }
 }
 

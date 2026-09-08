@@ -12,6 +12,15 @@
  *   • O CUPOM é validado contra o banco (existe, ativo, na validade, abaixo do
  *     limite, do produto certo). O desconto que a página mostrou não é aceito
  *     como entrada — é recalculado aqui pela mesma função (_shared/checkout).
+ *   • O DESCONTO POR MÉTODO (Pix) sai de `checkouts.desconto_pix_percentual` e
+ *     é aplicado DEPOIS do cupom, sobre o subtotal já descontado. A ordem
+ *     inteira — (produto + bump) → cupom → método — mora em calcularTotais(),
+ *     a mesma função que a cupom-validar usa para a prévia da tela: se o
+ *     cliente viu R$ 238,14, é R$ 238,14 que vai ao gateway.
+ *     O método que vale é o `payment_method_id` do formData, o MESMO campo que
+ *     segue no corpo da cobrança — não um campo de método à parte. Assim não
+ *     existe estado em que alguém receba desconto de Pix numa transação que o
+ *     Mercado Pago processou como cartão.
  *   • O PEDIDO nasce antes da cobrança, com status 'aguardando', e só muda
  *     depois da resposta do MP. Cobrar antes de registrar deixaria dinheiro
  *     entrando sem linha nenhuma no banco quando a function morre no meio.
@@ -56,12 +65,15 @@
 import { withCors } from '../_shared/cors.ts'
 import {
   avaliarCupom,
+  calcularTotais,
   carregarOferta,
   criarDb,
   entregaPlanoScan,
   gerarPlanoCode,
   jsonResponse,
+  normalizarMetodo,
   EMAIL_RE,
+  METODO_PIX,
   SLUG_RE,
   UUID_RE,
   VALOR_MAXIMO_CENTAVOS,
@@ -101,6 +113,16 @@ interface RequestBody {
   formData?: BrickFormData
   bump?: boolean
   cupom?: string
+  /**
+   * Método escolhido na tela. Aceito para a página poder mandar o mesmo corpo
+   * que manda para a cupom-validar, mas NÃO é ele que decide o desconto: quem
+   * decide é `formData.payment_method_id`, que é o campo que de fato vai ao
+   * Mercado Pago. Se os dois discordarem, vale o do formData — em silêncio,
+   * porque recusar uma venda por causa de um campo redundante seria trocar
+   * dinheiro por rigor, e o desconto concedido continua correto de qualquer
+   * jeito. Nunca um valor: o preço é sempre conta do servidor.
+   */
+  metodo?: string
   /** Segundo token do cartão, só para salvar. Ver cabeçalho. */
   card_token_salvar?: string
   origem?: string
@@ -329,11 +351,19 @@ Deno.serve(
     )
 
     // ----------------------------------------------------------------------
-    // 3. Cupom — revalidado aqui, nunca aceito pronto do navegador
+    // 3. Cupom e desconto de método — revalidados aqui, nunca aceitos prontos
     // ----------------------------------------------------------------------
+    // O método sai do `payment_method_id` do Brick, e não de `body.metodo`,
+    // porque é esta variável que vai depois no corpo enviado ao Mercado Pago
+    // (secção 5). Um só campo decidindo o desconto E a cobrança significa que
+    // "ganhar o desconto de Pix" e "ser cobrado por Pix" são a mesma coisa,
+    // por construção, sem depender de os dois campos concordarem.
+
+    const metodo = normalizarMetodo(formData.payment_method_id)
+    const isPix = metodo === METODO_PIX
 
     let cupomId: string | null = null
-    let desconto = 0
+    let descontoCupom = 0
     const codigoCupom = (body.cupom ?? '').trim()
     if (codigoCupom) {
       let avaliado
@@ -352,10 +382,22 @@ Deno.serve(
         )
       }
       cupomId = avaliado.cupom.id
-      desconto = avaliado.desconto_centavos
+      descontoCupom = avaliado.desconto_centavos
     }
 
-    const total = subtotal - desconto
+    // A conta inteira, na ordem oficial: (produto + bump) → cupom → método.
+    // Mesma chamada que a cupom-validar fez para a prévia — é isso que garante
+    // que o número da tela e o número da fatura sejam o mesmo número.
+    const totais = calcularTotais(
+      oferta.checkout,
+      subtotal,
+      descontoCupom,
+      metodo
+    )
+    const desconto = totais.desconto_centavos
+    const descontoMetodo = totais.desconto_metodo_centavos
+    const total = totais.total_centavos
+
     if (total < VALOR_MINIMO_CENTAVOS || total > VALOR_MAXIMO_CENTAVOS) {
       console.error('[checkout-pagar] Total fora da faixa:', total, 'slug:', slug)
       return jsonResponse({ erro: 'valor_invalido' }, 422)
@@ -385,7 +427,15 @@ Deno.serve(
         cliente_documento: documento,
         itens,
         subtotal_centavos: subtotal,
+        // Soma dos descontos (cupom + método), para valer a identidade que o
+        // recibo, a tela de obrigado e o Financeiro assumem:
+        //     total_centavos = subtotal_centavos − desconto_centavos
         desconto_centavos: desconto,
+        // Quanto daquele desconto veio do método. Gravado à parte porque, sem
+        // isso, "R$ 55,86 de desconto" é indistinguível de um cupom maior — e
+        // o Financeiro precisa saber quanto o incentivo ao Pix custou. Ver a
+        // migration 20260908200000.
+        desconto_metodo_centavos: descontoMetodo,
         total_centavos: total,
         cupom_id: cupomId,
         status: 'aguardando',
@@ -403,7 +453,8 @@ Deno.serve(
     // 5. Cobrança no Mercado Pago
     // ----------------------------------------------------------------------
 
-    const isPix = formData.payment_method_id === 'pix'
+    // `isPix` foi resolvido junto com o desconto, na secção 3, a partir deste
+    // mesmo `payment_method_id`.
 
     // Whitelist explícita do formData do Brick: só os campos abaixo cruzam a
     // fronteira. Repassar o objeto inteiro deixaria o navegador injetar
@@ -613,7 +664,12 @@ Deno.serve(
       pedido_id: pedido.id,
       status,
       total_centavos: total,
+      // Soma dos descontos, como no pedido. A quebra vai junto para a tela de
+      // confirmação poder creditar o Pix por nome em vez de mostrar um total
+      // anônimo. Campos acrescentados, nenhum renomeado.
       desconto_centavos: desconto,
+      desconto_cupom_centavos: totais.desconto_cupom_centavos,
+      desconto_metodo_centavos: descontoMetodo,
       ...(planoCode && { plano_code: planoCode }),
       ...(isPix &&
         poi?.transaction_data && {

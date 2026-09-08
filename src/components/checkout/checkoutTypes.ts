@@ -58,6 +58,14 @@ export interface CheckoutConfig {
   exigeDocumento: boolean
   /** Decide o destino após aprovar: upsell ou direto para o obrigado. */
   temUpsell: boolean
+  /**
+   * Percentual abatido do total quando o cliente paga no Pix. `null` = o
+   * método de pagamento não mexe no preço.
+   *
+   * Campo novo do RPC: enquanto o backend não o devolver, cai em `null` e a
+   * página segue exatamente como era. Nada aqui pode quebrar por ausência.
+   */
+  descontoPixPercentual: number | null
 }
 
 export interface CheckoutInfo {
@@ -137,6 +145,25 @@ function centavos(fonte: Registro, base: string): number | null {
         ? Number(emReais)
         : Number.NaN
   return Number.isFinite(numero) ? Math.round(numero * 100) : null
+}
+
+/**
+ * Percentual 0–100 vindo do banco. Fora da faixa, ausente ou zero viram
+ * `null`: "sem desconto" precisa ser indistinguível de "não configurado", ou
+ * a tela promete um abatimento que o servidor não vai dar.
+ */
+function percentual(fonte: Registro, ...chaves: string[]): number | null {
+  for (const chave of chaves) {
+    const valor = fonte[chave]
+    const numero =
+      typeof valor === 'number'
+        ? valor
+        : typeof valor === 'string' && valor.trim() !== ''
+          ? Number(valor)
+          : Number.NaN
+    if (Number.isFinite(numero) && numero > 0 && numero <= 100) return numero
+  }
+  return null
 }
 
 function lista(fonte: Registro, ...chaves: string[]): unknown[] {
@@ -285,6 +312,14 @@ export function normalizarCheckout(
           'tem_upsell',
           'temUpsell'
         ) || booleano(bruto, 'upsell', 'upsell_produto'),
+      // Aceita nos dois lugares porque o contrato não fixou onde o campo
+      // mora: dentro de `checkout` (como os irmãos dele) ou solto na raiz.
+      descontoPixPercentual:
+        percentual(
+          configBruta,
+          'desconto_pix_percentual',
+          'descontoPixPercentual'
+        ) ?? percentual(bruto, 'desconto_pix_percentual', 'descontoPixPercentual'),
     },
     produto,
     bump: lerBump(bruto.bump ?? bruto.bump_produto, configBruta),

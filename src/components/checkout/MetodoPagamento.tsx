@@ -1,6 +1,7 @@
 import { CreditCard } from 'lucide-react'
 import IconePix from './IconePix'
 import BandeirasCartao from './BandeirasCartao'
+import { formatarPercentual } from './checkoutTotal'
 
 /** Método escolhido na tela. O Brick é montado só com o que está aqui. */
 export type MetodoPagamento = 'cartao' | 'pix'
@@ -10,6 +11,8 @@ interface Props {
   onChange: (metodo: MetodoPagamento) => void
   /** Trava a troca enquanto o pagamento está em curso. */
   desabilitado: boolean
+  /** Percentual abatido ao pagar no Pix; `null` = sem desconto por método. */
+  descontoPixPercentual: number | null
 }
 
 /**
@@ -19,12 +22,23 @@ interface Props {
  * as opções, espaço seleciona, e leitor de tela anuncia "1 de 2". A seleção
  * decide QUAL formulário o Brick monta — não é enfeite duplicando a lista
  * interna do Mercado Pago, que fica desligada.
+ *
+ * Quando há desconto no Pix, o selo verde do card fica visível TAMBÉM com o
+ * cartão selecionado: é assim que ele funciona como convite para trocar. O
+ * total muda de verdade ao selecionar — o selo não promete nada que a próxima
+ * linha do resumo não confirme.
  */
 export default function SeletorMetodo({
   metodo,
   onChange,
   desabilitado,
+  descontoPixPercentual,
 }: Props) {
+  const seloPix =
+    descontoPixPercentual === null
+      ? undefined
+      : `${formatarPercentual(descontoPixPercentual)}% OFF`
+
   return (
     <fieldset className="mt-4" disabled={desabilitado}>
       <legend className="sr-only">Forma de pagamento</legend>
@@ -45,6 +59,14 @@ export default function SeletorMetodo({
           onChange={onChange}
           icone={<IconePix className="h-5 w-5" />}
           titulo="Pix"
+          selo={seloPix}
+          // "10% OFF" lido em voz alta não diz de quê. O texto curto fica na
+          // tela; o leitor de tela ouve a frase inteira.
+          seloDescricao={
+            descontoPixPercentual === null
+              ? undefined
+              : `${formatarPercentual(descontoPixPercentual)}% de desconto pagando no Pix`
+          }
           subtitulo="Aprovação imediata. Mais rápido e prático."
         />
       </div>
@@ -59,6 +81,7 @@ function Opcao({
   icone,
   titulo,
   selo,
+  seloDescricao,
   subtitulo,
   extra,
 }: {
@@ -68,6 +91,8 @@ function Opcao({
   icone: React.ReactNode
   titulo: string
   selo?: string
+  /** Frase completa para leitor de tela quando o selo é abreviado. */
+  seloDescricao?: string
   subtitulo: string
   extra?: React.ReactNode
 }) {
@@ -115,7 +140,14 @@ function Opcao({
           <span className="text-sm font-bold text-ink">{titulo}</span>
           {selo && (
             <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
-              {selo}
+              {seloDescricao ? (
+                <>
+                  <span aria-hidden>{selo}</span>
+                  <span className="sr-only">{seloDescricao}</span>
+                </>
+              ) : (
+                selo
+              )}
             </span>
           )}
         </span>

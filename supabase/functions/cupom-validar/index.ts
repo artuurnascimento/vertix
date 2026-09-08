@@ -12,6 +12,12 @@
  * (_shared/checkout.ts). Duas contas separadas divergiriam num arredondamento
  * e o cliente veria um preço na tela e outro na fatura.
  *
+ * Por isso o método de pagamento também entra aqui: desde 20260908200000 o
+ * Pix tem desconto próprio, e ele incide DEPOIS do cupom (a ordem inteira está
+ * em calcularTotais()). Uma prévia que ignorasse o método mostraria o preço de
+ * cartão para quem já escolheu Pix — o mesmo erro que este endpoint existe
+ * para evitar, só que na outra direção.
+ *
  * Sobre as mensagens: cupom inexistente e cupom desativado devolvem o mesmo
  * texto ("Cupom inválido."). Separar os dois transformaria este endpoint num
  * oráculo de quais códigos existem, e o primeiro script a passar por aqui
@@ -24,6 +30,7 @@
 import { withCors } from '../_shared/cors.ts'
 import {
   avaliarCupom,
+  calcularTotais,
   carregarOferta,
   criarDb,
   jsonResponse,
@@ -40,14 +47,17 @@ interface RequestBody {
    * quem marcou o bump erraria o número na tela.
    */
   bump?: boolean
-}
-
-/** Resposta única de "não vale", para não vazar por qual motivo exatamente. */
-function invalido(mensagem: string, status = 200): Response {
-  return jsonResponse(
-    { valido: false, desconto_centavos: 0, mensagem },
-    status
-  )
+  /**
+   * Método de pagamento escolhido na tela ('pix', 'credit_card'...). Só o
+   * MÉTODO — nunca um valor, nunca um percentual. Quanto o método desconta é
+   * lido de `checkouts.desconto_pix_percentual` aqui dentro, exatamente como a
+   * checkout-pagar faz na hora de cobrar.
+   *
+   * Ausente ou desconhecido = sem desconto de método, que é o comportamento
+   * anterior a esta mudança: a prévia só encolhe quando o método realmente
+   * desconta.
+   */
+  metodo?: string
 }
 
 Deno.serve(
@@ -69,9 +79,6 @@ Deno.serve(
     }
 
     const codigo = (body.codigo ?? '').trim()
-    if (!codigo) {
-      return invalido('Digite um cupom.')
-    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -98,21 +105,54 @@ Deno.serve(
       oferta.produto.preco_centavos +
       (comBump ? (oferta.bump?.preco_centavos ?? 0) : 0)
 
-    let avaliado
-    try {
-      avaliado = await avaliarCupom(db, codigo, oferta.produto.id, subtotal)
-    } catch {
-      return jsonResponse({ erro: 'falha_ao_validar_cupom' }, 502)
+    // Campo de cupom vazio NÃO é mais uma saída antecipada. Desde que o método
+    // entrou na conta, o total depende do Pix mesmo sem cupom nenhum, e a tela
+    // precisa poder perguntar "quanto fica no Pix?" sem inventar um código.
+    // Continua respondendo `valido: false` — não há cupom aplicado —, só que
+    // agora com os totais certos.
+    let cupomValido = false
+    let descontoCupom = 0
+    let mensagem = 'Digite um cupom.'
+
+    if (codigo) {
+      let avaliado
+      try {
+        avaliado = await avaliarCupom(db, codigo, oferta.produto.id, subtotal)
+      } catch {
+        return jsonResponse({ erro: 'falha_ao_validar_cupom' }, 502)
+      }
+      cupomValido = avaliado.valido
+      descontoCupom = avaliado.desconto_centavos
+      mensagem = avaliado.mensagem
     }
 
+    // A conta inteira, na ordem oficial: subtotal → cupom → método.
+    // É literalmente a mesma chamada que a checkout-pagar faz para cobrar.
+    const totais = calcularTotais(
+      oferta.checkout,
+      subtotal,
+      descontoCupom,
+      body.metodo
+    )
+
     return jsonResponse({
-      valido: avaliado.valido,
-      desconto_centavos: avaliado.desconto_centavos,
-      mensagem: avaliado.mensagem,
-      // Conveniência para a tela não recalcular: é o mesmo número que a
-      // checkout-pagar vai cobrar se nada mudar até o clique.
-      total_centavos: subtotal - avaliado.desconto_centavos,
-      subtotal_centavos: subtotal,
+      valido: cupomValido,
+      mensagem,
+      // SOMA dos descontos (cupom + método), para valer a identidade que a
+      // tela e o recibo assumem: total = subtotal − desconto. Com cupom
+      // inválido e Pix ligado, `valido` é false e este número ainda é o
+      // desconto real do Pix — a tela mostra o preço certo enquanto explica
+      // por que o cupom não colou.
+      desconto_centavos: totais.desconto_centavos,
+      subtotal_centavos: totais.subtotal_centavos,
+      // O mesmo número que a checkout-pagar vai cobrar se nada mudar até o
+      // clique — mesmo método, mesmo bump, mesmo cupom.
+      total_centavos: totais.total_centavos,
+      // Quebra dos dois, para a tela poder escrever duas linhas ("Cupom BF10"
+      // e "Desconto Pix") em vez de um total anônimo. Acréscimo ao contrato:
+      // campo novo, nenhum campo antigo mudou de nome.
+      desconto_cupom_centavos: totais.desconto_cupom_centavos,
+      desconto_metodo_centavos: totais.desconto_metodo_centavos,
     })
   })
 )

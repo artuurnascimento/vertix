@@ -54,8 +54,15 @@ import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
  * paga, e ninguém preenche cartão sem saber quanto vai custar.
  *
  * Uma regra atravessa o arquivo inteiro: o total mostrado é PRÉVIA. Quem soma
- * produto, bump e cupom para valer é o servidor, com os preços do banco. O
- * navegador só antecipa o número para a pessoa não pagar às cegas.
+ * produto, bump, cupom e desconto do método para valer é o servidor, com os
+ * preços do banco. O navegador só antecipa o número para a pessoa não pagar às
+ * cegas.
+ *
+ * O MÉTODO de pagamento entrou na conta: quando o checkout tem desconto no Pix
+ * configurado, escolher Pix abate o percentual e o novo total aparece ao mesmo
+ * tempo no resumo, na barra fixa do celular e dentro do botão de pagar — os
+ * três leem o mesmo `total.totalCentavos`, então não existe estado em que um
+ * mostre um número e outro mostre outro.
  */
 
 const SECAO_PAGAMENTO_ID = 'pagamento'
@@ -68,6 +75,12 @@ interface CupomAplicado {
   resposta: RespostaCupom
   /** Bump vigente quando o servidor calculou. Diferente = número velho. */
   bumpNaValidacao: boolean
+  /**
+   * Método vigente quando o servidor calculou. O total do servidor já vem com
+   * o desconto do método aplicado, então trocar de método envelhece a resposta
+   * exatamente como marcar o bump envelhece.
+   */
+  metodoNaValidacao: MetodoPagamento
 }
 
 export default function CheckoutPage() {
@@ -101,43 +114,71 @@ export default function CheckoutPage() {
     queryFn: () => buscarCheckout(slug ?? ''),
   })
 
+  // Desconto por método só existe no Pix; no cartão a taxa não deixa espaço.
+  const descontoPixPercentual = info?.checkout.descontoPixPercentual ?? null
+  const percentualDoMetodo = metodo === 'pix' ? descontoPixPercentual : null
+
   const total = useMemo(() => {
     const previa = calcularTotal({
       produtoCentavos: info?.produto.precoCentavos ?? 0,
       bumpCentavos: info?.bump?.precoCentavos ?? null,
       bumpMarcado,
-      descontoCentavos: cupom?.resposta.descontoCentavos ?? 0,
+      // O `descontoCentavos` da resposta é a SOMA (cupom + método): usá-lo
+      // aqui e ainda aplicar o percentual abaixo descontaria o Pix duas vezes.
+      // Por isso a prévia local usa o abatimento SÓ do cupom, e só cai na soma
+      // com servidor antigo — onde ela é o cupom e nada mais.
+      descontoCentavos:
+        cupom?.resposta.descontoCupomCentavos ??
+        cupom?.resposta.descontoCentavos ??
+        0,
+      percentualMetodo: percentualDoMetodo,
     })
 
-    // Os números do servidor só valem enquanto o bump for o mesmo que ele
-    // considerou. Marcou o bump depois de aplicar um cupom percentual? O total
-    // volta a ser prévia local até a revalidação (logo abaixo) responder.
+    // Os números do servidor só valem enquanto o bump E o método forem os
+    // mesmos que ele considerou. Marcou o bump (ou trocou para Pix) depois de
+    // aplicar um cupom percentual? O total volta a ser prévia local até a
+    // revalidação (logo abaixo) responder.
     const servidorAtual =
-      cupom !== null && cupom.bumpNaValidacao === bumpMarcado
+      cupom !== null &&
+      cupom.bumpNaValidacao === bumpMarcado &&
+      cupom.metodoNaValidacao === metodo
         ? cupom.resposta
         : null
     return resolverTotal(previa, servidorAtual)
-  }, [info, bumpMarcado, cupom])
+  }, [info, bumpMarcado, cupom, metodo, percentualDoMetodo])
 
   /**
-   * Revalida o cupom quando o bump muda. Sem isto, um cupom de 10% aplicado
-   * antes de marcar o bump mostraria o desconto do valor antigo — e a pessoa
-   * veria um número na tela e outro na fatura.
+   * Revalida o cupom quando o bump OU o método mudam. Sem isto, um cupom de
+   * 10% aplicado antes de marcar o bump mostraria o desconto do valor antigo —
+   * e a pessoa veria um número na tela e outro na fatura. Com o desconto do
+   * Pix na conta, trocar de método tem o mesmo efeito sobre o total.
    *
    * Falha aqui não desfaz o cupom nem trava nada: fica valendo a prévia local,
    * e o servidor aplica o desconto certo na hora de cobrar de qualquer forma.
    */
   useEffect(() => {
-    if (!slug || cupom === null || cupom.bumpNaValidacao === bumpMarcado) return
+    if (
+      !slug ||
+      cupom === null ||
+      (cupom.bumpNaValidacao === bumpMarcado &&
+        cupom.metodoNaValidacao === metodo)
+    ) {
+      return
+    }
 
     let cancelado = false
     const codigo = cupom.codigo
-    validarCupom(slug, codigo, bumpMarcado)
+    validarCupom(slug, codigo, bumpMarcado, metodo)
       .then((resposta) => {
         if (cancelado || !resposta.valido) return
         setCupom((atual) =>
           atual?.codigo === codigo
-            ? { codigo, resposta, bumpNaValidacao: bumpMarcado }
+            ? {
+                codigo,
+                resposta,
+                bumpNaValidacao: bumpMarcado,
+                metodoNaValidacao: metodo,
+              }
             : atual
         )
       })
@@ -149,7 +190,7 @@ export default function CheckoutPage() {
     return () => {
       cancelado = true
     }
-  }, [slug, bumpMarcado, cupom])
+  }, [slug, bumpMarcado, metodo, cupom])
 
   const alterarCampo = (campo: CampoCliente, valor: string) => {
     setCliente((atual) => ({ ...atual, [campo]: valor }))
@@ -321,6 +362,8 @@ export default function CheckoutPage() {
               bump={bump}
               bumpMarcado={bumpMarcado}
               cupomCodigo={cupom?.codigo ?? null}
+              metodo={metodo}
+              descontoPixPercentual={descontoPixPercentual}
               total={total}
               beneficios={beneficios}
             />
@@ -339,9 +382,15 @@ export default function CheckoutPage() {
               slug={checkout.slug}
               aplicado={cupom?.codigo ?? null}
               bumpMarcado={bumpMarcado}
+              metodo={metodo}
               descontoCentavos={total.descontoCentavos}
               onAplicar={(codigo, resposta) =>
-                setCupom({ codigo, resposta, bumpNaValidacao: bumpMarcado })
+                setCupom({
+                  codigo,
+                  resposta,
+                  bumpNaValidacao: bumpMarcado,
+                  metodoNaValidacao: metodo,
+                })
               }
               onRemover={() => setCupom(null)}
             />
@@ -360,6 +409,7 @@ export default function CheckoutPage() {
               totalCentavos={total.totalCentavos}
               metodo={metodo}
               onMetodo={setMetodo}
+              descontoPixPercentual={descontoPixPercentual}
               emailInicial={cliente.email}
               processando={processando}
               erro={erroPagamento}

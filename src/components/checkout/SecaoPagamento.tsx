@@ -8,6 +8,8 @@ interface Props {
   totalCentavos: number
   metodo: MetodoPagamento
   onMetodo: (metodo: MetodoPagamento) => void
+  /** Percentual do desconto no Pix; `null` = método não muda o preço. */
+  descontoPixPercentual: number | null
   emailInicial: string
   processando: boolean
   erro: string | null
@@ -25,6 +27,7 @@ export default function SecaoPagamento({
   totalCentavos,
   metodo,
   onMetodo,
+  descontoPixPercentual,
   emailInicial,
   processando,
   erro,
@@ -47,6 +50,7 @@ export default function SecaoPagamento({
         metodo={metodo}
         onChange={onMetodo}
         desabilitado={processando}
+        descontoPixPercentual={descontoPixPercentual}
       />
 
       {/* .vtx-checkout escopa o desenho do botão do Brick a esta página: a

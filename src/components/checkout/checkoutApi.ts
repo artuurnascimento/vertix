@@ -11,7 +11,14 @@
  *                             cartao_salvo?{card_id,ultimos_digitos},
  *                             plano_code?, erro? }
  *   POST /cupom-validar   → { valido, desconto_centavos, mensagem,
- *                             total_centavos, subtotal_centavos }
+ *                             total_centavos, subtotal_centavos,
+ *                             desconto_cupom_centavos,
+ *                             desconto_metodo_centavos }
+ *                           body { slug, codigo, bump, metodo }
+ *
+ * ATENÇÃO ao `desconto_centavos` da /cupom-validar: ele é a SOMA de cupom +
+ * desconto do método, não só o cupom. Quem quiser as duas linhas separadas no
+ * resumo tem que ler `desconto_cupom_centavos` e `desconto_metodo_centavos`.
  */
 
 import { supabase } from '../../lib/supabase'
@@ -56,7 +63,15 @@ export interface RespostaPagamento {
 
 export interface RespostaCupom {
   valido: boolean
+  /** SOMA dos abatimentos (cupom + método), como o servidor manda. */
   descontoCentavos: number
+  /**
+   * Abatimento só do CUPOM. `null` quando o servidor ainda não manda a
+   * separação — nesse caso a tela cai na atribuição antiga (tudo no cupom).
+   */
+  descontoCupomCentavos: number | null
+  /** Abatimento só do MÉTODO de pagamento. `null` = servidor sem separação. */
+  descontoMetodoCentavos: number | null
   mensagem: string | null
   /** Totais já calculados no servidor — a prévia da tela vira cópia deles. */
   totalCentavos: number | null
@@ -212,14 +227,20 @@ export async function pagarCheckout(
  * Valida o cupom no servidor. O `bump` vai junto porque desconto percentual
  * incide sobre o subtotal: sem ele, quem marcou o bump veria um desconto menor
  * na tela do que o que seria realmente aplicado.
+ *
+ * O `metodo` vai pelo mesmo motivo, um passo adiante: o desconto do Pix incide
+ * sobre o subtotal JÁ descontado o cupom, então o `total_centavos` da resposta
+ * depende dos dois. Mudar de método invalida a resposta anterior tanto quanto
+ * marcar o bump invalida.
  */
 export async function validarCupom(
   slug: string,
   codigo: string,
-  bump: boolean
+  bump: boolean,
+  metodo: string
 ): Promise<RespostaCupom> {
   const { data, error } = await supabase.functions.invoke('cupom-validar', {
-    body: { slug, codigo, bump },
+    body: { slug, codigo, bump, metodo },
   })
 
   const corpo = error
@@ -230,10 +251,22 @@ export async function validarCupom(
   if (corpo === null) throw new Error('cupom_indisponivel')
 
   const desconto = inteiroOuNull(corpo.desconto_centavos) ?? 0
+  const descontoCupom = inteiroOuNull(corpo.desconto_cupom_centavos)
+  const descontoMetodo = inteiroOuNull(corpo.desconto_metodo_centavos)
+
+  // O cupom vale quando o SERVIDOR diz que vale E ele sozinho abateu alguma
+  // coisa. Sem esta distinção, um código inexistente num checkout com desconto
+  // no Pix passaria por válido: `desconto_centavos` viria positivo por causa
+  // do Pix, e a tela mostraria "cupom aplicado" para um código que não existe.
+  const abatimentoDoCupom = descontoCupom ?? desconto
 
   return {
-    valido: corpo.valido === true && desconto > 0,
+    valido: corpo.valido === true && abatimentoDoCupom > 0,
     descontoCentavos: Math.max(0, desconto),
+    descontoCupomCentavos:
+      descontoCupom === null ? null : Math.max(0, descontoCupom),
+    descontoMetodoCentavos:
+      descontoMetodo === null ? null : Math.max(0, descontoMetodo),
     mensagem: stringOuNull(corpo.mensagem) ?? stringOuNull(corpo.message),
     totalCentavos: inteiroOuNull(corpo.total_centavos),
     subtotalCentavos: inteiroOuNull(corpo.subtotal_centavos),

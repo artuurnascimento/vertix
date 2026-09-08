@@ -9,6 +9,7 @@ import {
   limparProva,
   ofertaEhOProprioProduto,
   ofertasEmConflito,
+  percentualPixValido,
 } from './checkoutForm'
 import type { CheckoutFormValues } from './checkoutForm'
 import { parseProva } from './checkoutsData'
@@ -202,5 +203,43 @@ describe('checkoutFormToPayload', () => {
       depoimentos: [{ nome: 'Ana', texto: 'Ótimo', nota: null, loja: null }],
       selos: ['Compra segura'],
     })
+  })
+})
+
+describe('desconto no Pix', () => {
+  it('aceita vazio, zero e a faixa até o teto', () => {
+    expect(percentualPixValido('')).toBe(true)
+    expect(percentualPixValido('   ')).toBe(true)
+    expect(percentualPixValido('0')).toBe(true)
+    expect(percentualPixValido('10')).toBe(true)
+    expect(percentualPixValido('90')).toBe(true)
+  })
+
+  it('recusa acima do teto, negativo e não-número', () => {
+    expect(percentualPixValido('91')).toBe(false)
+    expect(percentualPixValido('100')).toBe(false)
+    expect(percentualPixValido('-5')).toBe(false)
+    expect(percentualPixValido('10,5')).toBe(false)
+    expect(percentualPixValido('dez')).toBe(false)
+  })
+
+  it('o schema acusa o percentual fora da faixa', () => {
+    expect(erroDe({ ...VALIDO, descontoPixPercentual: '95' }, 'descontoPixPercentual')).toBe(
+      'Informe um percentual inteiro de 0 a 90, ou deixe vazio.'
+    )
+    expect(
+      erroDe({ ...VALIDO, descontoPixPercentual: '10' }, 'descontoPixPercentual')
+    ).toBeUndefined()
+  })
+
+  it('vazio vira null no banco; número vira número', () => {
+    expect(
+      checkoutFormToPayload({ ...VALIDO, descontoPixPercentual: '' })
+        .desconto_pix_percentual
+    ).toBeNull()
+    expect(
+      checkoutFormToPayload({ ...VALIDO, descontoPixPercentual: '10' })
+        .desconto_pix_percentual
+    ).toBe(10)
   })
 })
