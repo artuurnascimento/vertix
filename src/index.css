@@ -253,6 +253,87 @@ body {
 }
 
 /* ============================================================
+   Brick DENTRO do checkout /c/:slug (.vtx-checkout)
+   ------------------------------------------------------------
+   A PagarPage usa o mesmo id de container, então tudo aqui é
+   escopado pela classe do wrapper: nada nesta seção pode
+   alcançar a página de cobrança, que já roda em produção.
+   ============================================================ */
+
+/* Título ("Meios de pagamento") e lista de métodos do próprio Brick. Só
+   somem quando a página conseguiu abrir o método sozinha — o atributo é
+   escrito pelo PagamentoBrick depois de marcar o rádio. Sem ele, a lista
+   do Mercado Pago continua visível e clicável. */
+.vtx-checkout #payment-brick[data-metodo-embutido='sim'] form > h1,
+.vtx-checkout
+  #payment-brick[data-metodo-embutido='sim']
+  [class*='payment-options'] {
+  display: none;
+}
+
+/* Botão de pagar ocupando a coluna inteira: é o CTA da página. */
+.vtx-checkout #payment-brick [class*='button-container'],
+.vtx-checkout #payment-brick button[type='submit'] {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* O Brick entrega o botão como cápsula, com halo largo em volta. No layout
+   aprovado ele é um retângulo de cantos suaves, gradiente sólido e sombra
+   curta — a cápsula com brilho puxa a atenção para a moldura, e o que precisa
+   ser lido aqui é o valor. Vai com !important porque o estilo do Brick é
+   injetado pelo SDK depois desta folha. Escopado em .vtx-checkout: a página
+   de cobrança de projeto usa o mesmo #payment-brick e não pode mudar. */
+.vtx-checkout #payment-brick button[type='submit'] {
+  min-height: 58px;
+  border-radius: 14px !important;
+  background-image: linear-gradient(180deg, #7b6bff 0%, #5b46e8 100%) !important;
+  background-color: #6c5bf2 !important;
+  border: 0 !important;
+  box-shadow: 0 10px 24px -12px rgba(108, 91, 242, 0.75) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  transition: filter 140ms ease, box-shadow 140ms ease;
+}
+
+.vtx-checkout #payment-brick button[type='submit']:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 12px 28px -12px rgba(108, 91, 242, 0.9) !important;
+}
+
+.vtx-checkout #payment-brick button[type='submit']:focus-visible {
+  outline: 2px solid #a99ef7 !important;
+  outline-offset: 3px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vtx-checkout #payment-brick button[type='submit'] {
+    transition: none;
+  }
+}
+
+/* Seta à direita do rótulo. Desenhada por máscara, e não por `content: '→'`,
+   para nenhum leitor de tela anunciar um caractere solto no meio do botão.
+   Fica fora do estado .vtx-processing, cujo ::after já escreve "Processando…". */
+.vtx-checkout
+  #payment-brick:not(.vtx-processing)
+  button[type='submit']::after {
+  content: '';
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  background: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/* ============================================================
    Splash de abertura da marca (SplashScreen.tsx)
    Lâminas do símbolo se desenham subindo ao vértice; wordmark
    entra com o "I" em indigo; overlay some no fade-out.

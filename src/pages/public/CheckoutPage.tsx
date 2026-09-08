@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
-import { CircleSlash, Hourglass, Loader2, ShieldCheck } from 'lucide-react'
+import { CircleSlash, Hourglass, Loader2 } from 'lucide-react'
 
 import {
   buscarCheckout,
@@ -16,6 +16,7 @@ import {
   calcularTotal,
   resolverTotal,
 } from '../../components/checkout/checkoutTotal'
+import { beneficiosDoResumo } from '../../components/checkout/conteudoCheckout'
 import {
   CLIENTE_VAZIO,
   clienteParaEnvio,
@@ -26,15 +27,19 @@ import {
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
 import BarraTotalMobile from '../../components/checkout/BarraTotalMobile'
+import CabecalhoCheckout from '../../components/checkout/CabecalhoCheckout'
 import CheckoutShell from '../../components/checkout/CheckoutShell'
 import Cronometro from '../../components/checkout/Cronometro'
 import CupomField from '../../components/checkout/CupomField'
 import DadosCliente from '../../components/checkout/DadosCliente'
+import Depoimentos from '../../components/checkout/Depoimentos'
+import GarantiaCard from '../../components/checkout/GarantiaCard'
 import OrderBump from '../../components/checkout/OrderBump'
-import PagamentoBrick from '../../components/checkout/PagamentoBrick'
 import PixPanel from '../../components/checkout/PixPanel'
-import ProvaGarantia from '../../components/checkout/ProvaGarantia'
 import ResumoPedido from '../../components/checkout/ResumoPedido'
+import SecaoPagamento from '../../components/checkout/SecaoPagamento'
+import SelosGrid from '../../components/checkout/SelosGrid'
+import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
 
 /**
  * Checkout público `/c/:slug`.
@@ -42,6 +47,11 @@ import ResumoPedido from '../../components/checkout/ResumoPedido'
  * A mecânica de pagamento é a mesma da página de cobrança que já roda em
  * produção (SDK do Mercado Pago + Payment Brick + Pix com QR e copia-e-cola);
  * o que muda aqui é a oferta: bump, cupom, cronômetro e prova social.
+ *
+ * O desenho é de duas colunas: à esquerda o fluxo (bump → cupom → dados →
+ * pagamento → confiança), à direita o resumo grudado no alto. No celular vira
+ * uma coluna só, com o resumo ABRINDO a página — é lá que quase todo mundo
+ * paga, e ninguém preenche cartão sem saber quanto vai custar.
  *
  * Uma regra atravessa o arquivo inteiro: o total mostrado é PRÉVIA. Quem soma
  * produto, bump e cupom para valer é o servidor, com os preços do banco. O
@@ -70,6 +80,7 @@ export default function CheckoutPage() {
   const [cliente, setCliente] = useState<ClienteCheckout>(CLIENTE_VAZIO)
   const [erros, setErros] = useState<ErrosCliente>({})
   const [estado, setEstado] = useState<EstadoPagina>('form')
+  const [metodo, setMetodo] = useState<MetodoPagamento>('cartao')
   const [pix, setPix] = useState<PixCheckout | null>(null)
   const [pedidoId, setPedidoId] = useState<string | null>(null)
   const [erroPagamento, setErroPagamento] = useState<string | null>(null)
@@ -281,9 +292,10 @@ export default function CheckoutPage() {
 
   // --------------------------------------------------------------- página --
   const { checkout, produto, bump, prova, garantia } = info
+  const beneficios = beneficiosDoResumo(prova, garantia)
 
   return (
-    <CheckoutShell>
+    <CheckoutShell cabecalho={false}>
       <motion.div
         initial={semMovimento ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -291,36 +303,30 @@ export default function CheckoutPage() {
         // pb no celular: a barra fixa do total não pode cobrir o rodapé.
         className="pb-28 md:pb-0"
       >
-        <div className="mx-auto mt-8 max-w-xl md:max-w-none">
-          {checkout.titulo && (
-            <h1 className="hero-heading text-center text-2xl font-bold leading-tight sm:text-3xl">
-              {checkout.titulo}
-            </h1>
-          )}
-          {checkout.subtitulo && (
-            <p className="mt-2 text-center text-sm font-light text-muted">
-              {checkout.subtitulo}
-            </p>
-          )}
-          <div className="mx-auto mt-5 max-w-md">
-            <Cronometro ate={info.cronometroAte} />
-          </div>
+        <CabecalhoCheckout
+          titulo={checkout.titulo}
+          subtitulo={checkout.subtitulo}
+        />
+
+        <div className="mx-auto mt-6 max-w-md">
+          <Cronometro ate={info.cronometroAte} />
         </div>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-[minmax(0,1fr)_360px] md:items-start">
+        <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] lg:items-start lg:gap-6">
           {/* Resumo primeiro no DOM = primeiro na tela do celular, que é onde
               quase todo mundo paga. No desktop ele vai para a direita e gruda. */}
-          <div className="md:order-2 md:sticky md:top-8">
+          <div className="lg:order-2 lg:sticky lg:top-8">
             <ResumoPedido
               produto={produto}
               bump={bump}
               bumpMarcado={bumpMarcado}
               cupomCodigo={cupom?.codigo ?? null}
               total={total}
+              beneficios={beneficios}
             />
           </div>
 
-          <div className="flex flex-col gap-5 md:order-1">
+          <div className="flex flex-col gap-5 lg:order-1">
             {bump && (
               <OrderBump
                 bump={bump}
@@ -349,40 +355,21 @@ export default function CheckoutPage() {
               />
             </div>
 
-            <section
+            <SecaoPagamento
               id={SECAO_PAGAMENTO_ID}
-              tabIndex={-1}
-              aria-label="Pagamento"
-              className="scroll-mt-6 rounded-2xl border border-white/5 bg-surface-1 p-4 focus:outline-none sm:p-6"
-            >
-              <h2 className="text-[11px] font-medium uppercase tracking-[0.25em] text-muted">
-                Pagamento
-              </h2>
-              <div className="mt-4">
-                <PagamentoBrick
-                  totalCentavos={total.totalCentavos}
-                  emailInicial={cliente.email}
-                  processando={processando}
-                  onSubmit={enviarPagamento}
-                  onErroCarregamento={setErroPagamento}
-                />
-              </div>
-              {erroPagamento && (
-                <p
-                  role="alert"
-                  className="mt-4 rounded-lg border border-red-400/25 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300"
-                >
-                  {erroPagamento}
-                </p>
-              )}
-            </section>
+              totalCentavos={total.totalCentavos}
+              metodo={metodo}
+              onMetodo={setMetodo}
+              emailInicial={cliente.email}
+              processando={processando}
+              erro={erroPagamento}
+              onSubmit={enviarPagamento}
+              onErroCarregamento={setErroPagamento}
+            />
 
-            <ProvaGarantia prova={prova} garantia={garantia} />
-
-            <p className="flex items-center justify-center gap-1.5 text-center text-[11px] font-light text-muted/80">
-              <ShieldCheck aria-hidden className="h-3.5 w-3.5 text-accent" />
-              Ambiente seguro · dados criptografados
-            </p>
+            <GarantiaCard garantia={garantia} />
+            {prova && <Depoimentos depoimentos={prova.depoimentos} />}
+            <SelosGrid selos={prova?.selos ?? []} />
           </div>
         </div>
       </motion.div>
