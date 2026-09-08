@@ -87,25 +87,34 @@ export default function CheckoutShell({
               </a>
             </span>
           </div>
-          {/* Termos e política também aqui, além do aceite junto do botão:
-              quem procura as regras depois de comprar procura no rodapé. */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted">
+          {/* Aceite dos termos — exigência da LGPD e do Código de Defesa do
+              Consumidor: quem compra precisa saber com quem está contratando,
+              quem processa o pagamento e onde ler as regras. Fica só aqui, e
+              não repetido junto do botão: uma declaração, um lugar. */}
+          <p className="mt-5 text-center text-xs leading-relaxed text-muted">
+            Ao prosseguir, você concorda com os{' '}
             <a
               href="/termos"
-              className="underline-offset-2 hover:text-ink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline decoration-white/25 underline-offset-2 transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             >
               Termos de uso
-            </a>
-            <span aria-hidden className="text-muted/40">·</span>
+            </a>{' '}
+            e a{' '}
             <a
               href="/privacidade"
-              className="underline-offset-2 hover:text-ink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline decoration-white/25 underline-offset-2 transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             >
               Política de Privacidade
-            </a>
-          </div>
-          <p className="mt-2 text-center text-[10px] text-muted/60">
-            Vertix Studio · CNPJ 54.203.421/0001-49
+            </a>{' '}
+            da Vertix Studio.
+          </p>
+          <p className="mt-1.5 text-center text-[11px] text-muted/80">
+            Pagamento processado pelo Mercado Pago · Vertix Studio · CNPJ
+            54.203.421/0001-49
           </p>
         </footer>
       </div>
