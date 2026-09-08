@@ -1,11 +1,10 @@
 import { useId, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, ShieldCheck, ShoppingCart } from 'lucide-react'
+import { ChevronDown, ShoppingCart } from 'lucide-react'
 import LogoMark from '../ui/LogoMark'
 import Revelar from './Revelar'
 import { formatarCentavos, formatarPercentual } from './checkoutTotal'
 import type { ResultadoTotal } from './checkoutTotal'
-import type { BeneficioResumo } from './conteudoCheckout'
 import type { BumpCheckout, ProdutoCheckout } from './checkoutTypes'
 import type { MetodoPagamento } from './MetodoPagamento'
 
@@ -20,7 +19,6 @@ interface Props {
   descontoPixPercentual: number | null
   total: ResultadoTotal
   /** Já derivados da configuração. Vazio = o bloco não aparece. */
-  beneficios: BeneficioResumo[]
   /**
    * Como o bloco nasce nesta oferta, vindo da configuração do checkout.
    * `false` = recolhido, que é o padrão do banco.
@@ -59,7 +57,6 @@ export default function ResumoPedido({
   metodo,
   descontoPixPercentual,
   total,
-  beneficios,
   padraoAberto,
 }: Props) {
   const semMovimento = useReducedMotion()
@@ -221,44 +218,7 @@ export default function ResumoPedido({
             Valor confirmado pelo nosso servidor no pagamento.
           </p>
 
-          {beneficios.length > 0 && (
-            <ul className="mt-5 flex flex-col gap-3 border-t border-white/[0.07] pt-5">
-              {/* Índice na chave: dois selos com o mesmo texto são configuração
-                  ruim, não motivo para o React perder o rastro da lista. */}
-              {beneficios.map((beneficio, indice) => (
-                <li
-                  key={`${beneficio.titulo}-${indice}`}
-                  className="flex items-start gap-2.5"
-                >
-                  <span
-                    aria-hidden
-                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/20"
-                  >
-                    <Check strokeWidth={3} className="h-2.5 w-2.5 text-accent" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-xs font-semibold leading-snug text-ink">
-                      {beneficio.titulo}
-                    </span>
-                    {beneficio.apoio && (
-                      <span className="mt-0.5 block text-[11px] font-light leading-snug text-muted">
-                        {beneficio.apoio}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
 
-          <div className="mt-5 flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/[0.07] p-3.5">
-            <ShieldCheck aria-hidden className="h-4 w-4 shrink-0 text-accent" />
-            <p className="text-[11px] font-light leading-relaxed text-muted">
-              <span className="font-semibold text-ink">Compra segura.</span> Seus
-              dados trafegam criptografados e o pagamento é processado pelo
-              Mercado Pago.
-            </p>
-          </div>
         </div>
       </Revelar>
     </section>

@@ -38,7 +38,6 @@ function renderizar(padraoAberto: boolean) {
       metodo="pix"
       descontoPixPercentual={null}
       total={TOTAL}
-      beneficios={[{ titulo: 'Garantia de 7 dias', apoio: null }]}
       padraoAberto={padraoAberto}
     />
   )
@@ -108,7 +107,6 @@ describe('ResumoPedido — padrão vindo da oferta', () => {
         metodo="cartao"
         descontoPixPercentual={null}
         total={TOTAL}
-        beneficios={[{ titulo: 'Garantia de 7 dias', apoio: null }]}
         padraoAberto
       />
     )

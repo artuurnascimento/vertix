@@ -9,13 +9,11 @@
  * lugar a menos onde a página poderia prometer algo que ninguém prometeu.
  */
 
-import type { GarantiaCheckout, ProvaCheckout } from './checkoutTypes'
-
-/** Quantos benefícios o desenho comporta em cada bloco. */
-const MAXIMO_BENEFICIOS = 3
-
 /** Acima disto a frase não é "benefício curto": vira parágrafo. */
 const TAMANHO_MAXIMO_BENEFICIO = 90
+
+/** Quantos itens da descrição do bump viram lista; o resto volta a parágrafo. */
+const MAXIMO_BENEFICIOS = 3
 
 /**
  * Separadores que o lojista usa de propósito para listar. Hífen e asterisco
@@ -88,42 +86,6 @@ export function textoDoBump(descricao: string | null): TextoDoBump {
     paragrafo: resto.length > 0 ? resto.join(' ') : null,
     beneficios: itens.slice(0, MAXIMO_BENEFICIOS),
   }
-}
-
-export interface BeneficioResumo {
-  titulo: string
-  /** Linha de apoio embaixo do título. `null` quando não há texto extra. */
-  apoio: string | null
-}
-
-function rotuloGarantia(dias: number): string {
-  return `Garantia de ${dias} ${dias === 1 ? 'dia' : 'dias'}`
-}
-
-/**
- * Benefícios do card do resumo, montados só com o que a configuração já diz:
- * a garantia primeiro (é a única que tem linha de apoio própria) e os selos
- * completando até três.
- *
- * Nada é escrito aqui. Sem garantia e sem selos a lista sai vazia e o bloco
- * inteiro some do resumo — três marcas de check sem texto ao lado parecem
- * defeito, e defeito numa página de pagamento custa venda.
- */
-export function beneficiosDoResumo(
-  prova: ProvaCheckout | null,
-  garantia: GarantiaCheckout | null
-): BeneficioResumo[] {
-  const beneficios: BeneficioResumo[] =
-    garantia === null
-      ? []
-      : [{ titulo: rotuloGarantia(garantia.dias), apoio: garantia.texto }]
-
-  for (const selo of prova?.selos ?? []) {
-    if (beneficios.length >= MAXIMO_BENEFICIOS) break
-    beneficios.push({ titulo: selo, apoio: null })
-  }
-
-  return beneficios
 }
 
 export interface TituloDestacado {

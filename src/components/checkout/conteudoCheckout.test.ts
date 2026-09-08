@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  beneficiosDoResumo,
   destacarFinalDoTitulo,
   textoDoBump,
 } from './conteudoCheckout'
@@ -73,56 +72,6 @@ describe('textoDoBump', () => {
 
     expect(resultado.beneficios).toEqual([])
     expect(resultado.paragrafo).toBe('Rotina dia-a-dia da loja.')
-  })
-})
-
-describe('beneficiosDoResumo', () => {
-  it('não devolve nada sem garantia e sem selos', () => {
-    expect(beneficiosDoResumo(null, null)).toEqual([])
-    expect(beneficiosDoResumo({ depoimentos: [], selos: [] }, null)).toEqual([])
-  })
-
-  it('põe a garantia primeiro, com o texto configurado de apoio', () => {
-    expect(beneficiosDoResumo(null, { dias: 7, texto: 'Devolvemos tudo.' })).toEqual(
-      [{ titulo: 'Garantia de 7 dias', apoio: 'Devolvemos tudo.' }]
-    )
-  })
-
-  it('usa singular na garantia de um dia', () => {
-    expect(beneficiosDoResumo(null, { dias: 1, texto: null })[0].titulo).toBe(
-      'Garantia de 1 dia'
-    )
-  })
-
-  it('completa com selos até três benefícios', () => {
-    const prova = {
-      depoimentos: [],
-      selos: ['Compra segura', 'Acesso imediato', 'Entrega em 24h'],
-    }
-
-    const beneficios = beneficiosDoResumo(prova, { dias: 7, texto: null })
-
-    expect(beneficios.map((b) => b.titulo)).toEqual([
-      'Garantia de 7 dias',
-      'Compra segura',
-      'Acesso imediato',
-    ])
-  })
-
-  it('nunca passa de três, mesmo com muitos selos', () => {
-    const prova = { depoimentos: [], selos: ['A', 'B', 'C', 'D', 'E'] }
-
-    expect(beneficiosDoResumo(prova, null).map((b) => b.titulo)).toEqual([
-      'A',
-      'B',
-      'C',
-    ])
-  })
-
-  it('selo não ganha linha de apoio inventada', () => {
-    const prova = { depoimentos: [], selos: ['Compra segura'] }
-
-    expect(beneficiosDoResumo(prova, null)[0].apoio).toBeNull()
   })
 })
 

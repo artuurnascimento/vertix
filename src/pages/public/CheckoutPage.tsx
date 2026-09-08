@@ -17,7 +17,6 @@ import {
   formatarCentavos,
   resolverTotal,
 } from '../../components/checkout/checkoutTotal'
-import { beneficiosDoResumo } from '../../components/checkout/conteudoCheckout'
 import {
   CLIENTE_VAZIO,
   clienteParaEnvio,
@@ -359,7 +358,6 @@ export default function CheckoutPage() {
 
   // --------------------------------------------------------------- página --
   const { checkout, produto, bump, prova, garantia } = info
-  const beneficios = beneficiosDoResumo(prova, garantia)
 
   /**
    * As avaliações aparecem em UM lugar por vez: na coluna da direita no
@@ -423,7 +421,6 @@ export default function CheckoutPage() {
               metodo={metodo}
               descontoPixPercentual={descontoPixPercentual}
               total={total}
-              beneficios={beneficios}
               padraoAberto={checkout.resumoAberto}
             />
             {avaliacoes && <div className="hidden lg:block">{avaliacoes}</div>}
