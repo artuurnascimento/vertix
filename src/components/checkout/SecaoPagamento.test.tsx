@@ -5,13 +5,14 @@ import SecaoPagamento from './SecaoPagamento'
 import type { MetodoPagamento } from './MetodoPagamento'
 
 /**
- * O que estes testes protegem é a trava nº 1 da migração: **enquanto ninguém
- * ligar a flag, esta seção tem de renderizar o Payment Brick, e só ele.**
+ * O que estes testes protegem é a trava nº 1, agora do outro lado da migração:
+ * **sem parâmetro nenhum, esta seção tem de renderizar o formulário novo.**
  *
- * O Brick está vendendo. Um `?` invertido aqui, ou uma flag lida com o valor
- * errado, trocaria o formulário de pagamento de 100% do tráfego sem ninguém
- * pedir — e o sintoma chegaria como queda de conversão, não como erro no
- * console.
+ * O Secure Fields passou nos testes com cartão de verdade e virou o checkout.
+ * Um `?` invertido aqui, ou uma flag lida com o valor errado, trocaria o
+ * formulário de pagamento de 100% do tráfego sem ninguém pedir — e o sintoma
+ * chegaria como queda de conversão, não como erro no console. O Brick continua
+ * coberto porque continua alcançável: `?sf=0` é o link que o suporte manda.
  *
  * Os três formulários são dublês: quem testa o que cada um faz são
  * `PagamentoPix.test.tsx` e `PagamentoCartao.test.tsx`. Aqui só interessa
@@ -86,9 +87,31 @@ describe('SecaoPagamento', () => {
     window.history.replaceState({}, '', '/')
   })
 
-  describe('flag desligada — o checkout de hoje, intacto', () => {
-    it('renderiza o Brick no cartão, e nenhum formulário novo', () => {
+  describe('sem parâmetro — o checkout que está vendendo', () => {
+    it('NÃO monta o Brick: o padrão agora é o formulário novo', () => {
+      // Se este teste voltar a passar com o Brick na tela, a promoção foi
+      // desfeita sem ninguém pedir — que é exatamente o acidente que a versão
+      // anterior deste arquivo existia para impedir, na direção contrária.
       renderizar()
+
+      expect(screen.queryByTestId('brick')).not.toBeInTheDocument()
+    })
+
+    it('o link do Scan (?a=<id>, sem sf) cai no formulário novo', async () => {
+      // `scan-comprar` monta /c/plano-correcao?a=<id>. Nenhum `sf` na URL.
+      renderizar({ busca: '?a=b0f1c2d3-0000-4000-8000-000000000000' })
+      await userEvent.click(
+        screen.getByRole('radio', { name: /cartão de crédito/i })
+      )
+
+      expect(screen.getByTestId('cartao')).toBeInTheDocument()
+      expect(screen.queryByTestId('brick')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('?sf=0 — o Brick como caminho de volta', () => {
+    it('renderiza o Brick no cartão, e nenhum formulário novo', () => {
+      renderizar({ busca: '?sf=0' })
 
       expect(screen.getByTestId('brick')).toBeInTheDocument()
       expect(screen.queryByTestId('cartao')).not.toBeInTheDocument()
@@ -96,14 +119,14 @@ describe('SecaoPagamento', () => {
     })
 
     it('renderiza o Brick TAMBÉM no Pix — quem desenha os dois é ele', () => {
-      renderizar({ metodo: 'pix' })
+      renderizar({ busca: '?sf=0', metodo: 'pix' })
 
       expect(screen.getByTestId('brick')).toHaveAttribute('data-metodo', 'pix')
       expect(screen.queryByTestId('pix')).not.toBeInTheDocument()
     })
 
     it('mantém o wrapper .vtx-checkout, que é quem escopa o botão do Brick', () => {
-      const { container } = renderizar()
+      const { container } = renderizar({ busca: '?sf=0' })
 
       const wrapper = container.querySelector('.vtx-checkout')
       expect(wrapper).not.toBeNull()
@@ -111,23 +134,16 @@ describe('SecaoPagamento', () => {
     })
 
     it('continua pré-preenchendo o e-mail do pagador', () => {
-      renderizar()
+      renderizar({ busca: '?sf=0' })
 
       expect(screen.getByTestId('brick')).toHaveAttribute(
         'data-email',
         'comprador@exemplo.com'
       )
     })
-
-    it('?sf=0 é o kill-switch: volta ao Brick mesmo pedindo o novo', () => {
-      renderizar({ busca: '?sf=0' })
-
-      expect(screen.getByTestId('brick')).toBeInTheDocument()
-      expect(screen.queryByTestId('cartao')).not.toBeInTheDocument()
-    })
   })
 
-  describe('flag ligada por ?sf=1', () => {
+  describe('formulário novo', () => {
     /**
      * Escolhe um método como a pessoa escolheria. Necessário em quase todo
      * teste daqui porque a tela abre SEM seleção — o formulário só existe
@@ -206,7 +222,7 @@ describe('SecaoPagamento', () => {
     })
   })
 
-  it.each([undefined, '?sf=1'])(
+  it.each(['?sf=0', undefined])(
     'mostra o erro da última tentativa nos dois caminhos (%j)',
     (busca) => {
       renderizar({ busca, erro: 'Cartão recusado pelo emissor.' })

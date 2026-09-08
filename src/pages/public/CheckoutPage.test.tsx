@@ -152,16 +152,16 @@ describe('CheckoutPage — documento obrigatório no cartão', () => {
     window.history.replaceState({}, '', '/')
   })
 
-  describe('flag desligada — o checkout de hoje, intacto', () => {
+  describe('?sf=0 — o Brick, o caminho de volta', () => {
     it('mantém o documento OPCIONAL no cartão', async () => {
-      renderizar()
+      renderizar('?sf=0')
       await esperarForm()
 
       expect(screen.getByText(ROTULO_OPCIONAL)).toBeInTheDocument()
     })
 
-    it('deixa pagar de cartão sem documento — como hoje', async () => {
-      renderizar()
+    it('deixa pagar sem documento, como o Brick sempre deixou', async () => {
+      renderizar('?sf=0')
       await esperarForm()
 
       await userEvent.click(screen.getByRole('button', { name: 'pagar' }))
@@ -186,7 +186,7 @@ describe('CheckoutPage — documento obrigatório no cartão', () => {
     })
   })
 
-  describe('flag ligada por ?sf=1', () => {
+  describe('formulário novo — o padrão, conferido também por ?sf=1', () => {
     it('rotula o documento como obrigatório no cartão', async () => {
       renderizar('?sf=1')
       await esperarForm()
@@ -348,11 +348,18 @@ describe('análise de origem na URL', () => {
   // chamada do primeiro e passaria por engano.
   beforeEach(() => vi.mocked(pagarCheckout).mockClear())
 
-  /** Preenche o mínimo que a página exige e dispara o pagamento. */
+  /**
+   * Preenche o mínimo que a página exige e dispara o pagamento.
+   *
+   * O documento entra aqui porque o formulário novo — que hoje é o padrão —
+   * exige CPF/CNPJ para tokenizar o cartão. Estes testes correm no caminho
+   * que 100% do tráfego usa, não no `?sf=0`.
+   */
   async function preencherEPagar() {
     await userEvent.type(screen.getByLabelText('Nome completo'), 'Artur Nascimento')
     await userEvent.type(screen.getByLabelText('E-mail'), 'artur@vertix.studio')
     await userEvent.type(screen.getByLabelText('WhatsApp'), '62999998888')
+    await userEvent.type(screen.getByLabelText(ROTULO_OBRIGATORIO), '12345678909')
     await userEvent.click(screen.getByRole('button', { name: 'pagar' }))
     await waitFor(() => expect(pagarCheckout).toHaveBeenCalled())
   }

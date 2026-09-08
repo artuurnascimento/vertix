@@ -615,6 +615,13 @@ Query param manda sobre env, deliberadamente: permite QA em produção sem afeta
 | 4 | Ligar em produção. Acompanhar **48h** | mudar a env no Vercel + redeploy, ~2 min |
 | 5 | PR separado apaga Brick, `mpSdk.ts:44-66`, `index.css:91-338` | — |
 
+> **Estado: passos 1-4 feitos.** O formulário novo passou na bateria em
+> produção via `?sf=1` e foi **promovido a padrão no código**, não pela env —
+> ver o cabeçalho de `flagFormularioNovo.ts`. Com a promoção, a env inverteu de
+> sentido: `VITE_CHECKOUT_SECURE_FIELDS=0` é o que volta todo mundo ao Brick, e
+> `?sf=0` continua sendo o link do suporte. O passo 5 (apagar o Brick) segue
+> aberto de propósito — enquanto ele existir, a reversão não depende de deploy.
+
 **Critérios para abortar (voltar a flag, sem discussão):**
 - Taxa de aprovação de cartão cai mais de 3 pontos percentuais em 100 tentativas
 - `card_token_salvar` vem nulo em mais de 10% das vendas de cartão
