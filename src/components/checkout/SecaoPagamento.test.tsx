@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import SecaoPagamento from './SecaoPagamento'
 import type { MetodoPagamento } from './MetodoPagamento'
 
@@ -27,19 +28,33 @@ vi.mock('./PagamentoBrick', () => ({
   ),
 }))
 
+/*
+ * Os dublês RENDERIZAM o `seletor` que recebem, como os componentes reais
+ * fazem. Sem isso a lista de métodos desapareceria do DOM assim que o
+ * formulário monta, e nenhum teste conseguiria verificar o que acontece com
+ * ela depois da escolha — que é metade do comportamento desta seção.
+ */
 vi.mock('./PagamentoCartao', () => ({
-  default: (props: { documento: string; totalCentavos: number }) => (
+  default: (props: {
+    documento: string
+    totalCentavos: number
+    seletor?: React.ReactNode
+  }) => (
     <div
       data-testid="cartao"
       data-documento={props.documento}
       data-total={String(props.totalCentavos)}
-    />
+    >
+      {props.seletor}
+    </div>
   ),
 }))
 
 vi.mock('./PagamentoPix', () => ({
-  default: (props: { totalCentavos: number }) => (
-    <div data-testid="pix" data-total={String(props.totalCentavos)} />
+  default: (props: { totalCentavos: number; seletor?: React.ReactNode }) => (
+    <div data-testid="pix" data-total={String(props.totalCentavos)}>
+      {props.seletor}
+    </div>
   ),
 }))
 
@@ -113,8 +128,30 @@ describe('SecaoPagamento', () => {
   })
 
   describe('flag ligada por ?sf=1', () => {
-    it('troca o Brick pelo formulário de cartão', () => {
+    /**
+     * Escolhe um método como a pessoa escolheria. Necessário em quase todo
+     * teste daqui porque a tela abre SEM seleção — o formulário só existe
+     * depois da decisão.
+     */
+    const escolher = async (rotulo: RegExp) => {
+      await userEvent.click(screen.getByRole('radio', { name: rotulo }))
+    }
+
+    it('abre sem método marcado e sem formulário nenhum', () => {
+      renderizar({ busca: '?sf=1' })
+
+      // Opção pré-marcada faz a pessoa passar direto sem ler a lista, e passar
+      // direto pelo Pix é passar direto pelo desconto.
+      for (const radio of screen.getAllByRole('radio')) {
+        expect(radio).not.toBeChecked()
+      }
+      expect(screen.queryByTestId('cartao')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('pix')).not.toBeInTheDocument()
+    })
+
+    it('troca o Brick pelo formulário de cartão depois da escolha', async () => {
       const { container } = renderizar({ busca: '?sf=1' })
+      await escolher(/cartão de crédito/i)
 
       expect(screen.getByTestId('cartao')).toBeInTheDocument()
       expect(screen.queryByTestId('brick')).not.toBeInTheDocument()
@@ -122,8 +159,9 @@ describe('SecaoPagamento', () => {
       expect(container.querySelector('.vtx-checkout')).toBeNull()
     })
 
-    it('entrega o documento ao cartão: sem ele não há token nem venda', () => {
+    it('entrega o documento ao cartão: sem ele não há token nem venda', async () => {
       renderizar({ busca: '?sf=1' })
+      await escolher(/cartão de crédito/i)
 
       expect(screen.getByTestId('cartao')).toHaveAttribute(
         'data-documento',
@@ -131,8 +169,9 @@ describe('SecaoPagamento', () => {
       )
     })
 
-    it('no Pix monta o painel do Pix, não o do cartão', () => {
+    it('no Pix monta o painel do Pix, não o do cartão', async () => {
       renderizar({ busca: '?sf=1', metodo: 'pix' })
+      await escolher(/pix/i)
 
       expect(screen.getByTestId('pix')).toHaveAttribute(
         'data-total',
@@ -140,6 +179,30 @@ describe('SecaoPagamento', () => {
       )
       expect(screen.queryByTestId('cartao')).not.toBeInTheDocument()
       expect(screen.queryByTestId('brick')).not.toBeInTheDocument()
+    })
+
+    it('escolhido um método, o outro sai da lista', async () => {
+      renderizar({ busca: '?sf=1' })
+      await escolher(/cartão de crédito/i)
+
+      expect(
+        screen.getByRole('radio', { name: /cartão de crédito/i })
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('radio', { name: /pix/i })
+      ).not.toBeInTheDocument()
+    })
+
+    it('"escolher outra forma" devolve as duas opções e o formulário some', async () => {
+      renderizar({ busca: '?sf=1' })
+      await escolher(/cartão de crédito/i)
+
+      await userEvent.click(
+        screen.getByRole('button', { name: /escolher outra forma/i })
+      )
+
+      expect(screen.getAllByRole('radio')).toHaveLength(2)
+      expect(screen.queryByTestId('cartao')).not.toBeInTheDocument()
     })
   })
 

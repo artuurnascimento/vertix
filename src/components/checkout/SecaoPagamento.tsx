@@ -72,13 +72,16 @@ export default function SecaoPagamento({
   const formularioNovo = usarFormularioNovo();
 
   /*
-   * Depois que a pessoa ESCOLHE, a lista encolhe para o método escolhido mais
-   * um link de troca. Começa aberta de propósito: cartão já vem selecionado,
-   * e colapsar na abertura esconderia o selo de desconto do Pix — que é o
-   * convite para o método que custa menos taxa para a loja. Colapsar é
-   * arrumação depois da decisão, não antes dela.
+   * A tela abre SEM método escolhido, e o formulário só nasce depois da
+   * escolha. Nada de cartão pré-marcado: o padrão faz a pessoa passar direto
+   * sem ler as opções, e passar direto pelo Pix é passar direto pelo desconto
+   * — que é o método mais barato para a loja.
    *
-   * Só no formulário novo: o Brick recebe o seletor de sempre.
+   * Escolhido um, a lista encolhe para ele mais um link de troca. Trocar volta
+   * ao estado inicial, com os dois à mostra.
+   *
+   * Só no formulário novo: o Brick continua com o seletor de sempre, marcado
+   * desde a abertura, porque ele precisa de um método para montar.
    */
   const [escolheu, setEscolheu] = useState(false);
 
@@ -92,7 +95,14 @@ export default function SecaoPagamento({
       desabilitado={processando}
       descontoPixPercentual={descontoPixPercentual}
       colapsado={formularioNovo && escolheu}
-      onTrocar={() => setEscolheu(false)}
+      onTrocar={() => {
+        setEscolheu(false);
+        // Volta ao preço cheio junto com a lista: sem método escolhido, exibir
+        // o total com desconto do Pix prometeria um abatimento que ninguém
+        // pediu ainda.
+        onMetodo("cartao");
+      }}
+      semSelecao={formularioNovo && !escolheu}
     />
   );
 
@@ -109,7 +119,13 @@ export default function SecaoPagamento({
       }
     >
       {formularioNovo ? (
-        metodo === "pix" ? (
+        !escolheu ? (
+          /* Antes da escolha só existem as duas opções. Montar o formulário de
+             cartão aqui criaria os iframes do Mercado Pago para quem talvez vá
+             de Pix, e encheria a tela de campos que a pessoa ainda não sabe se
+             vai preencher. */
+          seletor
+        ) : metodo === "pix" ? (
           <PagamentoPix
             totalCentavos={totalCentavos}
             processando={processando}

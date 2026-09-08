@@ -25,6 +25,15 @@ interface Props {
   colapsado?: boolean
   /** Reabre a lista. Necessário sempre que `colapsado` for true. */
   onTrocar?: () => void
+  /**
+   * Nenhuma opção marcada, à espera de uma escolha de verdade.
+   *
+   * `metodo` continua valendo para o resto da página (é ele que decide o total
+   * exibido), mas nenhum radio aparece marcado: o padrão pré-selecionado faz a
+   * pessoa passar direto sem ler as opções — e passar direto pelo Pix é passar
+   * direto pelo desconto.
+   */
+  semSelecao?: boolean
 }
 
 /**
@@ -47,6 +56,7 @@ export default function SeletorMetodo({
   descontoPixPercentual,
   colapsado = false,
   onTrocar,
+  semSelecao = false,
 }: Props) {
   const seloPix =
     descontoPixPercentual === null
@@ -61,7 +71,7 @@ export default function SeletorMetodo({
   const cartao = (
     <Opcao
       valor="cartao"
-      selecionado={metodo === 'cartao'}
+      selecionado={!semSelecao && metodo === 'cartao'}
       onChange={onChange}
       icone={<CreditCard aria-hidden className="h-5 w-5" />}
       titulo="Cartão de crédito"
@@ -74,7 +84,7 @@ export default function SeletorMetodo({
   const pix = (
     <Opcao
       valor="pix"
-      selecionado={metodo === 'pix'}
+      selecionado={!semSelecao && metodo === 'pix'}
       onChange={onChange}
       icone={<IconePix className="h-5 w-5" />}
       titulo="Pix"
