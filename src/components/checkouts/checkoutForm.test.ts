@@ -4,6 +4,7 @@ import {
   campoDataHoraParaIso,
   checkoutFormToPayload,
   checkoutSchema,
+  checkoutToFormValues,
   cronometroExpirado,
   isoParaCampoDataHora,
   limparProva,
@@ -13,6 +14,7 @@ import {
 } from './checkoutForm'
 import type { CheckoutFormValues } from './checkoutForm'
 import { parseProva } from './checkoutsData'
+import type { Checkout } from './checkoutsData'
 
 const PRINCIPAL = '11111111-1111-4111-8111-111111111111'
 const OUTRO = '22222222-2222-4222-8222-222222222222'
@@ -241,5 +243,60 @@ describe('desconto no Pix', () => {
       checkoutFormToPayload({ ...VALIDO, descontoPixPercentual: '10' })
         .desconto_pix_percentual
     ).toBe(10)
+  })
+})
+
+describe('padrão do resumo do pedido', () => {
+  const LINHA: Checkout = {
+    id: '33333333-3333-4333-8333-333333333333',
+    produto_id: PRINCIPAL,
+    slug: 'plano-de-correcao',
+    titulo: 'Corrija sua loja em 7 dias',
+    subtitulo: null,
+    bump_produto_id: null,
+    bump_titulo: null,
+    bump_texto: null,
+    upsell_produto_id: null,
+    upsell_titulo: null,
+    upsell_texto: null,
+    downsell_produto_id: null,
+    downsell_titulo: null,
+    downsell_texto: null,
+    prova: null,
+    banner: null,
+    garantia_dias: null,
+    garantia_texto: null,
+    desconto_pix_percentual: null,
+    cronometro_ate: null,
+    resumo_aberto: false,
+    ativo: true,
+    created_at: '2026-09-09T12:00:00.000Z',
+    updated_at: '2026-09-09T12:00:00.000Z',
+  }
+
+  it('checkout novo nasce com o resumo RECOLHIDO', () => {
+    expect(EMPTY_CHECKOUT.resumoAberto).toBe(false)
+    expect(checkoutFormToPayload(VALIDO).resumo_aberto).toBe(false)
+  })
+
+  it('marcado, o payload manda o resumo aberto', () => {
+    expect(
+      checkoutFormToPayload({ ...VALIDO, resumoAberto: true }).resumo_aberto
+    ).toBe(true)
+  })
+
+  it('a coluna volta para o formulário como veio', () => {
+    expect(checkoutToFormValues(LINHA).resumoAberto).toBe(false)
+    expect(
+      checkoutToFormValues({ ...LINHA, resumo_aberto: true }).resumoAberto
+    ).toBe(true)
+  })
+
+  it('linha antiga, sem a coluna, cai em recolhido em vez de undefined', () => {
+    // Uma leitura feita antes da migration chega sem o campo. `undefined` num
+    // checkbox controlado trocaria o input para não-controlado no meio do uso.
+    const semColuna = { ...LINHA } as Partial<Checkout>
+    delete semColuna.resumo_aberto
+    expect(checkoutToFormValues(semColuna as Checkout).resumoAberto).toBe(false)
   })
 })

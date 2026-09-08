@@ -28,6 +28,7 @@ import BannerEditor from './BannerEditor'
 import DescontoPixBloco from './DescontoPixBloco'
 import OfertaBloco from './OfertaBloco'
 import ProvaEditor from './ProvaEditor'
+import ResumoPedidoBloco from './ResumoPedidoBloco'
 import GarantiaCronometroBloco from './GarantiaCronometroBloco'
 import LinkCheckout from './LinkCheckout'
 
@@ -261,6 +262,11 @@ export default function CheckoutFormModal({
           precoPrincipalCentavos={principal?.preco_centavos ?? null}
           erro={erros.descontoPixPercentual}
           onChange={(v) => setCampo('descontoPixPercentual', v)}
+        />
+
+        <ResumoPedidoBloco
+          aberto={values.resumoAberto}
+          onChange={(v) => setCampo('resumoAberto', v)}
         />
 
         <ProvaEditor

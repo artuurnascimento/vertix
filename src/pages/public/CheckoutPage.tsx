@@ -14,6 +14,7 @@ import {
 } from '../../components/checkout/checkoutApi'
 import {
   calcularTotal,
+  formatarCentavos,
   resolverTotal,
 } from '../../components/checkout/checkoutTotal'
 import { beneficiosDoResumo } from '../../components/checkout/conteudoCheckout'
@@ -37,7 +38,7 @@ import DadosCliente from '../../components/checkout/DadosCliente'
 import Depoimentos from '../../components/checkout/Depoimentos'
 import GarantiaCard from '../../components/checkout/GarantiaCard'
 import OrderBump from '../../components/checkout/OrderBump'
-import PixPanel from '../../components/checkout/PixPanel'
+import PixModal from '../../components/checkout/PixModal'
 import ResumoPedido from '../../components/checkout/ResumoPedido'
 import SecaoPagamento from '../../components/checkout/SecaoPagamento'
 import SelosGrid from '../../components/checkout/SelosGrid'
@@ -76,7 +77,13 @@ import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
 
 const SECAO_PAGAMENTO_ID = 'pagamento'
 
-type EstadoPagina = 'form' | 'pix' | 'analise'
+/**
+ * `'pix'` saiu daqui de propósito: o Pix passou a abrir POR CIMA do checkout,
+ * em `PixModal`, e não como tela própria. Deixar o valor no tipo convidaria
+ * alguém a reintroduzir a troca de página, que era o que apagava o contexto de
+ * quem tinha acabado de preencher o formulário.
+ */
+type EstadoPagina = 'form' | 'analise'
 
 interface CupomAplicado {
   codigo: string
@@ -104,6 +111,7 @@ export default function CheckoutPage() {
   const [estado, setEstado] = useState<EstadoPagina>('form')
   const [metodo, setMetodo] = useState<MetodoPagamento>('cartao')
   const [pix, setPix] = useState<PixCheckout | null>(null)
+  const [pixAberto, setPixAberto] = useState(false)
   const [pedidoId, setPedidoId] = useState<string | null>(null)
   const [erroPagamento, setErroPagamento] = useState<string | null>(null)
   const [processando, setProcessando] = useState(false)
@@ -280,8 +288,11 @@ export default function CheckoutPage() {
       }
 
       if (resposta.pix) {
+        // Sem `setEstado`: o Pix abre POR CIMA do checkout. Trocar a página
+        // inteira apagava o contexto — a pessoa sumia do formulário que acabou
+        // de preencher e, se fechasse sem pagar, não tinha para onde voltar.
         setPix(resposta.pix)
-        setEstado('pix')
+        setPixAberto(true)
         return
       }
       if (resposta.status === 'aprovado' && resposta.pedidoId) {
@@ -345,19 +356,6 @@ export default function CheckoutPage() {
     )
   }
 
-  if (estado === 'pix' && pix) {
-    return (
-      <CheckoutShell estreito>
-        <div className="mt-8 rounded-2xl border border-white/5 bg-surface-1 p-5 sm:p-7">
-          <PixPanel
-            pix={pix}
-            totalCentavos={totalCobrado ?? total.totalCentavos}
-            linkPedido={pedidoId ? `/c/${slug}/obrigado/${pedidoId}` : null}
-          />
-        </div>
-      </CheckoutShell>
-    )
-  }
 
   // --------------------------------------------------------------- página --
   const { checkout, produto, bump, prova, garantia } = info
@@ -402,11 +400,21 @@ export default function CheckoutPage() {
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] lg:items-start lg:gap-6">
           {/* Resumo primeiro no DOM = primeiro na tela do celular, que é onde
-              quase todo mundo paga. No desktop ele vai para a direita e gruda. */}
-          {/* max-h + overflow no desktop: com as avaliações embaixo, a coluna
-              pode ficar mais alta que a tela, e sem isto o fim dela seria
-              inalcançável enquanto ela estivesse grudada. */}
-          <div className="flex flex-col gap-5 lg:order-2 lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
+              quase todo mundo paga. No desktop ele vai para a direita. */}
+          {/* SEM `sticky` e SEM rolagem própria, de propósito. Esta coluna já
+              foi `lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]
+              lg:overflow-y-auto` e escondia conteúdo: com o resumo aberto mais
+              as avaliações embaixo, ela passa da altura da tela (medido em
+              1440×900: teto de 836px para um conteúdo maior), e o excedente ia
+              parar numa barra de rolagem INTERNA que ninguém percebe — o fim
+              da coluna simplesmente não era lido.
+              Tirar só o `max-h`/`overflow` não resolveria: um elemento grudado
+              mais alto que a viewport encosta no topo e nunca mostra o próprio
+              fim. E grudar "só enquanto couber" exigiria medir altura em
+              JavaScript a cada mudança do resumo, do cupom e do bump.
+              Rolando junto com a página, o comportamento é o mesmo do celular,
+              é previsível, e tudo aparece. */}
+          <div className="flex flex-col gap-5 lg:order-2">
             <ResumoPedido
               produto={produto}
               bump={bump}
@@ -416,6 +424,7 @@ export default function CheckoutPage() {
               descontoPixPercentual={descontoPixPercentual}
               total={total}
               beneficios={beneficios}
+              padraoAberto={checkout.resumoAberto}
             />
             {avaliacoes && <div className="hidden lg:block">{avaliacoes}</div>}
           </div>
@@ -476,10 +485,50 @@ export default function CheckoutPage() {
         </div>
       </motion.div>
 
-      <BarraTotalMobile
-        totalCentavos={total.totalCentavos}
-        alvoId={SECAO_PAGAMENTO_ID}
-      />
+      {/* A barra do total some quando existe um Pix: o pedido já foi criado,
+          e continuar oferecendo "ir para pagamento" convidaria a gerar um
+          segundo. Em lugar dela entra o caminho de volta ao código. */}
+      {!pix && (
+        <BarraTotalMobile
+          totalCentavos={total.totalCentavos}
+          alvoId={SECAO_PAGAMENTO_ID}
+        />
+      )}
+
+      {/* Fechou o painel sem pagar? O código continua valendo, e este é o
+          caminho de volta. Sem ele, fechar significaria perder de vista um Pix
+          que já existe no Mercado Pago — e a pessoa não teria como concluir
+          nem como saber que ainda dá. */}
+      {pix && !pixAberto && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-surface-1/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+            <p className="text-xs font-light leading-snug text-muted">
+              Seu Pix de{' '}
+              <span className="font-medium text-ink">
+                {formatarCentavos(totalCobrado ?? total.totalCentavos)}
+              </span>{' '}
+              está esperando o pagamento.
+            </p>
+            <button
+              type="button"
+              onClick={() => setPixAberto(true)}
+              className="shrink-0 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Ver código Pix
+            </button>
+          </div>
+        </div>
+      )}
+
+      {pix && (
+        <PixModal
+          aberto={pixAberto}
+          pix={pix}
+          totalCentavos={totalCobrado ?? total.totalCentavos}
+          linkPedido={pedidoId ? `/c/${slug}/obrigado/${pedidoId}` : null}
+          onFechar={() => setPixAberto(false)}
+        />
+      )}
     </CheckoutShell>
   )
 }

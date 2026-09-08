@@ -36,6 +36,8 @@ export interface CheckoutFormValues {
   descontoPixPercentual: string
   /** Valor de <input type="datetime-local">; '' = sem cronômetro. */
   cronometroAte: string
+  /** true = o resumo do pedido nasce aberto na página pública. */
+  resumoAberto: boolean
   ativo: boolean
 }
 
@@ -60,6 +62,9 @@ export const EMPTY_CHECKOUT: CheckoutFormValues = {
   garantiaTexto: '',
   descontoPixPercentual: '',
   cronometroAte: '',
+  // Recolhido, igual ao default da coluna: aberto, o bloco ocupa quase uma
+  // tela de telefone e empurra o pagamento para baixo da dobra.
+  resumoAberto: false,
   ativo: true,
 }
 
@@ -220,6 +225,7 @@ export const checkoutSchema = z
         (v) => v.trim() === '' || campoDataHoraParaIso(v) !== null,
         'Data e hora do cronômetro inválidas.'
       ),
+    resumoAberto: z.boolean(),
     ativo: z.boolean(),
   })
   .superRefine((values, ctx) => {
@@ -286,6 +292,7 @@ export function checkoutFormToPayload(
     garantia_texto: limpo(values.garantiaTexto),
     desconto_pix_percentual: descontoPix === '' ? null : Number(descontoPix),
     cronometro_ate: campoDataHoraParaIso(values.cronometroAte),
+    resumo_aberto: values.resumoAberto,
     ativo: values.ativo,
   }
 }
@@ -318,6 +325,10 @@ export function checkoutToFormValues(checkout: Checkout): CheckoutFormValues {
         ? ''
         : String(checkout.desconto_pix_percentual),
     cronometroAte: isoParaCampoDataHora(checkout.cronometro_ate),
+    // `=== true` e não o valor cru: uma linha lida antes da migration da
+    // coluna chega sem o campo, e "ausente" tem de virar recolhido — o mesmo
+    // default do banco — em vez de `undefined` num checkbox controlado.
+    resumoAberto: checkout.resumo_aberto === true,
     ativo: checkout.ativo,
   }
 }

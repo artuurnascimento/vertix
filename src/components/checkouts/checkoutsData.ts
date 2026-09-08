@@ -66,6 +66,12 @@ export interface Checkout {
   desconto_pix_percentual: number | null
   /** Instante absoluto do fim do cronômetro (ISO) ou null. */
   cronometro_ate: string | null
+  /**
+   * Como o bloco "Seu pedido" nasce na página pública: `false` (padrão do
+   * banco) recolhido, `true` aberto. Depois de carregada a página, quem manda
+   * é o clique do comprador.
+   */
+  resumo_aberto: boolean
   ativo: boolean
   created_at: string
   updated_at: string
@@ -77,7 +83,7 @@ export type CheckoutPayload = Omit<
 > & { prova: Prova; banner: Banner }
 
 const COLUNAS =
-  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, banner, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, ativo, created_at, updated_at'
+  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, banner, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, resumo_aberto, ativo, created_at, updated_at'
 
 function ehRegistro(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor)

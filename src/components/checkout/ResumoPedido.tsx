@@ -21,19 +21,27 @@ interface Props {
   total: ResultadoTotal
   /** Já derivados da configuração. Vazio = o bloco não aparece. */
   beneficios: BeneficioResumo[]
+  /**
+   * Como o bloco nasce nesta oferta, vindo da configuração do checkout.
+   * `false` = recolhido, que é o padrão do banco.
+   */
+  padraoAberto: boolean
 }
 
 /**
- * Resumo do pedido, RECOLHIDO por padrão no celular.
+ * Resumo do pedido, RECOLHIDO por padrão — em qualquer largura de tela.
  *
- * O motivo é medido em rolagens: aberto, este bloco ocupa quase uma tela
+ * O estado inicial vem de `padraoAberto`, que é configuração da OFERTA
+ * (`checkouts.resumo_aberto`), não do aparelho. Antes ele era decidido aqui
+ * por `matchMedia`: recolhido no celular, aberto a partir de 1024px. A regra
+ * por largura saiu porque a resposta certa não é do tamanho da tela e sim do
+ * que está sendo vendido — e porque, aberto, o bloco ocupa quase uma tela
  * inteira de telefone (descrição do produto, linhas, benefícios, selo de
  * segurança) e empurra o formulário de pagamento para muito abaixo da dobra.
  * Quem já decidiu comprar não precisa reler a oferta — precisa achar o botão.
  *
- * No DESKTOP ele nasce ABERTO: lá o resumo é a coluna grudada da direita, não
- * disputa espaço vertical com nada, e nesse formato funciona como reforço da
- * oferta enquanto a pessoa preenche o cartão à esquerda.
+ * Por isso o padrão do banco é recolhido, e quem vende um pacote caro, com
+ * muita coisa inclusa, marca a caixa na configuração para ele nascer aberto.
  *
  * Duas coisas nunca se escondem, porque são o que a pessoa procura de relance:
  * o NOME do que está comprando e o TOTAL. E quando algum desconto pegou (cupom
@@ -52,19 +60,15 @@ export default function ResumoPedido({
   descontoPixPercentual,
   total,
   beneficios,
+  padraoAberto,
 }: Props) {
   const semMovimento = useReducedMotion()
   const detalhesId = useId()
 
-  // Estado inicial por largura, decidido uma vez na montagem: a partir de lg a
-  // página vira duas colunas e o resumo passa a ser a coluna grudada. Depois
-  // disso quem manda é o clique da pessoa — redimensionar a janela não desfaz
-  // uma escolha que ela acabou de fazer.
-  const [aberto, setAberto] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(min-width: 1024px)').matches
-  )
+  // Semente, não amarra: `padraoAberto` decide só o primeiro quadro. Depois da
+  // montagem quem manda é o clique da pessoa, e mudar a configuração da oferta
+  // (ou qualquer re-render) não desfaz uma escolha que ela acabou de fazer.
+  const [aberto, setAberto] = useState(padraoAberto)
 
   const descontoTotal = total.descontoCentavos + total.descontoMetodoCentavos
   const temBump = bumpMarcado && bump !== null
@@ -131,7 +135,7 @@ export default function ResumoPedido({
             </span>
             {/* aria-live polite: quem usa leitor de tela ouve o total mudar ao
                 trocar o método, marcar o bump ou aplicar o cupom — inclusive
-                com o resumo fechado, que é o estado padrão no celular. */}
+                com o resumo fechado, que é o estado padrão. */}
             <span
               aria-live="polite"
               className="block text-[26px] font-extrabold leading-none tabular-nums text-ink"

@@ -274,6 +274,42 @@ describe('normalizarCheckout', () => {
   })
 })
 
+describe('normalizarCheckout · padrão do resumo do pedido', () => {
+  const PRODUTO = { produto: { nome: 'Curso', preco_centavos: 19700 } }
+
+  test('sem o campo, o resumo nasce RECOLHIDO', () => {
+    // É o default da coluna e o que a página fazia no celular antes de o
+    // campo existir. Ausente nunca pode virar aberto.
+    expect(normalizarCheckout(PRODUTO, 'curso')?.checkout.resumoAberto).toBe(
+      false
+    )
+  })
+
+  test('lê o campo dentro de `checkout`', () => {
+    const info = normalizarCheckout(
+      { ...PRODUTO, checkout: { resumo_aberto: true } },
+      'curso'
+    )
+    expect(info?.checkout.resumoAberto).toBe(true)
+  })
+
+  test('lê o campo na raiz, onde a RPC também o devolve', () => {
+    const info = normalizarCheckout(
+      { ...PRODUTO, checkout: {}, resumo_aberto: true },
+      'curso'
+    )
+    expect(info?.checkout.resumoAberto).toBe(true)
+  })
+
+  test('false explícito continua false', () => {
+    const info = normalizarCheckout(
+      { ...PRODUTO, checkout: { resumo_aberto: false }, resumo_aberto: false },
+      'curso'
+    )
+    expect(info?.checkout.resumoAberto).toBe(false)
+  })
+})
+
 describe('desconto por método de pagamento', () => {
   test('sem percentual configurado nada muda no total', () => {
     const resultado = calcularTotal({

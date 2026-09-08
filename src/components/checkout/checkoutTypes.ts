@@ -86,6 +86,12 @@ export interface CheckoutConfig {
    * página segue exatamente como era. Nada aqui pode quebrar por ausência.
    */
   descontoPixPercentual: number | null
+  /**
+   * Como o bloco "Seu pedido" nasce nesta oferta: `false` (padrão) recolhido,
+   * `true` aberto com os detalhes à vista. Ausente vira `false`, que é o
+   * mesmo default da coluna no banco.
+   */
+  resumoAberto: boolean
 }
 
 export interface CheckoutInfo {
@@ -378,6 +384,12 @@ export function normalizarCheckout(
           'desconto_pix_percentual',
           'descontoPixPercentual'
         ) ?? percentual(bruto, 'desconto_pix_percentual', 'descontoPixPercentual'),
+      // Nos dois lugares, como o banner: a RPC devolve a mesma coluna dentro
+      // de `checkout` e na raiz. Ausente = recolhido, que é o padrão do banco
+      // e o que a página fazia no celular antes deste campo existir.
+      resumoAberto:
+        booleano(configBruta, 'resumo_aberto', 'resumoAberto') ||
+        booleano(bruto, 'resumo_aberto', 'resumoAberto'),
     },
     produto,
     bump: lerBump(bruto.bump ?? bruto.bump_produto, configBruta),

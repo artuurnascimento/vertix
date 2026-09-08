@@ -28,6 +28,7 @@ const INFO: CheckoutInfo = {
     exigeDocumento: false,
     temUpsell: false,
     descontoPixPercentual: null,
+    resumoAberto: false,
   },
   produto: {
     nome: 'Produto',
