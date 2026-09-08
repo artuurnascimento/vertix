@@ -1,4 +1,5 @@
 import { catalogoSupabase } from '../produtos/catalogoSupabase'
+import { PAGAR_PUBLIC_BASE } from '../../lib/publicUrls'
 
 /**
  * Leitura e escrita de public.checkouts — a OFERTA montada sobre um produto
@@ -126,7 +127,9 @@ export async function excluirCheckout(id: string): Promise<void> {
 
 /** Endereço público da oferta: o que a equipe copia e manda para o cliente. */
 export function urlDoCheckout(slug: string): string {
-  const base =
-    typeof window === 'undefined' ? '' : window.location.origin
-  return `${base}/c/${slug}`
+  // Sempre pay.vertix.studio, nunca o host onde o painel está aberto: quem
+  // copia este link vai divulgá-lo, e sistema.vertix.studio é o endereço do
+  // administrativo. Os domínios apontam para o mesmo deploy, então a página
+  // abre nos dois — mas o que chega ao cliente precisa ser o de pagamento.
+  return `${PAGAR_PUBLIC_BASE}/c/${slug}`
 }
