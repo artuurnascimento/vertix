@@ -1,17 +1,7 @@
 import type { ReactNode } from 'react'
-import { formatarCentavos } from './checkoutTotal'
 import './botaoPagar.css'
 
 interface Props {
-  /**
-   * Total a cobrar, em centavos, para o rótulo. `null` mostra só o verbo — é
-   * o caso do pedido sem nada a pagar, em que "Pagar R$ 0,00" seria mentira.
-   *
-   * Este número é PRÉVIA, igual ao resumo: quem cobra é o servidor. Ele está
-   * aqui porque um botão que diz o valor é a última confirmação antes de
-   * autorizar — botão mudo é o que faz a pessoa voltar para conferir.
-   */
-  totalCentavos: number | null
   /** Cobrança em curso: trava o clique e conta o que está acontecendo. */
   processando: boolean
   /** Trava por outro motivo (formulário incompleto, por exemplo). */
@@ -39,18 +29,21 @@ interface Props {
  * quem não enxerga sem nenhuma pista de que o clique pegou.
  */
 export default function BotaoPagar({
-  totalCentavos,
   processando,
   desabilitado = false,
-  rotulo = 'Pagar',
+  rotulo = 'Pagar agora',
   type = 'button',
   onClick,
   icone,
 }: Props) {
-  const texto =
-    totalCentavos === null
-      ? rotulo
-      : `${rotulo} ${formatarCentavos(totalCentavos)}`
+  /*
+   * O rótulo NÃO carrega mais o valor. Ele aparece no resumo, na barra fixa do
+   * celular e no total logo acima — repeti-lo dentro do botão engordava a
+   * frase sem acrescentar informação, e um botão de ação lê melhor curto.
+   * `totalCentavos` fica na assinatura porque a página ainda o usa para
+   * decidir o caso de pedido sem valor a pagar.
+   */
+  const texto = rotulo
 
   return (
     <>

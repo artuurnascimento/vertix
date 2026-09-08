@@ -35,7 +35,7 @@ describe('PagamentoPix', () => {
     expect(cardTokenSalvar).toBeNull()
   })
 
-  it('mostra o total a pagar no botão', () => {
+  it('chama o botão para a ação, sem repetir o valor', () => {
     render(
       <PagamentoPix
         totalCentavos={TOTAL}
@@ -44,9 +44,11 @@ describe('PagamentoPix', () => {
       />
     )
 
-    expect(screen.getByRole('button').textContent).toContain(
-      formatarCentavos(TOTAL)
-    )
+    const botao = screen.getByRole('button')
+    expect(botao.textContent).toMatch(/pagar agora/i)
+    // O valor aparece no resumo, na barra fixa do celular e no total logo
+    // acima. Repeti-lo dentro do botão engordava a frase sem informar nada.
+    expect(botao.textContent).not.toContain(formatarCentavos(TOTAL))
   })
 
   it('desabilita o botão e diz o que está acontecendo enquanto processa', () => {

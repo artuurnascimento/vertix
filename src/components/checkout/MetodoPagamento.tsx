@@ -86,7 +86,7 @@ export default function SeletorMetodo({
       valor="pix"
       selecionado={!semSelecao && metodo === 'pix'}
       onChange={onChange}
-      icone={<IconePix className="h-5 w-5" />}
+      icone={<IconePix className="h-5 w-5 text-[#32BCAD]" />}
       titulo="Pix"
       selo={seloPix}
       // "10% OFF" lido em voz alta não diz de quê. O texto curto fica na

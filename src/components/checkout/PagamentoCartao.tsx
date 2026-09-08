@@ -307,7 +307,6 @@ export default function PagamentoCartao({
         </p>
         <div className="mt-4">
           <BotaoPagar
-            totalCentavos={null}
             rotulo="Finalizar pedido"
             processando={ocupado}
             onClick={() => void enviarGratuito()}
@@ -347,7 +346,6 @@ export default function PagamentoCartao({
       <div className="mt-5">
         <BotaoPagar
           type="submit"
-          totalCentavos={totalCentavos}
           processando={ocupado}
           // Sem os campos de pé não há o que tokenizar: aqui o botão desabilita
           // porque a mensagem de falha já está na tela, dizendo o motivo.

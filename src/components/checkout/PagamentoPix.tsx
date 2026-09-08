@@ -84,7 +84,6 @@ export default function PagamentoPix({
         </p>
         <div className="mt-4">
           <BotaoPagar
-            totalCentavos={null}
             rotulo="Finalizar pedido"
             processando={processando}
             onClick={() => pagar(null)}
@@ -110,7 +109,7 @@ export default function PagamentoPix({
         />
 
         <div className="relative flex items-center gap-3">
-          <IconePix className="h-8 w-8 shrink-0" />
+          <IconePix className="h-8 w-8 shrink-0 text-[#32BCAD]" />
           <div>
             <h3 className="text-base font-semibold text-ink">Pagar com Pix</h3>
             <p className="text-xs font-light text-muted">
@@ -134,9 +133,8 @@ export default function PagamentoPix({
 
       <div className="mt-5">
         <BotaoPagar
-          totalCentavos={totalCentavos}
           processando={processando}
-          icone={<IconePix className="h-5 w-5" />}
+          icone={<IconePix className="h-5 w-5 text-white" />}
           onClick={() => pagar(FORM_DATA_PIX)}
         />
       </div>

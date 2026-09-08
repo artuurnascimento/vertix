@@ -38,9 +38,9 @@
   background-color: #6c5bf2;
   background-image: linear-gradient(180deg, #7b6bff 0%, #5b46e8 100%);
   background-size: 180% 180%;
-  /* Contorno claro por DENTRO da borda — a assinatura do CTA da marca. */
-  outline: 2px solid #f4f4f0;
-  outline-offset: -3px;
+  /* Sem contorno claro por dentro: o traço branco recortava o botão em duas
+     áreas e competia com o rótulo. O peso do CTA vem do gradiente e da
+     sombra, que já bastam para ele ser a coisa mais evidente da tela. */
   box-shadow: 0 10px 24px -12px rgba(108, 91, 242, 0.75);
   color: #fff;
   font-family: inherit;
@@ -69,9 +69,9 @@
   box-shadow: 0 12px 28px -12px rgba(108, 91, 242, 0.9);
 }
 
-/* Anel de foco POR FORA, somado ao contorno claro que já existe por dentro:
-   o `outline` está ocupado desenhando a assinatura do botão, então o foco
-   usa sombra. Assim o teclado nunca fica sem indicação visível. */
+/* Anel de foco em sombra, e não em `outline`. Continua assim mesmo depois de
+   o contorno interno sair: sombra acompanha o `border-radius` sem o degrau que
+   um outline deixa nos cantos arredondados. */
 .vtx-btn-pagar:focus-visible {
   box-shadow:
     0 0 0 3px rgba(169, 158, 247, 0.9),

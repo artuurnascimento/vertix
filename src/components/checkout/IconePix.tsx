@@ -3,25 +3,29 @@ interface Props {
 }
 
 /**
- * Símbolo do Pix: o losango do Banco Central, formado por quatro pontas que
- * convergem ao centro, no turquesa da marca (#32BCAD).
+ * Símbolo oficial do Pix.
  *
- * Desenhado inline, e não baixado: a política de segurança da página bloqueia
- * domínio externo, e num checkout nada pode depender de um arquivo de fora
- * carregar. Exibir a marca do meio de pagamento aceito é o uso comum e
- * esperado numa página de compra.
+ * A cor vem de `currentColor` e NÃO fica fixa no turquesa da marca: o mesmo
+ * símbolo aparece na lista de métodos (turquesa) e dentro do botão de pagar
+ * (branco, sobre o roxo). Fixar a cor obrigaria a manter duas cópias do
+ * desenho — por isso quem usa declara a cor pela classe.
+ *
+ * Inline, e não baixado: a política de segurança da página bloqueia domínio
+ * externo, e num checkout nada pode depender de um arquivo de fora carregar.
+ * Exibir a marca do meio de pagamento aceito é o uso comum e esperado numa
+ * página de compra.
  */
 export default function IconePix({ className = 'h-5 w-5' }: Props) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden focusable="false">
-      <g fill="#32BCAD">
-        {/* As quatro pontas do losango, com folga entre elas: é a folga que
-            faz o símbolo ser lido como Pix, e não como um quadrado girado. */}
-        <path d="M16 1.8 L22.1 7.9 L16 14 L9.9 7.9 Z" />
-        <path d="M24.1 9.9 L30.2 16 L24.1 22.1 L18 16 Z" />
-        <path d="M16 18 L22.1 24.1 L16 30.2 L9.9 24.1 Z" />
-        <path d="M7.9 9.9 L14 16 L7.9 22.1 L1.8 16 Z" />
-      </g>
+    <svg
+      viewBox="0 0 16 16"
+      className={className}
+      fill="currentColor"
+      aria-hidden
+      focusable="false"
+    >
+      <path d="M11.917 11.71a2.046 2.046 0 0 1-1.454-.602l-2.1-2.1a.4.4 0 0 0-.551 0l-2.108 2.108a2.044 2.044 0 0 1-1.454.602h-.414l2.66 2.66c.83.83 2.177.83 3.007 0l2.667-2.668h-.253zM4.25 4.282c.55 0 1.066.214 1.454.602l2.108 2.108a.39.39 0 0 0 .552 0l2.1-2.1a2.044 2.044 0 0 1 1.453-.602h.253L9.503 1.623a2.127 2.127 0 0 0-3.007 0l-2.66 2.66h.414z" />
+      <path d="m14.377 6.496-1.612-1.612a.307.307 0 0 1-.114.023h-.733c-.379 0-.75.154-1.017.422l-2.1 2.1a1.005 1.005 0 0 1-1.425 0L5.268 5.32a1.448 1.448 0 0 0-1.018-.422h-.9a.306.306 0 0 1-.109-.021L1.623 6.496c-.83.83-.83 2.177 0 3.008l1.618 1.618a.305.305 0 0 1 .108-.022h.901c.38 0 .75-.153 1.018-.421L7.375 8.57a1.034 1.034 0 0 1 1.426 0l2.1 2.1c.267.268.638.421 1.017.421h.733c.04 0 .079.01.114.024l1.612-1.612c.83-.83.83-2.178 0-3.008z" />
     </svg>
   )
 }
