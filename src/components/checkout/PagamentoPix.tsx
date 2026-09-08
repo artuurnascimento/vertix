@@ -1,18 +1,23 @@
-import type { ReactNode } from 'react'
-import { Clock, Lock, QrCode, Zap } from 'lucide-react'
-import BotaoPagar from './BotaoPagar'
-import IconePix from './IconePix'
+import type { ReactNode } from "react";
+import { Clock, Lock, QrCode, Zap } from "lucide-react";
+import BotaoPagar from "./BotaoPagar";
+import IconePix from "./IconePix";
 
 interface Props {
   /** Total já com cupom e com o desconto do Pix aplicados. */
-  totalCentavos: number
-  processando: boolean
+  totalCentavos: number;
+  processando: boolean;
   /**
    * Mesmo contrato do Brick: recebe o formData e o segundo token do cartão.
    * No Pix não existe cartão, então o segundo argumento é sempre `null`.
    * Rejeita quando a cobrança falha — a página é quem mostra a mensagem.
    */
-  onSubmit: (formData: unknown, cardTokenSalvar: string | null) => Promise<void>
+  onSubmit: (
+    formData: unknown,
+    cardTokenSalvar: string | null,
+  ) => Promise<void>;
+  /** Escolha do método, mostrada acima do painel. */
+  seletor?: ReactNode;
 }
 
 /**
@@ -27,7 +32,7 @@ interface Props {
  * Congelado porque é literal compartilhado entre submits: um consumidor que o
  * mutasse mudaria silenciosamente o método de pagamento da venda seguinte.
  */
-const FORM_DATA_PIX = Object.freeze({ payment_method_id: 'pix' })
+const FORM_DATA_PIX = Object.freeze({ payment_method_id: "pix" });
 
 /**
  * Painel do Pix sem o Payment Brick.
@@ -46,6 +51,7 @@ export default function PagamentoPix({
   totalCentavos,
   processando,
   onSubmit,
+  seletor,
 }: Props) {
   /*
    * `onSubmit` rejeita de propósito quando a cobrança falha — era assim que o
@@ -55,8 +61,8 @@ export default function PagamentoPix({
    * rejection no console do cliente.
    */
   const pagar = (formData: unknown) => {
-    void onSubmit(formData, null).catch(() => undefined)
-  }
+    void onSubmit(formData, null).catch(() => undefined);
+  };
 
   if (totalCentavos <= 0) {
     /*
@@ -72,6 +78,7 @@ export default function PagamentoPix({
      */
     return (
       <div className="mt-5 text-center">
+        {seletor}
         <p className="text-sm text-ink">
           Seu cupom cobre o pedido inteiro — nada a pagar.
         </p>
@@ -84,12 +91,16 @@ export default function PagamentoPix({
           />
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="mt-5">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-surface-1 p-5">
+      {/* No Pix o seletor fica ACIMA do painel: não há cartão 3D para servir de
+          âncora, e o painel é a última coisa antes do botão. */}
+      {seletor}
+
+      <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/10 bg-surface-1 p-5">
         {/* Atmosfera no turquesa do Pix: o painel não é mais um card cinza
             igual aos outros, e a cor faz o trabalho de dizer qual método
             está na tela sem precisar de mais um rótulo. */}
@@ -101,9 +112,7 @@ export default function PagamentoPix({
         <div className="relative flex items-center gap-3">
           <IconePix className="h-8 w-8 shrink-0" />
           <div>
-            <h3 className="text-base font-semibold text-ink">
-              Pagar com Pix
-            </h3>
+            <h3 className="text-base font-semibold text-ink">Pagar com Pix</h3>
             <p className="text-xs font-light text-muted">
               Sem cartão, sem parcelas, sem juros.
             </p>
@@ -137,20 +146,14 @@ export default function PagamentoPix({
         Você não informa nenhum dado bancário aqui.
       </p>
     </div>
-  )
+  );
 }
 
-function Passo({
-  icone,
-  children,
-}: {
-  icone: ReactNode
-  children: ReactNode
-}) {
+function Passo({ icone, children }: { icone: ReactNode; children: ReactNode }) {
   return (
     <li className="flex items-start gap-2.5">
       <span className="mt-0.5 text-[#32BCAD]">{icone}</span>
       <span>{children}</span>
     </li>
-  )
+  );
 }

@@ -13,6 +13,18 @@ interface Props {
   desabilitado: boolean
   /** Percentual abatido ao pagar no Pix; `null` = sem desconto por método. */
   descontoPixPercentual: number | null
+  /**
+   * Mostra só o método escolhido, com um link para reabrir a lista.
+   *
+   * Opcional e falso por padrão porque o Payment Brick usa este mesmo seletor
+   * e não pode mudar de comportamento. Quem liga é o formulário novo, e só
+   * DEPOIS que a pessoa escolheu: colapsar já na abertura esconderia o selo
+   * de desconto do Pix, que é justamente o convite para o método que custa
+   * menos taxa para a loja.
+   */
+  colapsado?: boolean
+  /** Reabre a lista. Necessário sempre que `colapsado` for true. */
+  onTrocar?: () => void
 }
 
 /**
@@ -33,42 +45,71 @@ export default function SeletorMetodo({
   onChange,
   desabilitado,
   descontoPixPercentual,
+  colapsado = false,
+  onTrocar,
 }: Props) {
   const seloPix =
     descontoPixPercentual === null
       ? undefined
       : `${formatarPercentual(descontoPixPercentual)}% OFF`
 
+  const descricaoSeloPix =
+    descontoPixPercentual === null
+      ? undefined
+      : `${formatarPercentual(descontoPixPercentual)}% de desconto pagando no Pix`
+
+  const cartao = (
+    <Opcao
+      valor="cartao"
+      selecionado={metodo === 'cartao'}
+      onChange={onChange}
+      icone={<CreditCard aria-hidden className="h-5 w-5" />}
+      titulo="Cartão de crédito"
+      selo="Parcelamento disponível"
+      subtitulo="Pague com segurança e parcele no cartão."
+      extra={<BandeirasCartao />}
+    />
+  )
+
+  const pix = (
+    <Opcao
+      valor="pix"
+      selecionado={metodo === 'pix'}
+      onChange={onChange}
+      icone={<IconePix className="h-5 w-5" />}
+      titulo="Pix"
+      selo={seloPix}
+      // "10% OFF" lido em voz alta não diz de quê. O texto curto fica na
+      // tela; o leitor de tela ouve a frase inteira.
+      seloDescricao={descricaoSeloPix}
+      subtitulo="Aprovação imediata. Mais rápido e prático."
+    />
+  )
+
+  if (colapsado) {
+    return (
+      <fieldset className="mt-4" disabled={desabilitado}>
+        <legend className="sr-only">Forma de pagamento escolhida</legend>
+        <div className="grid gap-2">
+          {metodo === 'cartao' ? cartao : pix}
+          <button
+            type="button"
+            onClick={onTrocar}
+            className="justify-self-center rounded-lg px-2 py-1 text-xs font-light text-muted underline decoration-white/20 underline-offset-4 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            Escolher outra forma de pagamento
+          </button>
+        </div>
+      </fieldset>
+    )
+  }
+
   return (
     <fieldset className="mt-4" disabled={desabilitado}>
       <legend className="sr-only">Forma de pagamento</legend>
       <div className="grid gap-2.5">
-        <Opcao
-          valor="cartao"
-          selecionado={metodo === 'cartao'}
-          onChange={onChange}
-          icone={<CreditCard aria-hidden className="h-5 w-5" />}
-          titulo="Cartão de crédito"
-          selo="Parcelamento disponível"
-          subtitulo="Pague com segurança e parcele no cartão."
-          extra={<BandeirasCartao />}
-        />
-        <Opcao
-          valor="pix"
-          selecionado={metodo === 'pix'}
-          onChange={onChange}
-          icone={<IconePix className="h-5 w-5" />}
-          titulo="Pix"
-          selo={seloPix}
-          // "10% OFF" lido em voz alta não diz de quê. O texto curto fica na
-          // tela; o leitor de tela ouve a frase inteira.
-          seloDescricao={
-            descontoPixPercentual === null
-              ? undefined
-              : `${formatarPercentual(descontoPixPercentual)}% de desconto pagando no Pix`
-          }
-          subtitulo="Aprovação imediata. Mais rápido e prático."
-        />
+        {cartao}
+        {pix}
       </div>
     </fieldset>
   )
@@ -117,6 +158,12 @@ function Opcao({
           value={valor}
           checked={selecionado}
           onChange={() => onChange(valor)}
+          // `onChange` não dispara ao clicar na opção JÁ selecionada, e cartão
+          // vem marcado desde a abertura: sem este `onClick`, confirmar o
+          // cartão não seria registrado como escolha e a lista nunca
+          // encolheria. Chamar com o mesmo valor é inofensivo — quem recebe só
+          // regrava o método atual.
+          onClick={() => onChange(valor)}
           className="peer h-[18px] w-[18px] cursor-pointer appearance-none rounded-full border-2 border-white/25 transition-colors checked:border-accent"
         />
         <span

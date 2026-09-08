@@ -1,30 +1,34 @@
-import { CreditCard, Lock } from 'lucide-react'
-import CartaoSecao from './CartaoSecao'
-import PagamentoBrick from './PagamentoBrick'
-import PagamentoCartao from './PagamentoCartao'
-import PagamentoPix from './PagamentoPix'
-import SeletorMetodo, { type MetodoPagamento } from './MetodoPagamento'
-import { usarFormularioNovo } from './flagFormularioNovo'
+import { useState } from "react";
+import { CreditCard, Lock } from "lucide-react";
+import CartaoSecao from "./CartaoSecao";
+import PagamentoBrick from "./PagamentoBrick";
+import PagamentoCartao from "./PagamentoCartao";
+import PagamentoPix from "./PagamentoPix";
+import SeletorMetodo, { type MetodoPagamento } from "./MetodoPagamento";
+import { usarFormularioNovo } from "./flagFormularioNovo";
 
 interface Props {
-  id: string
-  totalCentavos: number
-  metodo: MetodoPagamento
-  onMetodo: (metodo: MetodoPagamento) => void
+  id: string;
+  totalCentavos: number;
+  metodo: MetodoPagamento;
+  onMetodo: (metodo: MetodoPagamento) => void;
   /** Percentual do desconto no Pix; `null` = método não muda o preço. */
-  descontoPixPercentual: number | null
-  emailInicial: string
+  descontoPixPercentual: number | null;
+  emailInicial: string;
   /**
    * CPF/CNPJ digitado em "Seus dados". Só o formulário novo usa: o
    * `createCardToken` do Secure Fields exige a identificação de quem paga, e
    * sem ela não existe token nem venda. O Brick coleta o dele por conta
    * própria e ignora este valor.
    */
-  documento: string
-  processando: boolean
-  erro: string | null
-  onSubmit: (formData: unknown, cardTokenSalvar: string | null) => Promise<void>
-  onErroCarregamento: (mensagem: string) => void
+  documento: string;
+  processando: boolean;
+  erro: string | null;
+  onSubmit: (
+    formData: unknown,
+    cardTokenSalvar: string | null,
+  ) => Promise<void>;
+  onErroCarregamento: (mensagem: string) => void;
 }
 
 /**
@@ -65,7 +69,32 @@ export default function SecaoPagamento({
    * ilusão de estabilidade e deixaria esta seção discordar da `CheckoutPage`,
    * que lê a mesma função para decidir se o documento é obrigatório.
    */
-  const formularioNovo = usarFormularioNovo()
+  const formularioNovo = usarFormularioNovo();
+
+  /*
+   * Depois que a pessoa ESCOLHE, a lista encolhe para o método escolhido mais
+   * um link de troca. Começa aberta de propósito: cartão já vem selecionado,
+   * e colapsar na abertura esconderia o selo de desconto do Pix — que é o
+   * convite para o método que custa menos taxa para a loja. Colapsar é
+   * arrumação depois da decisão, não antes dela.
+   *
+   * Só no formulário novo: o Brick recebe o seletor de sempre.
+   */
+  const [escolheu, setEscolheu] = useState(false);
+
+  const seletor = (
+    <SeletorMetodo
+      metodo={metodo}
+      onChange={(novoMetodo) => {
+        setEscolheu(true);
+        onMetodo(novoMetodo);
+      }}
+      desabilitado={processando}
+      descontoPixPercentual={descontoPixPercentual}
+      colapsado={formularioNovo && escolheu}
+      onTrocar={() => setEscolheu(false)}
+    />
+  );
 
   return (
     <CartaoSecao
@@ -79,19 +108,13 @@ export default function SecaoPagamento({
         </span>
       }
     >
-      <SeletorMetodo
-        metodo={metodo}
-        onChange={onMetodo}
-        desabilitado={processando}
-        descontoPixPercentual={descontoPixPercentual}
-      />
-
       {formularioNovo ? (
-        metodo === 'pix' ? (
+        metodo === "pix" ? (
           <PagamentoPix
             totalCentavos={totalCentavos}
             processando={processando}
             onSubmit={onSubmit}
+            seletor={seletor}
           />
         ) : (
           <PagamentoCartao
@@ -99,6 +122,7 @@ export default function SecaoPagamento({
             documento={documento}
             processando={processando}
             onSubmit={onSubmit}
+            seletor={seletor}
           />
         )
       ) : (
@@ -106,16 +130,19 @@ export default function SecaoPagamento({
            PagarPage usa o mesmo container id e não pode ser arrastada junto.
            O wrapper fica com o Brick — o botão novo tem pele própria, em
            botaoPagar.css, e não depende deste escopo. */
-        <div className="vtx-checkout">
-          <PagamentoBrick
-            totalCentavos={totalCentavos}
-            metodo={metodo}
-            emailInicial={emailInicial}
-            processando={processando}
-            onSubmit={onSubmit}
-            onErroCarregamento={onErroCarregamento}
-          />
-        </div>
+        <>
+          {seletor}
+          <div className="vtx-checkout">
+            <PagamentoBrick
+              totalCentavos={totalCentavos}
+              metodo={metodo}
+              emailInicial={emailInicial}
+              processando={processando}
+              onSubmit={onSubmit}
+              onErroCarregamento={onErroCarregamento}
+            />
+          </div>
+        </>
       )}
 
       {erro && (
@@ -131,5 +158,5 @@ export default function SecaoPagamento({
           mesma declaração em dois lugares da mesma tela só polui a área do
           botão, que é onde a pessoa precisa de foco para concluir. */}
     </CartaoSecao>
-  )
+  );
 }

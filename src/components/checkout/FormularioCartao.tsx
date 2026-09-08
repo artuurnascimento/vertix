@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { AlertCircle, Check, ChevronDown, IdCard } from 'lucide-react'
 import CartaoTresD, {
   type CampoCartao as CampoDoCartao,
@@ -74,6 +74,12 @@ interface Props {
   totalCentavos: number
   /** Cobrança em curso: congela o que dá para congelar. */
   desabilitado: boolean
+  /**
+   * A escolha do método, renderizada logo abaixo do cartão 3D. Chega pronta
+   * de fora porque o método é estado da seção de pagamento — este formulário
+   * só existe quando cartão já é o escolhido.
+   */
+  seletor?: ReactNode
 }
 
 const MENSAGEM_FALHA: Record<FalhaCampos, string> = {
@@ -114,6 +120,7 @@ export default function FormularioCartao({
   parcelamento,
   totalCentavos,
   desabilitado,
+  seletor,
 }: Props) {
   const idTitular = useId()
   const idParcelas = useId()
@@ -164,6 +171,13 @@ export default function FormularioCartao({
           digitosCvv={digitosCvv === 4 ? 4 : 3}
         />
       </div>
+
+      {/* O seletor entra AQUI, entre o cartão e os campos, e não acima de
+          tudo: o cartão é o que identifica a seção de relance, e a linha do
+          método escolhido lê melhor como legenda dele do que como cabeçalho
+          solto. Vem de fora porque quem manda no método é a seção de
+          pagamento, não este formulário. */}
+      {seletor}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {/* O titular é o único campo do cartão que é input nosso de verdade —

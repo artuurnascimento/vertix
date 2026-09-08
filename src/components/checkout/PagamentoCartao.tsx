@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { CreditCard, Lock } from 'lucide-react'
 import BotaoPagar from './BotaoPagar'
 import FormularioCartao from './FormularioCartao'
@@ -56,6 +56,8 @@ interface Props {
    * cobrança falha — a `CheckoutPage` é quem mostra a mensagem da recusa.
    */
   onSubmit: (formData: unknown, cardTokenSalvar: string | null) => Promise<void>
+  /** Escolha do método, posicionada abaixo do cartão 3D pelo formulário. */
+  seletor?: ReactNode
 }
 
 const CAMPOS: readonly CampoIframe[] = ['numero', 'validade', 'cvv']
@@ -88,6 +90,7 @@ export default function PagamentoCartao({
   documento,
   processando,
   onSubmit,
+  seletor,
 }: Props) {
   const gratuito = totalCentavos <= 0
 
@@ -338,6 +341,7 @@ export default function PagamentoCartao({
         parcelamento={parcelamento}
         totalCentavos={totalCentavos}
         desabilitado={ocupado}
+        seletor={seletor}
       />
 
       <div className="mt-5">
