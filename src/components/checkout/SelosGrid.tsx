@@ -1,5 +1,6 @@
 import { BadgeCheck } from 'lucide-react'
 import LogoMercadoPago from './LogoMercadoPago'
+import SeloLgpd from './SeloLgpd'
 
 /**
  * Selos que valem mais como MARCA do que como frase.
@@ -18,6 +19,12 @@ const LOGOS: Record<string, { Logo: typeof LogoMercadoPago; altura: string }> = 
   // ele vira borrão. Aqui as três caixas continuam do mesmo tamanho — o que
   // cresce é só o conteúdo desta.
   'mercado pago': { Logo: LogoMercadoPago, altura: 'h-7 sm:h-8' },
+
+  // As três grafias que alguém usaria para o mesmo selo. Sem elas, mudar
+  // "Dados protegidos" para "LGPD" no painel faria o desenho sumir sem aviso.
+  'dados protegidos': { Logo: SeloLgpd, altura: 'h-6 sm:h-7' },
+  lgpd: { Logo: SeloLgpd, altura: 'h-6 sm:h-7' },
+  'dados protegidos (lgpd)': { Logo: SeloLgpd, altura: 'h-6 sm:h-7' },
 }
 
 /** "Mercado  Pago " e "MERCADO PAGO" precisam cair na mesma chave. */
