@@ -70,6 +70,37 @@ export default function SecaoPagamento({
           {erro}
         </p>
       )}
+
+      {/* Aceite dos termos: exigência da LGPD e do Código de Defesa do
+          Consumidor — quem compra precisa saber, ANTES de pagar, com quem
+          está contratando, quem processa o pagamento e onde ler as regras.
+          Fica junto do botão de propósito: aviso de contrato escondido no
+          rodapé não cumpre o papel de informar. */}
+      <p className="mt-5 text-center text-xs leading-relaxed text-muted">
+        Ao prosseguir, você concorda com os{' '}
+        <a
+          href="/termos"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-ink underline decoration-white/25 underline-offset-2 transition-colors hover:text-accent"
+        >
+          Termos de uso
+        </a>{' '}
+        e a{' '}
+        <a
+          href="/privacidade"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-ink underline decoration-white/25 underline-offset-2 transition-colors hover:text-accent"
+        >
+          Política de Privacidade
+        </a>{' '}
+        da Vertix Studio.
+        <span className="mt-1.5 block text-[11px] text-muted/80">
+          Pagamento processado pelo Mercado Pago · Vertix Studio · CNPJ
+          54.203.421/0001-49
+        </span>
+      </p>
     </CartaoSecao>
   )
 }

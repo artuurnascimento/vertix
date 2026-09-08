@@ -87,7 +87,24 @@ export default function CheckoutShell({
               </a>
             </span>
           </div>
-          <p className="mt-4 text-center text-[10px] text-muted/60">
+          {/* Termos e política também aqui, além do aceite junto do botão:
+              quem procura as regras depois de comprar procura no rodapé. */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted">
+            <a
+              href="/termos"
+              className="underline-offset-2 hover:text-ink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Termos de uso
+            </a>
+            <span aria-hidden className="text-muted/40">·</span>
+            <a
+              href="/privacidade"
+              className="underline-offset-2 hover:text-ink hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              Política de Privacidade
+            </a>
+          </div>
+          <p className="mt-2 text-center text-[10px] text-muted/60">
             Vertix Studio · CNPJ 54.203.421/0001-49
           </p>
         </footer>

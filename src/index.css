@@ -264,10 +264,14 @@ body {
    somem quando a página conseguiu abrir o método sozinha — o atributo é
    escrito pelo PagamentoBrick depois de marcar o rádio. Sem ele, a lista
    do Mercado Pago continua visível e clicável. */
+/* CUIDADO com o plural aqui. A estrutura do Brick é:
+     [class*='payment-options']  ← container PAI: tem o seletor E o formulário
+       ├── [class*='__selector-']       ← o rádio do método (é o que sobra)
+       └── [class*='payment-option-']   ← o FORMULÁRIO, com 13 campos
+   Esconder o pai (que era o que esta regra fazia) derrubava o formulário do
+   cartão junto, deixando um vão entre os métodos e o botão de pagar. */
 .vtx-checkout #payment-brick[data-metodo-embutido='sim'] form > h1,
-.vtx-checkout
-  #payment-brick[data-metodo-embutido='sim']
-  [class*='payment-options'] {
+.vtx-checkout #payment-brick[data-metodo-embutido='sim'] [class*='__selector-'] {
   display: none;
 }
 

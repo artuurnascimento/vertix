@@ -38,6 +38,8 @@ const PagarPage = lazy(() => import('./pages/public/PagarPage'))
 const CheckoutPage = lazy(() => import('./pages/public/CheckoutPage'))
 const UpsellPage = lazy(() => import('./pages/public/UpsellPage'))
 const ObrigadoPage = lazy(() => import('./pages/public/ObrigadoPage'))
+const TermosPage = lazy(() => import('./pages/public/TermosPage'))
+const PrivacidadePage = lazy(() => import('./pages/public/PrivacidadePage'))
 const Produtos = lazy(() => import('./pages/Produtos'))
 const Checkouts = lazy(() => import('./pages/Checkouts'))
 
@@ -100,6 +102,8 @@ export default function App() {
       <Route path="/c/:slug" element={<CheckoutPage />} />
       <Route path="/c/:slug/upsell/:pedidoId" element={<UpsellPage />} />
       <Route path="/c/:slug/obrigado/:pedidoId" element={<ObrigadoPage />} />
+      <Route path="/termos" element={<TermosPage />} />
+      <Route path="/privacidade" element={<PrivacidadePage />} />
       {/* Link de bio: rota longa válida em qualquer host (a raiz de
           vertix.bio cai aqui pelo HostRoot, lá embaixo). */}
       <Route path="/bio" element={<BioRoute />} />

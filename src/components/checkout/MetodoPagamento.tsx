@@ -1,4 +1,5 @@
-import { CreditCard, QrCode } from 'lucide-react'
+import { CreditCard } from 'lucide-react'
+import IconePix from './IconePix'
 import BandeirasCartao from './BandeirasCartao'
 
 /** Método escolhido na tela. O Brick é montado só com o que está aqui. */
@@ -42,7 +43,7 @@ export default function SeletorMetodo({
           valor="pix"
           selecionado={metodo === 'pix'}
           onChange={onChange}
-          icone={<QrCode aria-hidden className="h-5 w-5" />}
+          icone={<IconePix className="h-5 w-5" />}
           titulo="Pix"
           subtitulo="Aprovação imediata. Mais rápido e prático."
         />
