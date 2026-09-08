@@ -28,20 +28,20 @@ body {
   font-family: 'Kanit', sans-serif;
 }
 
+/**
+ * Título de destaque: branco chapado.
+ *
+ * Já foi um cromado metálico (gradiente vertical recortado no texto). Saiu
+ * porque a banda escura do meio caía bem na altura das letras e apagava o
+ * miolo da palavra — o título acabava mais difícil de ler que o corpo do
+ * texto logo abaixo, o oposto do que um título existe para fazer.
+ *
+ * A classe continua existindo e segue aplicada em mais de 40 títulos do
+ * sistema, para que rever esta decisão seja mexer aqui, e não em 40 arquivos.
+ */
 .hero-heading {
-  /* Cromado metálico: bandas claras/escuras simulando reflexo de aço. */
-  background: linear-gradient(
-    180deg,
-    #f7f7f5 0%,
-    #dddedb 28%,
-    #9a9c99 48%,
-    #6e706d 54%,
-    #c9cbc8 68%,
-    #f4f4f0 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #f4f4f0; /* mesmo `ink` do tailwind.config.js */
+  -webkit-text-fill-color: currentColor;
 }
 
 /* Atmosfera: glow ambiente accent + grain sutil (aplicado via div .app-ambient

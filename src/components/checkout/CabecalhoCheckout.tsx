@@ -23,10 +23,10 @@ export default function CabecalhoCheckout({ titulo, subtitulo }: Props) {
 
       {titulo && (
         <h1 className="mt-7 max-w-2xl text-balance text-[26px] font-bold leading-[1.15] tracking-tight text-ink sm:text-4xl">
-          {/* Sem a `hero-heading` de propósito: o cromado metálico dela escurece
-              o miolo das letras, e num checkout o título precisa ser o texto
-              mais legível da tela. O contraste que importa aqui é o accent da
-              expressão final. A classe segue intacta no resto do painel. */}
+          {/* Não usa `hero-heading` porque aqui o título é bicolor: o começo em
+              `ink` e a expressão final em accent. A classe pinta o texto todo
+              de uma cor só. Era o cromado dela que este comentário evitava —
+              efeito removido de todo o sistema. */}
           {inicio && <span className="text-ink">{inicio} </span>}
           {destaque && <span className="text-accent">{destaque}</span>}
         </h1>
