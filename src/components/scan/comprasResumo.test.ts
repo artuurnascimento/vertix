@@ -33,6 +33,8 @@ function compra(over: Partial<ScanCompra> = {}): ScanCompra {
     concorrentes: null,
     reanalise_agendada_em: null,
     reanalise_analysis_id: null,
+    receivable_id: 'rec-1',
+    reembolsado_em: null,
     ...over,
   }
 }

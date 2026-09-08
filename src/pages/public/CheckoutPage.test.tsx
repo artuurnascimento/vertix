@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -37,9 +37,24 @@ const INFO: CheckoutInfo = {
     ancoraCentavos: null,
   },
   bump: null,
+  banner: null,
   prova: null,
   garantia: null,
   cronometroAte: null,
+}
+
+const BANNER = {
+  desktop: { url: 'https://cdn/desktop.webp', largura: 1600, altura: 400 },
+  mobile: { url: 'https://cdn/mobile.webp', largura: 780, altura: 600 },
+  alt: 'Plano de correção em 7 dias',
+}
+
+const DEPOIMENTO = {
+  nome: 'Ana',
+  texto: 'Minha loja vendeu mais na primeira semana.',
+  loja: 'Ateliê da Ana',
+  nota: 5,
+  fotoUrl: null,
 }
 
 const buscarCheckout = vi.fn()
@@ -199,5 +214,119 @@ describe('CheckoutPage — documento obrigatório no cartão', () => {
         expect(screen.getByText(ROTULO_OPCIONAL)).toBeInTheDocument()
       )
     })
+  })
+})
+
+/**
+ * Banner e avaliações: as duas coisas que mudam o TOPO e a DIREITA da página.
+ *
+ * O que se protege aqui não é estética. Banner sem `width`/`height` faz a
+ * página saltar quando a imagem chega — e o que salta é o botão de pagar,
+ * debaixo do dedo de quem ia clicar. Avaliações no lugar errado no celular
+ * empurram o formulário para fora da primeira tela. Nos dois casos o preço do
+ * erro é a venda.
+ */
+describe('CheckoutPage — banner e avaliações', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+    buscarCheckout.mockResolvedValue(INFO)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.clearAllMocks()
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('sem banner, não sobra moldura nem espaço no topo', async () => {
+    renderizar()
+    await esperarForm()
+
+    expect(document.querySelector('picture')).toBeNull()
+  })
+
+  it('põe a arte de celular no <img> e a de desktop no <source media>', async () => {
+    buscarCheckout.mockResolvedValue({ ...INFO, banner: BANNER })
+    renderizar()
+    await esperarForm()
+
+    const imagem = screen.getByAltText(BANNER.alt) as HTMLImageElement
+    // O <img> é o que carrega quando o <picture> não é entendido — e é do
+    // celular que vem a maior parte das compras.
+    expect(imagem.getAttribute('src')).toBe(BANNER.mobile.url)
+    expect(imagem.getAttribute('width')).toBe('780')
+    expect(imagem.getAttribute('height')).toBe('600')
+    expect(imagem.getAttribute('loading')).toBe('eager')
+
+    const fonte = document.querySelector('picture source')
+    expect(fonte?.getAttribute('media')).toBe('(min-width: 768px)')
+    expect(fonte?.getAttribute('srcSet') ?? fonte?.getAttribute('srcset')).toBe(
+      BANNER.desktop.url
+    )
+    expect(fonte?.getAttribute('width')).toBe('1600')
+  })
+
+  it('com uma arte só, ela serve os dois tamanhos e não sobra <source>', async () => {
+    buscarCheckout.mockResolvedValue({
+      ...INFO,
+      banner: { ...BANNER, mobile: null },
+    })
+    renderizar()
+    await esperarForm()
+
+    const imagem = screen.getByAltText(BANNER.alt) as HTMLImageElement
+    expect(imagem.getAttribute('src')).toBe(BANNER.desktop.url)
+    expect(document.querySelector('picture source')).toBeNull()
+  })
+
+  it('alt vazio marca a arte como decorativa em vez de sumir com o atributo', async () => {
+    buscarCheckout.mockResolvedValue({
+      ...INFO,
+      banner: { ...BANNER, alt: '' },
+    })
+    renderizar()
+    await esperarForm()
+
+    const imagem = document.querySelector('picture img')
+    expect(imagem?.getAttribute('alt')).toBe('')
+  })
+
+  it('sem depoimento cadastrado, nenhuma lista de avaliações é desenhada', async () => {
+    renderizar()
+    await esperarForm()
+
+    expect(
+      screen.queryAllByRole('list', { name: 'Depoimentos' })
+    ).toHaveLength(0)
+  })
+
+  it('no desktop as avaliações ficam na coluna do resumo; no celular, no fluxo', async () => {
+    buscarCheckout.mockResolvedValue({
+      ...INFO,
+      prova: { depoimentos: [DEPOIMENTO], selos: [] },
+    })
+    renderizar()
+    await esperarForm()
+
+    const resumo = screen.getByRole('region', { name: 'Seu pedido' })
+    const colunaDireita = resumo.parentElement as HTMLElement
+    // A cópia de desktop mora junto do resumo — é o vazio que sobrava ali.
+    expect(
+      within(colunaDireita).getByRole('list', { name: 'Depoimentos' })
+    ).toBeInTheDocument()
+
+    // E existe a cópia do celular, no fim do fluxo. Só uma das duas fica
+    // visível por vez (o CSS esconde a outra, e `hidden` também a tira da
+    // árvore de acessibilidade); no jsdom, sem CSS, as duas aparecem.
+    expect(screen.getAllByRole('list', { name: 'Depoimentos' })).toHaveLength(2)
   })
 })

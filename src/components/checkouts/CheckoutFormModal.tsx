@@ -23,6 +23,8 @@ import {
 import type { CheckoutFormValues } from './checkoutForm'
 import { atualizarCheckout, criarCheckout } from './checkoutsData'
 import type { Checkout } from './checkoutsData'
+import type { Banner } from './bannerUpload'
+import BannerEditor from './BannerEditor'
 import DescontoPixBloco from './DescontoPixBloco'
 import OfertaBloco from './OfertaBloco'
 import ProvaEditor from './ProvaEditor'
@@ -85,6 +87,15 @@ export default function CheckoutFormModal({
     campo: K,
     valor: CheckoutFormValues[K]
   ) => setValues((atual) => ({ ...atual, [campo]: valor }))
+
+  /**
+   * O banner é atualizado por FUNÇÃO porque o upload é assíncrono: quando a
+   * imagem termina de subir, o `values` de quando ela começou já pode estar
+   * velho. Aplicando sobre o estado mais recente, nenhuma das duas artes some
+   * por causa da outra.
+   */
+  const setBanner = (atualizar: (atual: Banner) => Banner) =>
+    setValues((atual) => ({ ...atual, banner: atualizar(atual.banner) }))
 
   const setTitulo = (titulo: string) => {
     setValues((atual) => ({
@@ -194,6 +205,8 @@ export default function CheckoutFormModal({
             {erros.slug && <span className="text-xs text-red-400">{erros.slug}</span>}
           </label>
         </Bloco>
+
+        <BannerEditor banner={values.banner} onChange={setBanner} />
 
         <OfertaBloco
           titulo="Order bump"

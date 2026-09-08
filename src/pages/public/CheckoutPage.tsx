@@ -27,6 +27,7 @@ import {
 import { usarFormularioNovo } from '../../components/checkout/flagFormularioNovo'
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
+import BannerTopo from '../../components/checkout/BannerTopo'
 import BarraTotalMobile from '../../components/checkout/BarraTotalMobile'
 import CabecalhoCheckout from '../../components/checkout/CabecalhoCheckout'
 import CheckoutShell from '../../components/checkout/CheckoutShell'
@@ -50,9 +51,16 @@ import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
  * o que muda aqui é a oferta: bump, cupom, cronômetro e prova social.
  *
  * O desenho é de duas colunas: à esquerda o fluxo (bump → cupom → dados →
- * pagamento → confiança), à direita o resumo grudado no alto. No celular vira
- * uma coluna só, com o resumo ABRINDO a página — é lá que quase todo mundo
- * paga, e ninguém preenche cartão sem saber quanto vai custar.
+ * pagamento → confiança), à direita o resumo grudado no alto e, logo abaixo
+ * dele, as avaliações — que no desktop ocupam o vazio que sobrava sob o
+ * resumo. No celular vira uma coluna só, com o resumo ABRINDO a página — é lá
+ * que quase todo mundo paga, e ninguém preenche cartão sem saber quanto vai
+ * custar — e as avaliações voltam para o fim do fluxo, depois do pagamento e
+ * da garantia, para não empurrarem o formulário para fora da primeira tela.
+ *
+ * Acima de tudo pode existir um BANNER configurado pelo lojista, com uma arte
+ * para desktop e outra para celular. Sem banner, a página começa direto no
+ * título: não há espaço reservado esperando imagem.
  *
  * Uma regra atravessa o arquivo inteiro: o total mostrado é PRÉVIA. Quem soma
  * produto, bump, cupom e desconto do método para valer é o servidor, com os
@@ -355,6 +363,19 @@ export default function CheckoutPage() {
   const { checkout, produto, bump, prova, garantia } = info
   const beneficios = beneficiosDoResumo(prova, garantia)
 
+  /**
+   * As avaliações aparecem em UM lugar por vez: na coluna da direita no
+   * desktop (sob o resumo) e no fim do fluxo no celular. O mesmo elemento é
+   * colocado nos dois pontos e o CSS esconde o que não vale para a largura
+   * atual — `hidden` tira o outro também da árvore de acessibilidade, então
+   * ninguém ouve o depoimento duas vezes. Sem depoimento cadastrado, nada
+   * disso existe: nem moldura, nem espaço.
+   */
+  const avaliacoes =
+    prova && prova.depoimentos.length > 0 ? (
+      <Depoimentos depoimentos={prova.depoimentos} />
+    ) : null
+
   return (
     <CheckoutShell cabecalho={false}>
       <motion.div
@@ -364,6 +385,12 @@ export default function CheckoutPage() {
         // pb no celular: a barra fixa do total não pode cobrir o rodapé.
         className="pb-28 md:pb-0"
       >
+        {info.banner && (
+          <div className="mb-7 sm:mb-9">
+            <BannerTopo banner={info.banner} />
+          </div>
+        )}
+
         <CabecalhoCheckout
           titulo={checkout.titulo}
           subtitulo={checkout.subtitulo}
@@ -376,7 +403,10 @@ export default function CheckoutPage() {
         <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] lg:items-start lg:gap-6">
           {/* Resumo primeiro no DOM = primeiro na tela do celular, que é onde
               quase todo mundo paga. No desktop ele vai para a direita e gruda. */}
-          <div className="lg:order-2 lg:sticky lg:top-8">
+          {/* max-h + overflow no desktop: com as avaliações embaixo, a coluna
+              pode ficar mais alta que a tela, e sem isto o fim dela seria
+              inalcançável enquanto ela estivesse grudada. */}
+          <div className="flex flex-col gap-5 lg:order-2 lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
             <ResumoPedido
               produto={produto}
               bump={bump}
@@ -387,6 +417,7 @@ export default function CheckoutPage() {
               total={total}
               beneficios={beneficios}
             />
+            {avaliacoes && <div className="hidden lg:block">{avaliacoes}</div>}
           </div>
 
           <div className="flex flex-col gap-5 lg:order-1">
@@ -439,7 +470,7 @@ export default function CheckoutPage() {
             />
 
             <GarantiaCard garantia={garantia} />
-            {prova && <Depoimentos depoimentos={prova.depoimentos} />}
+            {avaliacoes && <div className="lg:hidden">{avaliacoes}</div>}
             <SelosGrid selos={prova?.selos ?? []} />
           </div>
         </div>

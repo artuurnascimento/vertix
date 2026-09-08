@@ -1,5 +1,6 @@
 import { catalogoSupabase } from '../produtos/catalogoSupabase'
-import { supabase } from '../../lib/supabase'
+import { criarMensagemDoCorpo, invocarReembolso } from './reembolsoResposta'
+import type { ResultadoReembolso } from './reembolsoResposta'
 import { intervaloDoPeriodo } from '../../lib/periodo'
 import type { Periodo } from '../../lib/periodo'
 
@@ -235,119 +236,33 @@ export async function fetchPedidos(periodo: Periodo): Promise<PedidosResposta> {
 // ---------------------------------------------------------------------------
 // Reembolso
 // ---------------------------------------------------------------------------
-
-/**
- * Os dois desfechos de sucesso da edge function. `ja_reembolsado` NÃO é
- * erro: duas abas abertas, um retry de rede ou um estorno feito ontem caem
- * todos ali, e a tela deve mostrar "reembolsado" em vez de uma falha.
- */
-export type ResultadoReembolso = 'reembolsado' | 'ja_reembolsado'
-
-/** Erro de reembolso já traduzido para quem está olhando a tela. */
-export class ReembolsoError extends Error {
-  /** true quando a edge function ainda não foi publicada neste ambiente. */
-  naoPublicada: boolean
-
-  constructor(message: string, naoPublicada = false) {
-    super(message)
-    this.name = 'ReembolsoError'
-    this.naoPublicada = naoPublicada
-  }
-}
-
-/**
- * Códigos que a function devolve SEM `mensagem` própria. Os que têm mensagem
- * (gateway_recusou, gateway_indisponivel, reembolsado_sem_registro,
- * reembolso_em_andamento…) são mostrados com o texto do servidor: ele sabe se
- * o dinheiro saiu, e reescrever aqui só criaria uma segunda versão da
- * verdade, capaz de divergir da primeira numa atualização do backend.
- */
-const MENSAGENS: Record<string, string> = {
-  pedido_nao_encontrado: 'Esse pedido não existe mais no banco.',
-  nao_autenticado: 'Sua sessão expirou. Entre de novo e repita a operação.',
-  acesso_negado: 'Seu usuário não tem permissão para reembolsar.',
-  falha_ao_validar_permissao:
-    'Não deu para conferir sua permissão. Nada foi cobrado nem estornado.',
-  config_ausente:
-    'O ambiente está sem a credencial do Mercado Pago. Nada foi estornado.',
-  falha_ao_reservar_reembolso:
-    'O banco não conseguiu reservar este reembolso. Nada foi estornado — tente de novo.',
-  payload_invalido: 'A requisição saiu malformada. Recarregue a página.',
-  pedido_id_invalido: 'A requisição saiu sem o pedido. Recarregue a página.',
-  method_not_allowed: 'A função de reembolso recusou a chamada. Recarregue a página.',
-}
-
-const MENSAGEM_PADRAO =
-  'Não deu para reembolsar. O dinheiro pode não ter voltado — confira no Mercado Pago antes de tentar de novo.'
-
-const MENSAGEM_NAO_PUBLICADA =
-  'A função de reembolso ainda não está publicada neste ambiente. O pedido continua pago e nada foi cobrado nem estornado.'
-
-async function corpoDoErro(erro: unknown): Promise<Record<string, unknown> | null> {
-  const contexto = (erro as { context?: unknown })?.context
-  if (!(contexto instanceof Response)) return null
-  try {
-    const corpo: unknown = await contexto.clone().json()
-    return ehRegistro(corpo) ? corpo : null
-  } catch {
-    return null
-  }
-}
-
-function statusDoErro(erro: unknown): number | null {
-  const contexto = (erro as { context?: unknown })?.context
-  return contexto instanceof Response ? contexto.status : null
-}
+// A tradução da resposta e a chamada em si moram em `reembolsoResposta.ts`,
+// compartilhadas com a aba de vendas do Scan: as duas edge functions de
+// reembolso respondem no MESMO contrato, e duas cópias da tradução
+// divergiriam justamente na parte que diz se o dinheiro saiu.
+//
+// O que fica AQUI é o que é do pedido: quais códigos esta function devolve sem
+// `mensagem` própria.
 
 /**
  * Corpo de resposta → mensagem, ou null quando a resposta é de sucesso.
- * A `mensagem` do servidor tem precedência sobre o mapa local (ver MENSAGENS).
+ * Reexportado com este nome porque é ele que a tela e os testes usam.
  */
-export function mensagemDoCorpo(corpo: Record<string, unknown> | null): string | null {
-  if (corpo === null) return null
-  const codigo = texto(corpo.erro) ?? texto(corpo.error)
-  if (codigo === null) return null
-  return texto(corpo.mensagem) ?? MENSAGENS[codigo] ?? MENSAGEM_PADRAO
-}
-
-/** 'ja_reembolsado' e 'reembolsado' são sucesso; qualquer outro corpo não é. */
-function resultadoDoCorpo(corpo: unknown): ResultadoReembolso {
-  if (!ehRegistro(corpo)) return 'reembolsado'
-  return texto(corpo.resultado) === 'ja_reembolsado' ? 'ja_reembolsado' : 'reembolsado'
-}
+export const mensagemDoCorpo = criarMensagemDoCorpo({
+  pedido_nao_encontrado: 'Esse pedido não existe mais no banco.',
+  pedido_id_invalido: 'A requisição saiu sem o pedido. Recarregue a página.',
+})
 
 /**
  * Estorna o pedido inteiro e revoga o acesso do cliente, numa chamada só.
- *
  * O contrato é `{ pedido_id }` (supabase/functions/checkout-reembolsar).
- * Devolve como terminou, porque "já estava reembolsado" e "acabei de
- * reembolsar" são a mesma resposta HTTP e frases diferentes na tela.
  */
 export async function reembolsarPedido(
   pedidoId: string
 ): Promise<ResultadoReembolso> {
-  const { data, error } = await supabase.functions.invoke('checkout-reembolsar', {
-    body: { pedido_id: pedidoId },
-  })
-
-  if (error) {
-    const corpo = await corpoDoErro(error)
-    const mensagem = mensagemDoCorpo(corpo)
-    if (mensagem !== null) throw new ReembolsoError(mensagem)
-    // 404 SEM corpo reconhecível = a rota não existe. Com corpo, o 404 é
-    // `pedido_nao_encontrado`, que já saiu pelo ramo acima — distinguir os
-    // dois importa porque um manda publicar a function e o outro, não.
-    if (statusDoErro(error) === 404) {
-      throw new ReembolsoError(MENSAGEM_NAO_PUBLICADA, true)
-    }
-    throw new ReembolsoError(MENSAGEM_PADRAO)
-  }
-
-  // A function também pode responder 2xx com um `erro` no corpo: sucesso de
-  // transporte não é sucesso de estorno, e tratar como sucesso mostraria
-  // "reembolsado" para um cliente que continua sem o dinheiro de volta.
-  const mensagem = mensagemDoCorpo(ehRegistro(data) ? data : null)
-  if (mensagem !== null) throw new ReembolsoError(mensagem)
-
-  return resultadoDoCorpo(data)
+  return await invocarReembolso(
+    'checkout-reembolsar',
+    { pedido_id: pedidoId },
+    mensagemDoCorpo
+  )
 }

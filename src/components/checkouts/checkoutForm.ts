@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { PADRAO_SLUG } from '../produtos/produtoForm'
+import { BANNER_VAZIO, limparBanner, parseBanner } from './bannerUpload'
+import type { Banner } from './bannerUpload'
 import { parseProva } from './checkoutsData'
 import type { Checkout, CheckoutPayload, Depoimento, Prova } from './checkoutsData'
 
@@ -25,6 +27,8 @@ export interface CheckoutFormValues {
   downsellTexto: string
   depoimentos: Depoimento[]
   selos: string[]
+  /** Artes do topo da página. Já enviadas ao storage quando chegam aqui. */
+  banner: Banner
   /** Texto do input numérico; '' = sem garantia declarada. */
   garantiaDias: string
   garantiaTexto: string
@@ -51,6 +55,7 @@ export const EMPTY_CHECKOUT: CheckoutFormValues = {
   downsellTexto: '',
   depoimentos: [],
   selos: [],
+  banner: BANNER_VAZIO,
   garantiaDias: '',
   garantiaTexto: '',
   descontoPixPercentual: '',
@@ -148,6 +153,20 @@ export function percentualPixValido(valor: string): boolean {
   return Number(limpo) <= DESCONTO_PIX_MAXIMO
 }
 
+const bannerImagemSchema = z
+  .object({
+    url: z.string(),
+    largura: z.number().int().nullable(),
+    altura: z.number().int().nullable(),
+  })
+  .nullable()
+
+const bannerSchema = z.object({
+  desktop: bannerImagemSchema,
+  mobile: bannerImagemSchema,
+  alt: z.string(),
+})
+
 export const checkoutSchema = z
   .object({
     produtoId: z.uuid('Escolha o produto principal.'),
@@ -176,6 +195,10 @@ export const checkoutSchema = z
       })
     ),
     selos: z.array(z.string()),
+    // Sem validação de conteúdo: a URL não é digitada, vem do upload que já
+    // passou por tipo e tamanho em bannerUpload.ts. O schema existe aqui só
+    // para o campo sobreviver ao `parse` e chegar ao payload.
+    banner: bannerSchema,
     garantiaDias: z
       .string()
       .refine(inteiroOpcional, 'Informe os dias de garantia em número inteiro.'),
@@ -250,6 +273,7 @@ export function checkoutFormToPayload(
     downsell_titulo: limpo(values.downsellTitulo),
     downsell_texto: limpo(values.downsellTexto),
     prova: limparProva(values.depoimentos, values.selos),
+    banner: limparBanner(values.banner),
     garantia_dias: dias === '' ? null : Number(dias),
     garantia_texto: limpo(values.garantiaTexto),
     desconto_pix_percentual: descontoPix === '' ? null : Number(descontoPix),
@@ -276,6 +300,7 @@ export function checkoutToFormValues(checkout: Checkout): CheckoutFormValues {
     downsellTexto: checkout.downsell_texto ?? '',
     depoimentos: prova.depoimentos,
     selos: prova.selos,
+    banner: parseBanner(checkout.banner),
     garantiaDias:
       checkout.garantia_dias === null ? '' : String(checkout.garantia_dias),
     garantiaTexto: checkout.garantia_texto ?? '',

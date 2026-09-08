@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { AlertTriangle, ExternalLink, ShoppingBag } from 'lucide-react'
+import { AlertTriangle, ExternalLink, RotateCcw, ShoppingBag } from 'lucide-react'
 import { formatRelativeTime } from '../../lib/format'
 import { planoUrl } from '../leadsRaiox/raioxData'
 import {
@@ -7,6 +7,7 @@ import {
   concorrentesInformados,
   entregaDaCompra,
   formatCentavos,
+  podeReembolsarCompra,
 } from './comprasResumo'
 import type { ScanCompra } from './comprasData'
 
@@ -18,10 +19,19 @@ import type { ScanCompra } from './comprasData'
  *
  * A linha de quem pagou e não recebeu ganha borda e fundo vermelhos: é o
  * único estado desta tela que exige alguém agir agora.
+ *
+ * O botão de reembolso fica na PONTA DIREITA da linha, longe do "Ver plano" e
+ * depois de tudo que a decisão exige olhar (valor, status, entrega). Ele só
+ * aparece em compra paga — ver podeReembolsarCompra —, e clicar nele não
+ * estorna nada: abre a confirmação forte do ScanReembolsoModal.
  */
 
 interface ScanComprasTableProps {
   compras: ScanCompra[]
+  /** Ausente quando a coluna reembolsado_em ainda não existe no ambiente. */
+  temColunaReembolso?: boolean
+  /** Abre a confirmação. Sem ele a lista fica só de leitura. */
+  onReembolsar?: (compra: ScanCompra) => void
   /** Só para o teste conseguir fixar "agora" ao julgar o atraso da entrega. */
   agora?: Date
 }
@@ -39,6 +49,8 @@ function dataHora(iso: string): string {
 
 export default function ScanComprasTable({
   compras,
+  temColunaReembolso = true,
+  onReembolsar,
   agora,
 }: ScanComprasTableProps) {
   const prefersReducedMotion = useReducedMotion()
@@ -132,7 +144,33 @@ export default function ScanComprasTable({
                     Ver plano
                   </a>
                 )}
+
+                {onReembolsar && podeReembolsarCompra(compra) && (
+                  <button
+                    type="button"
+                    onClick={() => onReembolsar(compra)}
+                    className="ml-auto inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-400/30 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors duration-150 hover:bg-red-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400"
+                  >
+                    <RotateCcw aria-hidden className="h-3.5 w-3.5" />
+                    Reembolsar
+                    <span className="sr-only">
+                      {` ${formatCentavos(compra.valor_centavos)} de ${compra.comprador ?? 'comprador não identificado'}`}
+                    </span>
+                  </button>
+                )}
               </div>
+
+              {/* Reembolso já feito: o rodapé de bônus não vale mais nada, e o
+                  que interessa é quando o dinheiro voltou. */}
+              {compra.status === 'reembolsado' && (
+                <div className="border-t border-white/5 px-5 py-2.5 text-[11px] font-light text-red-300">
+                  {compra.reembolsado_em
+                    ? `Reembolsado em ${dataHora(compra.reembolsado_em)}`
+                    : temColunaReembolso
+                      ? 'Reembolsado (estornado por fora do painel)'
+                      : 'Reembolsado (data não registrada)'}
+                </div>
+              )}
 
               {/* Bônus e reanálise: só aparecem quando há pagamento a honrar. */}
               {compra.status === 'pago' && (

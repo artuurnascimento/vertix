@@ -150,6 +150,25 @@ export function compraStatusMeta(status: string): {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Reembolso: quando o botão pode existir
+// ---------------------------------------------------------------------------
+
+/**
+ * O botão de reembolso só existe em compra PAGA.
+ *
+ * 'aguardando_pagamento' e 'cancelado' nunca tiraram dinheiro do cliente —
+ * estornar seria devolver o que ninguém pagou. 'reembolsado' já foi, e mandar
+ * de novo é pedir um estorno em dobro ao gateway. Sobra exatamente um estado,
+ * e é esta função que garante que só ele mostra o botão.
+ *
+ * Gêmea da `podeReembolsar` dos pedidos, e separada só porque o vocabulário de
+ * status das duas tabelas é diferente ('aguardando' × 'aguardando_pagamento').
+ */
+export function podeReembolsarCompra(compra: Pick<ScanCompra, 'status'>): boolean {
+  return compra.status === 'pago'
+}
+
 /** O bônus só está completo com os DOIS concorrentes informados. */
 export function concorrentesInformados(compra: ScanCompra): boolean {
   return (compra.concorrentes ?? []).filter((c) => c.trim() !== '').length >= 2

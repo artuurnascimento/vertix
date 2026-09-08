@@ -1,4 +1,9 @@
 import { raioxSupabase } from '../leadsRaiox/raioxSupabase'
+import {
+  criarMensagemDoCorpo,
+  invocarReembolso,
+} from '../pedidos/reembolsoResposta'
+import type { ResultadoReembolso } from '../pedidos/reembolsoResposta'
 import { intervaloDoPeriodo } from '../../lib/periodo'
 import type { Periodo } from '../../lib/periodo'
 
@@ -12,6 +17,11 @@ import type { Periodo } from '../../lib/periodo'
  * leads de teste não pode arrastar uma compra paga). Sem FK o PostgREST não
  * faz embed, então o nome do comprador e o domínio da loja vêm em consultas
  * separadas e são casados aqui, em memória.
+ *
+ * A única escrita que sai daqui é o REEMBOLSO, e ela não escreve na tabela:
+ * chama a edge function `scan-reembolsar`, que tem service role, porque
+ * devolver dinheiro no gateway e revogar o acesso ao plano precisam acontecer
+ * juntos ou não acontecer.
  */
 
 /** Uma compra, já com comprador e loja resolvidos. */
@@ -35,6 +45,10 @@ export interface ScanCompra {
   /** Reanálise de 30 dias: agendada e, depois, executada. */
   reanalise_agendada_em: string | null
   reanalise_analysis_id: string | null
+  /** Cobrança que esta venda gerou no Financeiro. O reembolso a cancela. */
+  receivable_id: string | null
+  /** Quando o reembolso foi feito. NULL enquanto a coluna não existir. */
+  reembolsado_em: string | null
 }
 
 export interface ScanComprasResponse {
@@ -43,6 +57,12 @@ export interface ScanComprasResponse {
   compras: ScanCompra[]
   /** true quando o período tem mais compras do que o teto carregado. */
   truncado: boolean
+  /**
+   * true quando a coluna `reembolsado_em` ainda não existe neste ambiente.
+   * A tela usa isso para não afirmar "nunca reembolsada" sobre um dado que ela
+   * simplesmente não conseguiu ler.
+   */
+  semColunaReembolso: boolean
 }
 
 /**
@@ -67,6 +87,8 @@ interface LinhaCompra {
   reanalise_analysis_id: string | null
   pago_em: string | null
   created_at: string
+  receivable_id: string | null
+  reembolsado_em?: string | null
 }
 
 /** Mapa id → valor, para casar as compras com leads e análises. */
@@ -85,25 +107,63 @@ async function mapaPor<T extends string>(
   return new Map(linhas.map((l) => [l.id, l]))
 }
 
-export async function fetchScanCompras(
+/**
+ * A coluna do reembolso nasce na migração 20260908230000. Pedir uma coluna
+ * inexistente ao PostgREST derruba a consulta INTEIRA (42703), e a lista de
+ * vendas é útil mesmo sem ela — por isso a primeira tentativa a inclui e a
+ * segunda desiste dela. Mesmo arranjo da tela de Pedidos.
+ */
+const COLUNA_REEMBOLSO = 'reembolsado_em'
+const CODIGO_COLUNA_AUSENTE = '42703'
+
+const COLUNAS_BASE =
+  'id, analysis_id, lead_id, valor_centavos, status, plano_code, ' +
+  'plano_gerado_em, recibo_enviado_em, concorrentes, reanalise_agendada_em, ' +
+  'reanalise_analysis_id, pago_em, created_at, receivable_id'
+
+function codigoDoErro(erro: unknown): string | null {
+  if (typeof erro !== 'object' || erro === null) return null
+  const code = (erro as { code?: unknown }).code
+  return typeof code === 'string' ? code : null
+}
+
+async function consultar(
+  colunas: string,
   periodo: Periodo
-): Promise<ScanComprasResponse> {
+): Promise<{ linhas: LinhaCompra[]; total: number }> {
   const intervalo = intervaloDoPeriodo(periodo)
   let q = raioxSupabase
     .from('raiox_compras')
-    .select(
-      'id, analysis_id, lead_id, valor_centavos, status, plano_code, plano_gerado_em, recibo_enviado_em, concorrentes, reanalise_agendada_em, reanalise_analysis_id, pago_em, created_at',
-      { count: 'exact' }
-    )
+    .select(colunas, { count: 'exact' })
     .gte('created_at', intervalo.desde)
   if (intervalo.ate) q = q.lt('created_at', intervalo.ate)
 
   const { data, count, error } = await q
     .order('created_at', { ascending: false })
     .range(0, COMPRAS_LIMITE - 1)
-  if (error) throw new Error(error.message)
+  if (error) throw error
 
   const linhas = (data ?? []) as unknown as LinhaCompra[]
+  return { linhas, total: count ?? linhas.length }
+}
+
+export async function fetchScanCompras(
+  periodo: Periodo
+): Promise<ScanComprasResponse> {
+  let semColunaReembolso = false
+  let resultado: { linhas: LinhaCompra[]; total: number }
+
+  try {
+    resultado = await consultar(`${COLUNAS_BASE}, ${COLUNA_REEMBOLSO}`, periodo)
+  } catch (erro) {
+    if (codigoDoErro(erro) !== CODIGO_COLUNA_AUSENTE) {
+      throw erro instanceof Error ? erro : new Error(String(erro))
+    }
+    semColunaReembolso = true
+    resultado = await consultar(COLUNAS_BASE, periodo)
+  }
+
+  const linhas = resultado.linhas
   const [analises, leads] = await Promise.all([
     mapaPor<'domain'>('analyses', 'id, domain', [
       ...new Set(linhas.map((l) => l.analysis_id)),
@@ -130,9 +190,48 @@ export async function fetchScanCompras(
       concorrentes: l.concorrentes,
       reanalise_agendada_em: l.reanalise_agendada_em,
       reanalise_analysis_id: l.reanalise_analysis_id,
+      receivable_id: l.receivable_id,
+      reembolsado_em: l.reembolsado_em ?? null,
     }
   })
 
-  const total = count ?? compras.length
-  return { total, compras, truncado: total > compras.length }
+  const total = resultado.total
+  return {
+    total,
+    compras,
+    truncado: total > compras.length,
+    semColunaReembolso,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reembolso
+// ---------------------------------------------------------------------------
+// A tradução da resposta e a chamada em si moram em
+// `components/pedidos/reembolsoResposta.ts`, compartilhadas com a tela de
+// Pedidos: as duas edge functions de reembolso respondem no MESMO contrato, e
+// duas cópias da tradução divergiriam justamente na parte que diz se o
+// dinheiro saiu.
+//
+// O que fica AQUI é o que é da compra do Scan: quais códigos esta function
+// devolve sem `mensagem` própria.
+
+/** Corpo de resposta → mensagem, ou null quando a resposta é de sucesso. */
+export const mensagemDoCorpoDaCompra = criarMensagemDoCorpo({
+  compra_nao_encontrada: 'Essa venda não existe mais no banco.',
+  compra_id_invalido: 'A requisição saiu sem a venda. Recarregue a página.',
+})
+
+/**
+ * Estorna a compra inteira e revoga o acesso ao Plano de Correção, numa
+ * chamada só. O contrato é `{ compra_id }` (supabase/functions/scan-reembolsar).
+ */
+export async function reembolsarCompraDoScan(
+  compraId: string
+): Promise<ResultadoReembolso> {
+  return await invocarReembolso(
+    'scan-reembolsar',
+    { compra_id: compraId },
+    mensagemDoCorpoDaCompra
+  )
 }

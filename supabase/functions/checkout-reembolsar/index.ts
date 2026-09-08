@@ -64,19 +64,31 @@
  * NUNCA loga MP_ACCESS_TOKEN, JWT do chamador, dado de cartão nem documento
  * do cliente.
  *
- * Referências (documentação oficial do Mercado Pago):
- *   POST /v1/payments/{payment_id}/refunds — corpo vazio = reembolso total;
- *   resposta 201 { id, payment_id, amount, status }. O header
- *   `X-Render-In-Process-Refunds: true` faz o reembolso em contingência voltar
- *   como 201 com status 'in_process' em vez de 400.
- *   https://www.mercadopago.com.br/developers/pt/docs/checkout-api-payments/payment-management/cancellations-and-refunds/refund-pix
- *   https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/integration-model
- *   `X-Idempotency-Key` em operações de reembolso:
- *   https://www.mercadopago.com.br/developers/pt/docs/qr-code/migrate-dynamic-qr-model-to-orders
+ * O QUE ESTE ARQUIVO NÃO CONTÉM MAIS
+ *   A conversa com o Mercado Pago (POST do reembolso com a chave de
+ *   idempotência e o header de contingência, GET de reconciliação do
+ *   pagamento, reais→centavos) e a checagem de permissão do painel mudaram
+ *   para `_shared/reembolso.ts` quando a `scan-reembolsar` nasceu precisando
+ *   das mesmas regras. Duas cópias delas divergiriam no primeiro conserto
+ *   feito só de um lado — e é a metade em que errar custa dinheiro de
+ *   verdade. As referências da documentação oficial do MP estão lá, junto do
+ *   código que as segue.
+ *
+ *   O que ficou aqui é o que é DESTE fluxo: as RPCs de `pedidos`, a tradução
+ *   de cada desfecho em HTTP e a chave de idempotência do pedido.
  */
 
 import { withCors } from '../_shared/cors.ts'
 import { criarDb, jsonResponse, UUID_RE, type Db } from '../_shared/checkout.ts'
+import {
+  autenticarPainel,
+  pagamentoJaReembolsado,
+  reembolsarNoMp,
+  type RefundMp,
+} from '../_shared/reembolso.ts'
+
+/** Prefixo de log e de erro; é o nome da function em toda mensagem. */
+const ROTULO = 'checkout-reembolsar'
 
 interface RequestBody {
   pedido_id?: string
@@ -98,23 +110,6 @@ interface ReembolsoRpc {
   status?: string
 }
 
-/** Reembolso criado (ou já existente) no Mercado Pago. */
-interface RefundMp {
-  id: string | null
-  /** Centavos confirmados pelo MP, quando ele informa o valor. */
-  valor_centavos: number | null
-  /** 'approved' | 'in_process' — ver o cabeçalho sobre contingência. */
-  status: string | null
-}
-
-/**
- * Teto de espera pelo Mercado Pago. Generoso de propósito, ao contrário do
- * timeout do worker em _shared/entrega.ts: aqui não há alternativa recuperável
- * do outro lado, e desistir cedo produz exatamente o estado perigoso — um
- * reembolso que talvez tenha acontecido, sem resposta para gravar.
- */
-const MP_TIMEOUT_MS = 20_000
-
 /**
  * Chave de idempotência do reembolso deste pedido. DETERMINÍSTICA: sempre a
  * mesma string para o mesmo pedido, que é o que faz o Mercado Pago devolver o
@@ -127,150 +122,6 @@ const MP_TIMEOUT_MS = 20_000
  */
 function chaveIdempotencia(pedidoId: string): string {
   return `reembolso-${pedidoId}`
-}
-
-/**
- * Reais (como o MP devolve em `amount`) → centavos.
- * `Math.round` e não `Math.trunc`: 238.14 * 100 dá 23813.999... em ponto
- * flutuante, e truncar produziria um centavo a menos no registro do que
- * voltou para o cliente.
- */
-function reaisParaCentavos(valor: unknown): number | null {
-  const numero = typeof valor === 'number' ? valor : Number(valor)
-  if (!Number.isFinite(numero)) return null
-  return Math.round(numero * 100)
-}
-
-/**
- * O pagamento está reembolsado no Mercado Pago, independentemente do que a
- * nossa chamada respondeu?
- *
- * É a pergunta que transforma um erro do gateway em sucesso reconciliado. Só
- * `refunded` conta: 'charged_back' é contestação do titular — dinheiro que
- * saiu por outro caminho, com outra disputa em andamento —, e tratá-lo como
- * reembolso pedido por nós esconderia um chargeback dentro de um fluxo de
- * atendimento.
- *
- * Devolve null quando não deu para saber. Null NÃO é "não reembolsou": quem
- * chama trata a dúvida como dúvida.
- * Docs: https://www.mercadopago.com.br/developers/pt/reference/payments/_payments_id/get
- */
-async function pagamentoJaReembolsado(
-  mpToken: string,
-  paymentId: string
-): Promise<{ reembolsado: boolean; refund: RefundMp } | null> {
-  let res: Response
-  try {
-    res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: { Authorization: `Bearer ${mpToken}` },
-      signal: AbortSignal.timeout(MP_TIMEOUT_MS),
-    })
-  } catch (erro) {
-    console.error('[checkout-reembolsar] Consulta do pagamento falhou:', erro)
-    return null
-  }
-  if (!res.ok) {
-    console.error(
-      '[checkout-reembolsar] Consulta do pagamento recusada:',
-      res.status
-    )
-    return null
-  }
-
-  const corpo = (await res.json().catch(() => null)) as Record<
-    string,
-    unknown
-  > | null
-  if (!corpo) return null
-
-  if (corpo.status !== 'refunded') {
-    return {
-      reembolsado: false,
-      refund: { id: null, valor_centavos: null, status: null },
-    }
-  }
-
-  // O pagamento reembolsado traz a lista de reembolsos. Pegamos o primeiro
-  // porque só existe reembolso total aqui; a ausência da lista não invalida o
-  // fato de o pagamento estar `refunded`.
-  const lista = Array.isArray(corpo.refunds)
-    ? (corpo.refunds as Array<Record<string, unknown>>)
-    : []
-  const primeiro = lista[0]
-
-  return {
-    reembolsado: true,
-    refund: {
-      id: primeiro?.id != null ? String(primeiro.id) : null,
-      valor_centavos:
-        reaisParaCentavos(primeiro?.amount) ??
-        reaisParaCentavos(corpo.transaction_amount_refunded),
-      status: primeiro?.status != null ? String(primeiro.status) : 'approved',
-    },
-  }
-}
-
-/**
- * POST /v1/payments/{id}/refunds — reembolso TOTAL (corpo vazio).
- *
- * Devolve o reembolso quando o MP confirma, `null` quando ele recusa de forma
- * definitiva, e lança quando não foi possível saber (rede, timeout, 5xx) —
- * porque essas três situações exigem tratamentos diferentes de quem chama, e
- * colapsar "recusou" com "não sei" é o que produziria um reembolso duplicado.
- */
-async function reembolsarNoMp(
-  mpToken: string,
-  paymentId: string,
-  pedidoId: string
-): Promise<RefundMp | null> {
-  let res: Response
-  try {
-    res = await fetch(
-      `https://api.mercadopago.com/v1/payments/${paymentId}/refunds`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${mpToken}`,
-          'Content-Type': 'application/json',
-          'X-Idempotency-Key': chaveIdempotencia(pedidoId),
-          // Reembolso em contingência volta como 201 'in_process' em vez de
-          // 400. Sem este header, uma contingência (que É um reembolso a
-          // caminho) chegaria aqui como erro, e o dinheiro estaria voltando
-          // com o sistema achando que a operação falhou.
-          'X-Render-In-Process-Refunds': 'true',
-        },
-        // Corpo vazio = reembolso total. Mandar `amount` faria dele parcial.
-        body: '{}',
-        signal: AbortSignal.timeout(MP_TIMEOUT_MS),
-      }
-    )
-  } catch (erro) {
-    // Rede ou timeout: NÃO se sabe se o reembolso aconteceu.
-    console.error('[checkout-reembolsar] MP indisponível. Pedido:', pedidoId, erro)
-    throw new Error('mp_indisponivel')
-  }
-
-  const corpo = (await res.json().catch(() => ({}))) as Record<string, unknown>
-
-  if (!res.ok) {
-    // O corpo do erro do MP não carrega access token nem dado de cartão.
-    console.error(
-      '[checkout-reembolsar] MP recusou o reembolso:',
-      res.status,
-      'pedido:',
-      pedidoId,
-      JSON.stringify(corpo).slice(0, 500)
-    )
-    // 5xx é falha do lado deles, não recusa: pode ter reembolsado assim mesmo.
-    if (res.status >= 500) throw new Error('mp_indisponivel')
-    return null
-  }
-
-  return {
-    id: corpo.id != null ? String(corpo.id) : null,
-    valor_centavos: reaisParaCentavos(corpo.amount),
-    status: corpo.status != null ? String(corpo.status) : null,
-  }
 }
 
 /**
@@ -370,55 +221,27 @@ Deno.serve(
     // ----------------------------------------------------------------------
     // 1. Autenticação — o chamador é gente do painel?
     // ----------------------------------------------------------------------
-    // `verify_jwt` da plataforma já barrou quem não tem token. Aqui o JWT é
-    // resolvido para saber QUEM é, porque o reembolso é gravado com autor, e
-    // é conferido contra `profiles`: um JWT válido pode ser de qualquer conta
-    // do projeto Supabase, inclusive de alguém que nunca foi da equipe.
-
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return jsonResponse({ erro: 'nao_autenticado' }, 401)
-    }
-    const jwt = authHeader.slice('Bearer '.length)
+    // A regra inteira (JWT resolvido para saber QUEM é, porque o reembolso é
+    // gravado com autor, e conferido contra `profiles`) mora em
+    // _shared/reembolso.ts, junto com a da scan-reembolsar: quem for afrouxar
+    // a permissão de devolver dinheiro tem de mexer num lugar só.
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
     if (!supabaseUrl || !serviceRoleKey || !mpAccessToken) {
-      console.error('[checkout-reembolsar] Env ausente.')
+      console.error(`[${ROTULO}] Env ausente.`)
       return jsonResponse({ erro: 'config_ausente' }, 500)
     }
 
-    const usuarioRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${jwt}` },
-    })
-    if (!usuarioRes.ok) {
-      return jsonResponse({ erro: 'nao_autenticado' }, 401)
-    }
-    const usuario = (await usuarioRes.json()) as { id?: string }
-    if (!usuario.id) {
-      return jsonResponse({ erro: 'nao_autenticado' }, 401)
-    }
-
-    const perfilRes = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?id=eq.${usuario.id}&select=id`,
-      {
-        headers: {
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
-        },
-      }
+    const auth = await autenticarPainel(
+      ROTULO,
+      req,
+      supabaseUrl,
+      serviceRoleKey
     )
-    if (!perfilRes.ok) {
-      console.error(
-        '[checkout-reembolsar] Falha ao checar profile:',
-        perfilRes.status
-      )
-      return jsonResponse({ erro: 'falha_ao_validar_permissao' }, 502)
-    }
-    const perfis = (await perfilRes.json()) as Array<{ id: string }>
-    if (perfis.length === 0) {
-      return jsonResponse({ erro: 'acesso_negado' }, 403)
+    if (!auth.ok) {
+      return jsonResponse({ erro: auth.erro }, auth.status)
     }
 
     // ----------------------------------------------------------------------
@@ -447,7 +270,7 @@ Deno.serve(
     try {
       reserva = await db.rpc<ReembolsoRpc>('pedido_reembolso_iniciar', {
         p_pedido_id: pedidoId,
-        p_usuario_id: usuario.id,
+        p_usuario_id: auth.usuarioId,
       })
     } catch {
       return jsonResponse({ erro: 'falha_ao_reservar_reembolso' }, 502)
@@ -546,7 +369,12 @@ Deno.serve(
 
     let refund: RefundMp | null
     try {
-      refund = await reembolsarNoMp(mpAccessToken, mpPaymentId, pedidoId)
+      refund = await reembolsarNoMp(
+        ROTULO,
+        mpAccessToken,
+        mpPaymentId,
+        chaveIdempotencia(pedidoId)
+      )
     } catch {
       // Não se sabe se reembolsou. A reserva FICA de propósito: soltá-la aqui
       // convidaria um segundo clique a chamar o gateway enquanto o primeiro
@@ -568,7 +396,11 @@ Deno.serve(
       // O MP recusou de forma definitiva. A recusa MAIS COMUM é o pagamento já
       // estar reembolsado, então antes de devolver erro consultamos o estado
       // real — ver o cabeçalho sobre reconciliação.
-      const consulta = await pagamentoJaReembolsado(mpAccessToken, mpPaymentId)
+      const consulta = await pagamentoJaReembolsado(
+        ROTULO,
+        mpAccessToken,
+        mpPaymentId
+      )
 
       if (consulta?.reembolsado) {
         console.error(

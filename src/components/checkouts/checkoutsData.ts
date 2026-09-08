@@ -1,12 +1,14 @@
 import { catalogoSupabase } from '../produtos/catalogoSupabase'
 import { PAGAR_PUBLIC_BASE } from '../../lib/publicUrls'
+import type { Banner } from './bannerUpload'
 
 /**
  * Leitura e escrita de public.checkouts — a OFERTA montada sobre um produto
  * (copy, order bump, upsell, downsell, prova social, garantia e cronômetro).
  *
- * O campo `prova` é jsonb de conteúdo de página. A forma abaixo é a mesma que
- * a página pública lê em src/components/checkout/checkoutTypes.ts.
+ * Os campos `prova` e `banner` são jsonb de conteúdo de página. A forma abaixo
+ * é a mesma que a página pública lê em
+ * src/components/checkout/checkoutTypes.ts.
  */
 
 export interface Depoimento {
@@ -41,6 +43,11 @@ export interface Checkout {
   downsell_titulo: string | null
   downsell_texto: string | null
   prova: unknown
+  /**
+   * Banner do topo, jsonb como a `prova` e pelo mesmo motivo: conteúdo de
+   * página. Forma em bannerUpload.ts (`parseBanner`).
+   */
+  banner: unknown
   garantia_dias: number | null
   garantia_texto: string | null
   /**
@@ -57,11 +64,11 @@ export interface Checkout {
 
 export type CheckoutPayload = Omit<
   Checkout,
-  'id' | 'created_at' | 'updated_at' | 'prova'
-> & { prova: Prova }
+  'id' | 'created_at' | 'updated_at' | 'prova' | 'banner'
+> & { prova: Prova; banner: Banner }
 
 const COLUNAS =
-  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, ativo, created_at, updated_at'
+  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, banner, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, ativo, created_at, updated_at'
 
 function ehRegistro(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor)

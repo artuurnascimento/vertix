@@ -40,6 +40,26 @@ export interface DepoimentoCheckout {
   fotoUrl: string | null
 }
 
+/** Uma das duas artes do banner do topo. */
+export interface BannerImagemCheckout {
+  url: string
+  /**
+   * Medidas naturais do arquivo, gravadas no upload. Viram `width`/`height`
+   * no HTML para o navegador reservar o espaço — sem elas a página SALTA
+   * quando a imagem chega, e num checkout o que salta é o botão de pagar.
+   * `null` quando não deu para medir na hora do upload.
+   */
+  largura: number | null
+  altura: number | null
+}
+
+export interface BannerCheckout {
+  desktop: BannerImagemCheckout | null
+  mobile: BannerImagemCheckout | null
+  /** Vazio = arte decorativa, que não deve ser lida por leitor de tela. */
+  alt: string
+}
+
 export interface ProvaCheckout {
   depoimentos: DepoimentoCheckout[]
   selos: string[]
@@ -72,6 +92,8 @@ export interface CheckoutInfo {
   checkout: CheckoutConfig
   produto: ProdutoCheckout
   bump: BumpCheckout | null
+  /** Arte do topo. `null` quando a oferta não tem banner — e aí não sobra buraco. */
+  banner: BannerCheckout | null
   prova: ProvaCheckout | null
   garantia: GarantiaCheckout | null
   /** ISO do instante em que a oferta expira; `null` quando não há cronômetro. */
@@ -240,6 +262,38 @@ function lerDepoimento(bruto: unknown): DepoimentoCheckout | null {
   }
 }
 
+/**
+ * Uma arte do banner. Aceita tanto o objeto completo quanto uma URL solta —
+ * um banner cadastrado por SQL, sem medidas, ainda deve aparecer na página
+ * (perde-se só a reserva de espaço).
+ */
+function lerBannerImagem(bruto: unknown): BannerImagemCheckout | null {
+  if (typeof bruto === 'string') {
+    const url = bruto.trim()
+    return url === '' ? null : { url, largura: null, altura: null }
+  }
+  if (!ehRegistro(bruto)) return null
+  const url = texto(bruto, 'url', 'imagem_url', 'src')
+  if (url === null) return null
+  const largura = inteiro(bruto, 'largura', 'width')
+  const altura = inteiro(bruto, 'altura', 'height')
+  return {
+    url,
+    largura: largura !== null && largura > 0 ? largura : null,
+    altura: altura !== null && altura > 0 ? altura : null,
+  }
+}
+
+function lerBanner(bruto: unknown): BannerCheckout | null {
+  if (!ehRegistro(bruto)) return null
+  const desktop = lerBannerImagem(bruto.desktop)
+  const mobile = lerBannerImagem(bruto.mobile)
+  // Sem nenhuma das duas artes não existe banner: devolver um objeto vazio
+  // faria a página desenhar uma moldura sem imagem dentro.
+  if (desktop === null && mobile === null) return null
+  return { desktop, mobile, alt: texto(bruto, 'alt', 'texto_alternativo') ?? '' }
+}
+
 function lerProva(bruto: unknown): ProvaCheckout | null {
   if (!ehRegistro(bruto)) {
     // Também aceitamos `prova` como array puro de depoimentos.
@@ -323,6 +377,10 @@ export function normalizarCheckout(
     },
     produto,
     bump: lerBump(bruto.bump ?? bruto.bump_produto, configBruta),
+    // A RPC devolve `banner` na raiz E dentro de `checkout` (mesma coluna,
+    // mesma consulta). Ler os dois lugares deixa a tela sobreviver a
+    // qualquer um deles sumir do contrato.
+    banner: lerBanner(bruto.banner ?? configBruta.banner),
     prova: lerProva(bruto.prova),
     garantia: lerGarantia(bruto.garantia),
     cronometroAte: instante(bruto.cronometro_ate),

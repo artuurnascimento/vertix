@@ -1,6 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, ShoppingBag } from 'lucide-react'
-import { fetchScanCompras } from './comprasData'
+import { fetchScanCompras, reembolsarCompraDoScan } from './comprasData'
+import type { ScanCompra } from './comprasData'
 import {
   entregaDaCompra,
   formatCentavos,
@@ -8,6 +10,8 @@ import {
   taxaDeConversao,
 } from './comprasResumo'
 import ScanComprasTable from './ScanComprasTable'
+import ScanReembolsoModal from './ScanReembolsoModal'
+import Toast, { useToast } from '../ui/Toast'
 import type { Periodo } from '../../lib/periodo'
 
 /**
@@ -19,6 +23,11 @@ import type { Periodo } from '../../lib/periodo'
  * período do filtro e o total de leads do MESMO período, que é o denominador
  * da conversão. Ler os leads de novo aqui daria dois números diferentes na
  * mesma tela.
+ *
+ * O REEMBOLSO SAI DAQUI, e não de uma tela de detalhe, porque a decisão se
+ * toma olhando a lista: o valor, o estado da entrega e o tempo desde a compra
+ * estão todos na mesma linha. É o mesmo arranjo da tela de Pedidos, com a
+ * mesma confirmação forte — e estas são as vendas que realmente existem hoje.
  */
 
 const STALE_TIME_MS = 60_000
@@ -35,6 +44,11 @@ export default function ScanVendasTab({
   rotuloPeriodo,
   leadsPeriodo,
 }: ScanVendasTabProps) {
+  const queryClient = useQueryClient()
+  const { toast, mostrar } = useToast()
+  const [paraReembolsar, setParaReembolsar] = useState<ScanCompra | null>(null)
+  const [erroReembolso, setErroReembolso] = useState<string | null>(null)
+
   const compras = useQuery({
     queryKey: ['apps-proxy', 'scan', 'compras', periodo],
     staleTime: STALE_TIME_MS,
@@ -42,6 +56,47 @@ export default function ScanVendasTab({
     refetchOnWindowFocus: false,
     queryFn: () => fetchScanCompras(periodo),
   })
+
+  const reembolso = useMutation({
+    mutationFn: (compra: ScanCompra) => reembolsarCompraDoScan(compra.id),
+    onSuccess: async (resultado, compra) => {
+      setParaReembolsar(null)
+      setErroReembolso(null)
+      // Invalidação e não edição local: o novo status, a data do reembolso e a
+      // revogação do plano são decididos no servidor, e reescrever a linha no
+      // cliente mostraria o que ESPERAMOS que tenha acontecido.
+      await queryClient.invalidateQueries({
+        queryKey: ['apps-proxy', 'scan', 'compras'],
+      })
+      const quem = compra.comprador ?? 'o comprador'
+      mostrar({
+        texto:
+          resultado === 'ja_reembolsado'
+            ? `Esta venda para ${quem} já estava reembolsada. A lista foi atualizada.`
+            : `${formatCentavos(compra.valor_centavos)} devolvidos a ${quem}. Acesso ao plano revogado.`,
+      })
+    },
+    onError: (erro: unknown) => {
+      const mensagem =
+        erro instanceof Error
+          ? erro.message
+          : 'Não deu para reembolsar. Confira no Mercado Pago antes de tentar de novo.'
+      // O erro fica NO MODAL, não num toast que some: é a única pista de que o
+      // dinheiro pode ou não ter saído, e some junto com a resposta.
+      setErroReembolso(mensagem)
+    },
+  })
+
+  const abrirReembolso = (compra: ScanCompra) => {
+    setErroReembolso(null)
+    setParaReembolsar(compra)
+  }
+
+  const fecharReembolso = () => {
+    if (reembolso.isPending) return
+    setParaReembolsar(null)
+    setErroReembolso(null)
+  }
 
   if (compras.isLoading) {
     return (
@@ -153,8 +208,23 @@ export default function ScanVendasTab({
       )}
 
       <div className="mt-8">
-        <ScanComprasTable compras={lista} />
+        <ScanComprasTable
+          compras={lista}
+          temColunaReembolso={!compras.data.semColunaReembolso}
+          onReembolsar={abrirReembolso}
+        />
       </div>
+
+      <ScanReembolsoModal
+        compra={paraReembolsar}
+        isPending={reembolso.isPending}
+        erro={erroReembolso}
+        onConfirm={() => {
+          if (paraReembolsar) reembolso.mutate(paraReembolsar)
+        }}
+        onClose={fecharReembolso}
+      />
+      <Toast mensagem={toast} />
     </div>
   )
 }
