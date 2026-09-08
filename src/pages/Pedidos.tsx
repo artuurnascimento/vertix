@@ -2,13 +2,19 @@ import { useState } from 'react'
 import { Receipt } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ehTabelaAusente } from '../components/produtos/catalogoSupabase'
-import { fetchPedidos, reembolsarPedido } from '../components/pedidos/pedidosData'
+import { fetchCategoriasDeProdutos, fetchPedidos, reembolsarPedido } from '../components/pedidos/pedidosData'
 import type { Pedido } from '../components/pedidos/pedidosData'
 import {
   formatCentavos,
   resumoDosPedidos,
 } from '../components/pedidos/pedidosResumo'
 import PedidosTable from '../components/pedidos/PedidosTable'
+import {
+  TODOS,
+  categoriasDosPedidos,
+  filtrarPedidos,
+  produtosDosPedidos,
+} from '../components/pedidos/pedidosFiltro'
 import ReembolsoModal from '../components/pedidos/ReembolsoModal'
 import FiltroPeriodo from '../components/ui/FiltroPeriodo'
 import Toast, { useToast } from '../components/ui/Toast'
@@ -35,6 +41,8 @@ export default function Pedidos() {
   const { toast, mostrar } = useToast()
 
   const [periodo, setPeriodo] = useState<Periodo>('30d')
+  const [produto, setProduto] = useState<string>(TODOS)
+  const [categoria, setCategoria] = useState<string>(TODOS)
   const [paraReembolsar, setParaReembolsar] = useState<Pedido | null>(null)
   const [erroReembolso, setErroReembolso] = useState<string | null>(null)
 
@@ -44,6 +52,17 @@ export default function Pedidos() {
     retry: false,
     refetchOnWindowFocus: false,
     queryFn: () => fetchPedidos(periodo),
+  })
+
+  // O catálogo é pequeno e muda pouco: uma consulta separada, cacheada por mais
+  // tempo que os pedidos. Falhar aqui não pode derrubar a tela — sem o mapa, o
+  // filtro de categoria some e o resto continua funcionando.
+  const categoriasQuery = useQuery({
+    queryKey: ['produtos-categorias'],
+    staleTime: STALE_TIME_MS * 5,
+    retry: false,
+    refetchOnWindowFocus: false,
+    queryFn: fetchCategoriasDeProdutos,
   })
 
   const reembolso = useMutation({
@@ -87,7 +106,13 @@ export default function Pedidos() {
   const migracaoPendente = ehTabelaAusente(pedidosQuery.error)
   const rotuloPeriodo = rotuloDoPeriodo(periodo)
   const dados = pedidosQuery.data
-  const pedidos = dados?.pedidos ?? []
+  const todosOsPedidos = dados?.pedidos ?? []
+  const categorias = categoriasQuery.data ?? {}
+  const opcoesProduto = produtosDosPedidos(todosOsPedidos)
+  const opcoesCategoria = categoriasDosPedidos(todosOsPedidos, categorias)
+  const pedidos = filtrarPedidos(todosOsPedidos, { produto, categoria }, categorias)
+  // O resumo segue o filtro: números do topo e linhas da tabela têm que contar
+  // a mesma coisa, senão o painel se contradiz na mesma tela.
   const resumo = resumoDosPedidos(pedidos)
 
   const cards = [
@@ -116,8 +141,59 @@ export default function Pedidos() {
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         <FiltroPeriodo valor={periodo} onChange={setPeriodo} />
+
+        {/* Os seletores só aparecem quando há mais de uma opção: com um
+            produto só, um filtro de um item é ruído, não controle. */}
+        {opcoesProduto.length > 1 && (
+          <label className="flex items-center gap-2 text-xs font-light text-muted">
+            Produto
+            <select
+              value={produto}
+              onChange={(e) => setProduto(e.target.value)}
+              className="rounded-lg border border-white/10 bg-surface-2 px-3 py-1.5 text-sm text-ink"
+            >
+              <option value={TODOS}>Todos</option>
+              {opcoesProduto.map((nome) => (
+                <option key={nome} value={nome}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {opcoesCategoria.length > 1 && (
+          <label className="flex items-center gap-2 text-xs font-light text-muted">
+            Tipo de serviço
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              className="rounded-lg border border-white/10 bg-surface-2 px-3 py-1.5 text-sm text-ink"
+            >
+              <option value={TODOS}>Todos</option>
+              {opcoesCategoria.map((nome) => (
+                <option key={nome} value={nome}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {(produto !== TODOS || categoria !== TODOS) && (
+          <button
+            type="button"
+            onClick={() => {
+              setProduto(TODOS)
+              setCategoria(TODOS)
+            }}
+            className="rounded-lg px-2 py-1 text-xs font-light text-accent underline decoration-accent/30 underline-offset-4"
+          >
+            Limpar filtros
+          </button>
+        )}
       </div>
 
       {pedidosQuery.isLoading && (

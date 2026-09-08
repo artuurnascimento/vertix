@@ -266,3 +266,41 @@ export async function reembolsarPedido(
     mensagemDoCorpo
   )
 }
+
+// ---------------------------------------------------------------------------
+// Catálogo — categoria por produto
+// ---------------------------------------------------------------------------
+
+/**
+ * `produto_id` → categoria de serviço, para o filtro da tela.
+ *
+ * Consulta separada de propósito: `pedidos.itens` é snapshot e guarda preço e
+ * nome congelados, que é o que precisa bater com o recibo. Categoria é
+ * classificação gerencial e tem que valer para o histórico inteiro — renomear
+ * "tema" para "tema sob medida" reclassifica tudo, em vez de criar duas
+ * categorias que somam separado.
+ *
+ * O catálogo é pequeno (dezenas de linhas), então vem inteiro numa consulta.
+ *
+ * Coluna ausente devolve mapa vazio em vez de derrubar a tela: a migration
+ * pode não ter sido aplicada ainda, e nesse caso a página perde o filtro de
+ * categoria e mantém o resto.
+ */
+export async function fetchCategoriasDeProdutos(): Promise<
+  Record<string, string | null>
+> {
+  const { data, error } = await catalogoSupabase
+    .from('produtos')
+    .select('id, categoria')
+
+  if (error) {
+    if (codigoDoErro(error) === CODIGO_COLUNA_AUSENTE) return {}
+    throw error
+  }
+
+  const mapa: Record<string, string | null> = {}
+  for (const linha of (data ?? []) as { id: string; categoria: string | null }[]) {
+    mapa[linha.id] = linha.categoria
+  }
+  return mapa
+}
