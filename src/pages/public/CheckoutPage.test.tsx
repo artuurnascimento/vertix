@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import CheckoutPage from './CheckoutPage'
 import type { CheckoutInfo } from '../../components/checkout/checkoutTypes'
+import { pagarCheckout } from '../../components/checkout/checkoutApi'
 
 /**
  * O único ponto desta migração que muda o PRODUTO: com o formulário novo, o
@@ -105,7 +106,9 @@ function renderizar(busca = '') {
   })
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/c/oferta']}>
+      {/* A busca vai também para o roteador: `useSearchParams` lê dele, não
+          de window.location, e antes os dois discordavam no teste. */}
+      <MemoryRouter initialEntries={[`/c/oferta${busca}`]}>
         <Routes>
           <Route path="/c/:slug" element={<CheckoutPage />} />
         </Routes>
@@ -329,5 +332,70 @@ describe('CheckoutPage — banner e avaliações', () => {
     // visível por vez (o CSS esconde a outra, e `hidden` também a tira da
     // árvore de acessibilidade); no jsdom, sem CSS, as duas aparecem.
     expect(screen.getAllByRole('list', { name: 'Depoimentos' })).toHaveLength(2)
+  })
+})
+
+/**
+ * O vínculo entre a compra e o Raio-X da loja.
+ *
+ * O funil do Scan manda a pessoa para /c/<slug>?a=<analysis_id>. Esse valor é
+ * o que diz ao worker de qual loja é o Plano de Correção: sem ele o pedido
+ * nasce órfão e a entrega não tem o que gerar. A página só o repassava depois
+ * desta mudança — antes ele chegava na URL e morria ali.
+ */
+describe('análise de origem na URL', () => {
+  // O dublê é o mesmo módulo entre os testes: sem limpar, o segundo leria a
+  // chamada do primeiro e passaria por engano.
+  beforeEach(() => vi.mocked(pagarCheckout).mockClear())
+
+  /** Preenche o mínimo que a página exige e dispara o pagamento. */
+  async function preencherEPagar() {
+    await userEvent.type(screen.getByLabelText('Nome completo'), 'Artur Nascimento')
+    await userEvent.type(screen.getByLabelText('E-mail'), 'artur@vertix.studio')
+    await userEvent.type(screen.getByLabelText('WhatsApp'), '62999998888')
+    await userEvent.click(screen.getByRole('button', { name: 'pagar' }))
+    await waitFor(() => expect(pagarCheckout).toHaveBeenCalled())
+  }
+
+  it('repassa o ?a= e marca a origem como scan', async () => {
+    vi.mocked(pagarCheckout).mockResolvedValue({
+      pedidoId: 'ped-1',
+      status: 'aprovado',
+      totalCentavos: 19700,
+      pix: null,
+      cartaoSalvo: null,
+      erro: null,
+      mensagem: null,
+    })
+
+    renderizar('?a=11111111-2222-3333-4444-555555555555')
+    await esperarForm()
+    await preencherEPagar()
+
+    const enviado = vi.mocked(pagarCheckout).mock.calls[0][0]
+    expect(enviado.analysisId).toBe('11111111-2222-3333-4444-555555555555')
+    expect(enviado.origem).toBe('scan')
+  })
+
+  it('sem ?a= a venda acontece igual, sem análise e sem origem', async () => {
+    // Quem compra por link direto não veio do Scan. Recusar o pagamento por
+    // falta de um parâmetro de rastreio seria trocar dinheiro por rigor.
+    vi.mocked(pagarCheckout).mockResolvedValue({
+      pedidoId: 'ped-2',
+      status: 'aprovado',
+      totalCentavos: 19700,
+      pix: null,
+      cartaoSalvo: null,
+      erro: null,
+      mensagem: null,
+    })
+
+    renderizar()
+    await esperarForm()
+    await preencherEPagar()
+
+    const enviado = vi.mocked(pagarCheckout).mock.calls[0][0]
+    expect(enviado.analysisId).toBeNull()
+    expect(enviado.origem).toBeNull()
   })
 })

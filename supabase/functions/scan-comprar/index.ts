@@ -66,6 +66,21 @@ interface ReceivableRecord {
 /** Domínio público oficial dos links de pagamento enviados a clientes. */
 const PAGAR_PUBLIC_BASE = 'https://pay.vertix.studio'
 
+/**
+ * Slug do checkout do Plano de Correção em pay.vertix.studio/c/<slug>.
+ *
+ * O funil do Scan manda a pessoa para /c/<slug>?a=<analysis_id>: a página
+ * repassa esse `a` para a checkout-pagar, que grava em `pedidos.analysis_id`.
+ * É esse vínculo que permite ao worker saber de qual loja é o plano na hora de
+ * gerá-lo — sem ele o pedido nasce órfão e a entrega não tem o que fazer.
+ */
+const CHECKOUT_PLANO_SLUG = 'plano-correcao'
+
+/** URL do checkout novo para uma análise. */
+function urlDoCheckout(analysisId: string): string {
+  return `${PAGAR_PUBLIC_BASE}/c/${CHECKOUT_PLANO_SLUG}?a=${encodeURIComponent(analysisId)}`
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -220,7 +235,7 @@ Deno.serve(async (req) => {
       if (res.ok) {
         const linhas = (await res.json()) as ReceivableRecord[]
         if (linhas[0]) {
-          paymentUrl = `${PAGAR_PUBLIC_BASE}/pagar/${linhas[0].payment_token}`
+          paymentUrl = urlDoCheckout(analysisId)
         }
       } else {
         console.error(
@@ -426,7 +441,11 @@ Deno.serve(async (req) => {
   // porque o comprador está olhando o checkout neste exato instante.)
 
   const paymentToken = crypto.randomUUID()
-  const paymentUrl = `${PAGAR_PUBLIC_BASE}/pagar/${paymentToken}`
+  // O recebível continua sendo criado (o painel e a contabilidade contam com
+  // ele), mas quem cobra agora é o checkout próprio: a página de /pagar é o
+  // fluxo antigo, com o Brick do Mercado Pago e sem os selos, o desconto no
+  // Pix e o cartão em Secure Fields que o checkout novo já tem no ar.
+  const paymentUrl = urlDoCheckout(analysisId)
 
   const recebivelRes = await fetch(`${restBase}/receivables`, {
     method: 'POST',

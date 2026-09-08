@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CircleSlash, Hourglass, Loader2 } from 'lucide-react'
@@ -100,6 +100,13 @@ interface CupomAplicado {
 
 export default function CheckoutPage() {
   const { slug } = useParams<{ slug: string }>()
+  const [parametrosDaUrl] = useSearchParams()
+  // O funil do Scan manda a pessoa para /c/<slug>?a=<analysis_id>. É esse
+  // valor que amarra o pedido ao Raio-X da loja: sem ele o worker não sabe
+  // de qual loja é o Plano de Correção e a entrega não tem o que gerar.
+  // Quem compra por link direto não tem análise, e isso é normal.
+  const analysisId = parametrosDaUrl.get('a')?.trim() || null
+  const origem = parametrosDaUrl.get('origem')?.trim() || (analysisId ? 'scan' : null)
   const navegar = useNavigate()
   const semMovimento = useReducedMotion()
 
@@ -277,6 +284,8 @@ export default function CheckoutPage() {
         bump: bumpMarcado,
         cupom: cupom?.codigo ?? null,
         cardTokenSalvar,
+        analysisId,
+        origem,
       })
 
       if (resposta.pedidoId) setPedidoId(resposta.pedidoId)

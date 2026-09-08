@@ -190,6 +190,20 @@ export interface PedidoRequisicao {
    * acessório: sem ele a venda passa igual, só o upsell perde o caminho curto.
    */
   cardTokenSalvar: string | null
+  /**
+   * Análise do Scan que originou a compra, lida de `?a=` na URL.
+   *
+   * É ela que amarra o pedido ao Raio-X: sem isso o worker não sabe de qual
+   * loja é o plano, e a entrega do Plano de Correção não tem o que gerar. A
+   * `checkout-pagar` grava em `pedidos.analysis_id`.
+   *
+   * A venda acontece mesmo sem ele — quem compra por link direto não tem
+   * análise, e recusar o pagamento por falta de um parâmetro de rastreio seria
+   * trocar dinheiro por rigor.
+   */
+  analysisId: string | null
+  /** De onde veio a compra ('scan', 'bio'...), para separar faturamento. */
+  origem: string | null
 }
 
 function lerRespostaPagamento(corpo: Registro): RespostaPagamento {
@@ -218,6 +232,8 @@ export async function pagarCheckout(
       ...(pedido.cardTokenSalvar
         ? { card_token_salvar: pedido.cardTokenSalvar }
         : {}),
+      ...(pedido.analysisId ? { analysis_id: pedido.analysisId } : {}),
+      ...(pedido.origem ? { origem: pedido.origem } : {}),
     },
   })
 
