@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { Bloco, inputClass, labelClass } from '../produtos/formUi'
 import type { Depoimento } from './checkoutsData'
+import FotoDepoimentoCampo from './FotoDepoimentoCampo'
 
 interface Props {
   depoimentos: readonly Depoimento[]
@@ -9,7 +10,13 @@ interface Props {
   onSelos: (lista: string[]) => void
 }
 
-const DEPOIMENTO_VAZIO: Depoimento = { nome: '', texto: '', nota: null, loja: null }
+const DEPOIMENTO_VAZIO: Depoimento = {
+  nome: '',
+  texto: '',
+  nota: null,
+  loja: null,
+  fotoUrl: null,
+}
 
 const NOTAS = [1, 2, 3, 4, 5] as const
 
@@ -48,6 +55,12 @@ export default function ProvaEditor({
             key={index}
             className="flex flex-col gap-3 rounded-lg border border-white/5 bg-surface-1 p-4"
           >
+            <FotoDepoimentoCampo
+              valor={depoimento.fotoUrl}
+              onChange={(url) => alterar(index, 'fotoUrl', url)}
+              posicao={index + 1}
+            />
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5">
                 <span className={labelClass}>Nome</span>

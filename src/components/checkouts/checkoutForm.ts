@@ -192,6 +192,11 @@ export const checkoutSchema = z
         texto: z.string(),
         nota: z.number().int().min(1).max(5).nullable(),
         loja: z.string().nullable(),
+        // Sem validação de formato: a URL não é digitada, vem do upload que já
+        // conferiu tipo e tamanho. O campo está aqui para sobreviver ao
+        // `parse` — fora do schema, o zod o descartaria e a foto sumiria ao
+        // salvar, sem erro nenhum.
+        fotoUrl: z.string().nullable(),
       })
     ),
     selos: z.array(z.string()),
@@ -248,6 +253,9 @@ export function limparProva(
         texto: d.texto.trim(),
         nota: d.nota,
         loja: d.loja === null || d.loja.trim() === '' ? null : d.loja.trim(),
+        // A foto acompanha o depoimento sem passar pelo schema do formulário:
+        // ela já é uma URL nossa, gerada pelo upload, e nunca digitada.
+        fotoUrl: d.fotoUrl,
       })),
     selos: selos.map((s) => s.trim()).filter((s) => s !== ''),
   }

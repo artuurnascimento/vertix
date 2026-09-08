@@ -144,13 +144,13 @@ describe('limparProva', () => {
   it('descarta depoimento sem texto e selo em branco', () => {
     const prova = limparProva(
       [
-        { nome: 'Ana', texto: ' Vendi mais. ', nota: 5, loja: ' Loja Ana ' },
-        { nome: 'Vazio', texto: '   ', nota: null, loja: null },
+        { nome: 'Ana', texto: ' Vendi mais. ', nota: 5, loja: ' Loja Ana ' , fotoUrl: null},
+        { nome: 'Vazio', texto: '   ', nota: null, loja: null , fotoUrl: null},
       ],
       ['Compra segura', '   ']
     )
     expect(prova.depoimentos).toEqual([
-      { nome: 'Ana', texto: 'Vendi mais.', nota: 5, loja: 'Loja Ana' },
+      { nome: 'Ana', texto: 'Vendi mais.', nota: 5, loja: 'Loja Ana' , fotoUrl: null},
     ])
     expect(prova.selos).toEqual(['Compra segura'])
   })
@@ -172,7 +172,7 @@ describe('parseProva', () => {
       selos: ['Selo', 3],
     })
     expect(prova.depoimentos).toEqual([
-      { nome: 'Ana', texto: 'Boa', nota: null, loja: null },
+      { nome: 'Ana', texto: 'Boa', nota: null, loja: null , fotoUrl: null},
     ])
     expect(prova.selos).toEqual(['Selo'])
   })
@@ -196,11 +196,11 @@ describe('checkoutFormToPayload', () => {
   it('grava a prova já limpa', () => {
     const payload = checkoutFormToPayload({
       ...VALIDO,
-      depoimentos: [{ nome: 'Ana', texto: 'Ótimo', nota: null, loja: '' }],
+      depoimentos: [{ nome: 'Ana', texto: 'Ótimo', nota: null, loja: '' , fotoUrl: null}],
       selos: ['Compra segura'],
     })
     expect(payload.prova).toEqual({
-      depoimentos: [{ nome: 'Ana', texto: 'Ótimo', nota: null, loja: null }],
+      depoimentos: [{ nome: 'Ana', texto: 'Ótimo', nota: null, loja: null , fotoUrl: null}],
       selos: ['Compra segura'],
     })
   })

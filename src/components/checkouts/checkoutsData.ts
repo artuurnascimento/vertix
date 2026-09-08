@@ -18,6 +18,15 @@ export interface Depoimento {
   nota: number | null
   /** Loja/empresa de quem deu o depoimento. Opcional. */
   loja: string | null
+  /**
+   * Foto de perfil, já encolhida e hospedada por nós. `null` = sem foto, e a
+   * página simplesmente não desenha o círculo.
+   *
+   * O nome do campo é o mesmo que a página pública lê (`fotoUrl`); o leitor de
+   * lá ainda aceita `foto_url`, `foto` e `avatar_url`, para não quebrar prova
+   * que tenha sido escrita à mão por SQL.
+   */
+  fotoUrl: string | null
 }
 
 export interface Prova {
@@ -97,6 +106,14 @@ export function parseProva(bruto: unknown): Prova {
         texto,
         nota: nota !== null && nota >= 1 && nota <= 5 ? nota : null,
         loja: textoOuNull(item.loja),
+        // Os três nomes alternativos são os mesmos que a página pública
+        // aceita: prova gravada por SQL à mão costuma usar `foto_url`, e
+        // divergir aqui faria a foto sumir ao reabrir o formulário.
+        fotoUrl:
+          textoOuNull(item.fotoUrl) ??
+          textoOuNull(item.foto_url) ??
+          textoOuNull(item.foto) ??
+          textoOuNull(item.avatar_url),
       },
     ]
   })

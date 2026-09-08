@@ -258,7 +258,11 @@ function lerDepoimento(bruto: unknown): DepoimentoCheckout | null {
     texto: textoDepoimento,
     loja: texto(bruto, 'loja', 'empresa', 'site'),
     nota: nota !== null && nota >= 1 && nota <= 5 ? nota : null,
-    fotoUrl: texto(bruto, 'foto_url', 'foto', 'avatar_url'),
+    // `fotoUrl` PRIMEIRO porque é o nome que o painel grava. Sem ele nesta
+    // lista, o lojista sobe a foto, salva, e ela nunca aparece na página —
+    // sem erro em lugar nenhum. Os outros três seguem aceitos para prova
+    // escrita à mão por SQL, que costuma vir em snake_case.
+    fotoUrl: texto(bruto, 'fotoUrl', 'foto_url', 'foto', 'avatar_url'),
   }
 }
 
