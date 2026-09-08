@@ -1,0 +1,189 @@
+/* ============================================================
+   Botão de pagar do checkout com Secure Fields (.vtx-btn-pagar)
+   ------------------------------------------------------------
+   Pele COPIADA de src/index.css, não movida: o bloco base
+   `#payment-brick button[type='submit']` (linhas 161-253) mais o
+   refinamento `.vtx-checkout #payment-brick button[type='submit']`
+   que hoje o sobrescreve na página /c/:slug. O Brick continua
+   vendendo com o CSS dele inteiro e intacto — nada lá foi apagado.
+
+   Por que os DOIS blocos e não só o primeiro: no checkout ao vivo o
+   cliente vê a soma dos dois. O gradiente animado, o contorno claro
+   interno e o brilho vêm do base; o retângulo de 14px, a altura de
+   58px e a seta vêm do refinamento. Copiar só o base entregaria uma
+   pílula que ninguém reconheceria como o botão do /c/:slug.
+
+   Duas diferenças deliberadas, ambas a favor:
+   1. Sem `!important`. Ele existia lá para vencer o CSS que o SDK do
+      Mercado Pago injeta DEPOIS da folha; aqui o botão é nosso e o
+      seletor de classe ganha sozinho.
+   2. Os nomes dos @keyframes são novos (`vtx-pagar-*`). Reusar
+      `vtx-btn-gradient`/`vtx-btn-shine`/`vtx-btn-fill` redefiniria as
+      animações do Brick a partir desta folha — e o Brick está vendendo.
+   ============================================================ */
+
+.vtx-btn-pagar {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* Folga à direita para o rótulo nunca encostar na seta do ::after. */
+  padding: 14px 46px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  background-color: #6c5bf2;
+  background-image: linear-gradient(180deg, #7b6bff 0%, #5b46e8 100%);
+  background-size: 180% 180%;
+  /* Contorno claro por DENTRO da borda — a assinatura do CTA da marca. */
+  outline: 2px solid #f4f4f0;
+  outline-offset: -3px;
+  box-shadow: 0 10px 24px -12px rgba(108, 91, 242, 0.75);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  cursor: pointer;
+  animation: vtx-pagar-gradiente 6s ease-in-out infinite;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.14s ease;
+}
+
+.vtx-btn-pagar__rotulo {
+  /* O rótulo troca de tamanho ao virar "Processando…"; centralizar o
+     conteúdo aqui evita o pulo de layout do botão inteiro. */
+  text-align: center;
+}
+
+.vtx-btn-pagar:not([disabled]):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+  box-shadow: 0 12px 28px -12px rgba(108, 91, 242, 0.9);
+}
+
+/* Anel de foco POR FORA, somado ao contorno claro que já existe por dentro:
+   o `outline` está ocupado desenhando a assinatura do botão, então o foco
+   usa sombra. Assim o teclado nunca fica sem indicação visível. */
+.vtx-btn-pagar:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(169, 158, 247, 0.9),
+    0 10px 24px -12px rgba(108, 91, 242, 0.75);
+}
+
+.vtx-btn-pagar[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Processando não é o mesmo que indisponível: o botão está trabalhando, e
+   apagá-lo faria parecer que o clique não pegou. */
+.vtx-btn-pagar[data-processando='sim'] {
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* Brilho que varre da esquerda pra direita de tempos em tempos. */
+.vtx-btn-pagar:not([disabled])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  animation: vtx-pagar-brilho 3.4s ease-in-out infinite;
+}
+
+/* Mesmo ::before, outro papel: a onda que preenche o botão enquanto a
+   cobrança está em curso. O texto do estado é DOM de verdade (o botão o
+   escreve), não `content` de CSS — leitor de tela não lê pseudo-elemento com
+   confiança e ninguém consegue selecionar aquilo. */
+.vtx-btn-pagar[data-processando='sim']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: auto;
+  background: rgba(255, 255, 255, 0.22);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: vtx-pagar-onda 1.1s ease-in-out infinite;
+}
+
+/* Seta à direita do rótulo. Desenhada por máscara, e não por `content: '→'`,
+   para nenhum leitor de tela anunciar um caractere solto dentro do botão.
+   Some durante o processamento: ali a mensagem é "espere", não "avance". */
+.vtx-btn-pagar:not([data-processando='sim'])::after {
+  content: '';
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  background: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+@keyframes vtx-pagar-gradiente {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes vtx-pagar-brilho {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+@keyframes vtx-pagar-onda {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vtx-btn-pagar {
+    animation: none;
+    transition: none;
+  }
+  .vtx-btn-pagar:not([disabled]):hover {
+    transform: none;
+  }
+  .vtx-btn-pagar:not([disabled])::before {
+    animation: none;
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  /* Sem pulso: o preenchimento fica parado e discreto, e quem informa o
+     estado é o texto do botão. */
+  .vtx-btn-pagar[data-processando='sim']::before {
+    animation: none;
+    transform: scaleX(1);
+    opacity: 0.15;
+  }
+}

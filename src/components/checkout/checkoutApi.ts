@@ -25,7 +25,16 @@ import { supabase } from '../../lib/supabase'
 import { normalizarCheckout, type CheckoutInfo } from './checkoutTypes'
 
 /** Public Key do Mercado Pago: pública por definição (identifica a conta no
- *  SDK do navegador). O Access Token continua só nas edge functions. */
+ *  SDK do navegador). O Access Token continua só nas edge functions.
+ *
+ *  CONSTANTE, sem override por env, e isso é deliberado: quem lê esta chave é
+ *  o Payment Brick, que serve TODO o tráfego. Uma env `TEST-...` publicada
+ *  aqui para experimentar o formulário novo faria o Brick tokenizar contra a
+ *  conta de teste e RECUSAR TODO CARTÃO REAL — e `?sf=0` não resgataria,
+ *  porque a env é resolvida no build, não na URL.
+ *
+ *  O caminho novo (Secure Fields) tem a própria env, isolada, em
+ *  `campos/mpInstancia.ts`. */
 export const MP_PUBLIC_KEY = 'APP_USR-53c10a53-70e6-4c45-90eb-cc3472aa51dd'
 
 export interface ClienteCheckout {

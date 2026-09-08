@@ -24,6 +24,7 @@ import {
   type CampoCliente,
   type ErrosCliente,
 } from '../../components/checkout/clienteForm'
+import { usarFormularioNovo } from '../../components/checkout/flagFormularioNovo'
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
 import BarraTotalMobile from '../../components/checkout/BarraTotalMobile'
@@ -117,6 +118,25 @@ export default function CheckoutPage() {
   // Desconto por método só existe no Pix; no cartão a taxa não deixa espaço.
   const descontoPixPercentual = info?.checkout.descontoPixPercentual ?? null
   const percentualDoMetodo = metodo === 'pix' ? descontoPixPercentual : null
+
+  /**
+   * O documento deixa de ser opcional quando se paga com cartão.
+   *
+   * Não é preferência de formulário: o `createCardToken` dos Secure Fields
+   * exige `identificationType` + `identificationNumber` para emitir o token, e
+   * sem token não existe cobrança. Quem deixasse em branco bateria no erro
+   * `214` do Mercado Pago, em inglês, depois de já ter digitado o cartão
+   * inteiro. Melhor pedir antes, com o rótulo dizendo que é obrigatório.
+   *
+   * Preso à flag de propósito. Este é o único ponto da migração que muda o
+   * PRODUTO — um campo obrigatório a mais na tela — e enquanto o Brick estiver
+   * servindo o tráfego ele continua coletando a identificação por conta
+   * própria. Com a flag desligada este booleano é, byte a byte, o
+   * `checkout.exigeDocumento` de hoje.
+   */
+  const exigeDocumento =
+    (info?.checkout.exigeDocumento ?? false) ||
+    (usarFormularioNovo() && metodo === 'cartao')
 
   const total = useMemo(() => {
     const previa = calcularTotal({
@@ -216,7 +236,7 @@ export default function CheckoutPage() {
   ) => {
     if (!info || !slug) return
 
-    const errosCliente = validarCliente(cliente, info.checkout.exigeDocumento)
+    const errosCliente = validarCliente(cliente, exigeDocumento)
     if (Object.keys(errosCliente).length > 0) {
       setErros(errosCliente)
       setErroPagamento('Confira seus dados acima antes de pagar.')
@@ -399,7 +419,7 @@ export default function CheckoutPage() {
               <DadosCliente
                 cliente={cliente}
                 erros={erros}
-                exigeDocumento={checkout.exigeDocumento}
+                exigeDocumento={exigeDocumento}
                 onChange={alterarCampo}
               />
             </div>
@@ -411,6 +431,7 @@ export default function CheckoutPage() {
               onMetodo={setMetodo}
               descontoPixPercentual={descontoPixPercentual}
               emailInicial={cliente.email}
+              documento={cliente.documento}
               processando={processando}
               erro={erroPagamento}
               onSubmit={enviarPagamento}
