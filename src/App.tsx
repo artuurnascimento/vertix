@@ -42,6 +42,7 @@ const TermosPage = lazy(() => import('./pages/public/TermosPage'))
 const PrivacidadePage = lazy(() => import('./pages/public/PrivacidadePage'))
 const Produtos = lazy(() => import('./pages/Produtos'))
 const Checkouts = lazy(() => import('./pages/Checkouts'))
+const Pedidos = lazy(() => import('./pages/Pedidos'))
 
 const SPLASH_SESSION_KEY = 'vx-splash-shown'
 
@@ -120,6 +121,7 @@ export default function App() {
           <Route path="propostas" element={<Propostas />} />
           <Route path="produtos" element={<Produtos />} />
           <Route path="checkouts" element={<Checkouts />} />
+          <Route path="pedidos" element={<Pedidos />} />
           <Route path="financeiro" element={<Financeiro />} />
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="contratos" element={<Contratos />} />

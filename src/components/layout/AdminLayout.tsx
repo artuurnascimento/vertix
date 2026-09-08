@@ -21,6 +21,7 @@ import {
   Package,
   Plus,
   Radar,
+  Receipt,
   ScanSearch,
   Settings,
   ShoppingCart,
@@ -79,6 +80,7 @@ const NAV_GROUPS = [
       { to: '/admin/lojas', label: 'Lojas', icon: Store, end: false },
       { to: '/admin/produtos', label: 'Produtos', icon: Boxes, end: false },
       { to: '/admin/checkouts', label: 'Checkouts', icon: ShoppingCart, end: false },
+      { to: '/admin/pedidos', label: 'Pedidos', icon: Receipt, end: false },
     ],
   },
   {
@@ -103,6 +105,7 @@ const SECTION_TITLES: Record<string, string> = {
   '/admin/lojas': 'Lojas',
   '/admin/produtos': 'Produtos',
   '/admin/checkouts': 'Checkouts',
+  '/admin/pedidos': 'Pedidos',
   '/admin/leads-raiox': 'Leads Raio-X',
   '/admin/scan': 'Vertix Scan',
   '/admin/bio': 'Link de bio',
