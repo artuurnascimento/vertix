@@ -1,5 +1,5 @@
-import { Lock } from 'lucide-react'
 import LogoMark from '../ui/LogoMark'
+import RodapeCheckout from './RodapeCheckout'
 
 /** Escada da marca, impressa de lado no canto do desktop. Puro enfeite. */
 const PALAVRAS_VERTICAIS = 'ANALISAR / CORRIGIR / EVOLUIR / VENDER MAIS'
@@ -65,58 +65,7 @@ export default function CheckoutShell({
 
         {children}
 
-        <footer className="mt-12 border-t border-white/[0.06] pt-6 text-[11px] font-light text-muted/80">
-          <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
-            <span className="flex items-center gap-2">
-              <LogoMark className="h-4 w-4" />
-              <span className="text-[10px] font-semibold tracking-[0.3em] text-muted">
-                VERTIX
-              </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Lock aria-hidden className="h-3 w-3 text-accent" />
-              Ambiente seguro · dados criptografados
-            </span>
-            <span>
-              Dúvidas?{' '}
-              <a
-                href="mailto:contato@vertix.studio"
-                className="text-accent underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-              >
-                contato@vertix.studio
-              </a>
-            </span>
-          </div>
-          {/* Aceite dos termos — exigência da LGPD e do Código de Defesa do
-              Consumidor: quem compra precisa saber com quem está contratando,
-              quem processa o pagamento e onde ler as regras. Fica só aqui, e
-              não repetido junto do botão: uma declaração, um lugar. */}
-          <p className="mt-5 text-center text-xs leading-relaxed text-muted">
-            Ao prosseguir, você concorda com os{' '}
-            <a
-              href="/termos"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-ink underline decoration-white/25 underline-offset-2 transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              Termos de uso
-            </a>{' '}
-            e a{' '}
-            <a
-              href="/privacidade"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-ink underline decoration-white/25 underline-offset-2 transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              Política de Privacidade
-            </a>{' '}
-            da Vertix Studio.
-          </p>
-          <p className="mt-1.5 text-center text-[11px] text-muted/80">
-            Pagamento processado pelo Mercado Pago · Vertix Studio · CNPJ
-            54.203.421/0001-49
-          </p>
-        </footer>
+        <RodapeCheckout comAceite />
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
+import RodapeCheckout from '../checkout/RodapeCheckout'
 
 /**
  * Moldura das telas públicas pós-compra. Mesmo enquadramento da página de
@@ -62,21 +63,18 @@ export function Entrada({
 }
 
 /** Rodapé institucional idêntico ao da página de pagamento. */
+/**
+ * Rodapé da confirmação e do upsell — o MESMO do checkout.
+ *
+ * Antes era um rodapé próprio, com apenas o e-mail de contato e o CNPJ. O
+ * efeito é que a compra começava numa página com marca, selo de ambiente
+ * seguro e as regras à mão, e terminava numa visivelmente mais pobre — logo
+ * onde a pessoa mais procura suporte e quer reler o que contratou.
+ *
+ * O nome se manteve para não mexer nas duas páginas que já o importam.
+ * `comAceite` fica de fora: aqui a compra já aconteceu, e pedir aceite de quem
+ * já pagou sugere uma pendência que não existe.
+ */
 export function RodapeVertix() {
-  return (
-    <footer className="mt-10 flex flex-col items-center gap-1.5 text-center text-xs font-light text-muted">
-      <p>
-        Precisa de ajuda com o seu pedido?{' '}
-        <a
-          href="mailto:contato@vertix.studio"
-          className="rounded text-accent underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          contato@vertix.studio
-        </a>
-      </p>
-      <p className="text-[11px] text-muted/80">
-        Vertix Studio · CNPJ 54.203.421/0001-49
-      </p>
-    </footer>
-  )
+  return <RodapeCheckout />
 }
