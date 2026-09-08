@@ -61,12 +61,40 @@ export function useCheckoutInfo(slug: string | undefined) {
  * acontecer é tratar "não sei" como "tem cartão salvo" — por isso o null
  * propaga e a página de upsell interpreta ausência como "sem cartão".
  */
-export function useStatusPedido(pedidoId: string | undefined) {
+/** De quanto em quanto tempo reconsultar enquanto o pagamento não fecha. */
+const INTERVALO_PENDENTE_MS = 8_000
+
+/**
+ * @param acompanhar Reconsulta sozinho enquanto o pedido não estiver pago.
+ *   Existe para a confirmação de um Pix: a pessoa paga no app do banco com a
+ *   página aberta ao lado, e sem isso ficaria olhando "aguardando" para
+ *   sempre, mesmo depois de o dinheiro cair. A `checkout-info` já pergunta ao
+ *   Mercado Pago quando o pedido está aguardando, então cada consulta traz o
+ *   estado real, e não uma cópia velha do nosso banco.
+ *
+ *   Desligado por padrão porque a página de upsell lê o status uma vez só,
+ *   para decidir se oferece o cartão salvo — repetir ali seria consulta à toa.
+ */
+export function useStatusPedido(
+  pedidoId: string | undefined,
+  acompanhar = false
+) {
   return useQuery({
     queryKey: ['checkout-status-pedido', pedidoId],
     enabled: Boolean(pedidoId),
     retry: false,
-    staleTime: 60_000,
+    // Sem cache enquanto acompanha: com `staleTime` alto o refetch devolveria
+    // o valor guardado, e a tela nunca sairia de "aguardando".
+    staleTime: acompanhar ? 0 : 60_000,
+    refetchInterval: (query) => {
+      if (!acompanhar) return false
+      const status = query.state.data?.status
+      // Para de perguntar assim que existe desfecho: pago, recusado e
+      // reembolsado não voltam atrás.
+      return status === 'aguardando' || status === undefined || status === null
+        ? INTERVALO_PENDENTE_MS
+        : false
+    },
     queryFn: async (): Promise<StatusPedido | null> => {
       try {
         const { data, error } = await supabase.functions.invoke(

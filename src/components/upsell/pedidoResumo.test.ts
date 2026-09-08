@@ -3,6 +3,7 @@ import {
   ehPlanoDeCorrecao,
   montarResumo,
   planoScanUrl,
+  situacaoDoPedido,
   somarTotal,
   temCartaoSalvo,
 } from './pedidoResumo'
@@ -159,5 +160,42 @@ describe('temCartaoSalvo', () => {
     expect(temCartaoSalvo(null)).toBe(false)
     expect(temCartaoSalvo(undefined)).toBe(false)
     expect(temCartaoSalvo({})).toBe(false)
+  })
+})
+
+describe('situacaoDoPedido', () => {
+  /*
+   * O bug que estes testes existem para impedir: a confirmação anunciava
+   * "Compra confirmada" para QUALQUER pedido, inclusive um Pix gerado e nunca
+   * pago. A pessoa fechava o código achando que tinha terminado, o produto não
+   * chegava, e uma venda pendente virava reclamação de quem tinha certeza de
+   * ter pago.
+   */
+  test('só um pagamento confirmado autoriza dizer que está pago', () => {
+    expect(situacaoDoPedido('pago')).toBe('pago')
+    expect(situacaoDoPedido('aprovado')).toBe('pago')
+  })
+
+  test('Pix gerado e não pago fica AGUARDANDO, nunca confirmado', () => {
+    expect(situacaoDoPedido('aguardando')).toBe('aguardando')
+    expect(situacaoDoPedido('pendente')).toBe('aguardando')
+  })
+
+  test('recusa e reembolso têm cara própria', () => {
+    expect(situacaoDoPedido('recusado')).toBe('recusado')
+    expect(situacaoDoPedido('rejeitado')).toBe('recusado')
+    expect(situacaoDoPedido('reembolsado')).toBe('reembolsado')
+  })
+
+  test.each([undefined, null, '', '   ', 'qualquer-coisa'])(
+    'sem status confiável (%j) não afirma pagamento',
+    (valor) => {
+      expect(situacaoDoPedido(valor)).toBe('desconhecido')
+    }
+  )
+
+  test('não se importa com caixa nem espaço em volta', () => {
+    expect(situacaoDoPedido('  PAGO  ')).toBe('pago')
+    expect(situacaoDoPedido('Aguardando')).toBe('aguardando')
   })
 })

@@ -47,6 +47,15 @@ export interface UpsellAceito {
  * "não sei" nunca pode ser lido como "sim" (ver temCartaoSalvo).
  */
 export interface StatusPedido {
+  /**
+   * Situação do pagamento: 'aguardando', 'pago', 'recusado' ou 'reembolsado'.
+   *
+   * A `checkout-info` sempre devolveu este campo — ela inclusive consulta o
+   * Mercado Pago quando o pedido está aguardando — mas ele não estava
+   * declarado aqui, então a confirmação nunca o leu e anunciava "compra
+   * confirmada" para todo mundo, inclusive para quem gerou um Pix e não pagou.
+   */
+  status?: string | null
   email?: string | null
   total_centavos?: number | null
   itens?: ReadonlyArray<{
@@ -189,6 +198,41 @@ const ROTULOS: Record<TipoItem, string> = {
   principal: 'Produto',
   bump: 'Item adicional',
   upsell: 'Adicionado depois',
+}
+
+/** O que a tela de confirmação deve afirmar sobre o pagamento. */
+export type SituacaoPedido =
+  | 'pago'
+  | 'aguardando'
+  | 'recusado'
+  | 'reembolsado'
+  /** O servidor não respondeu. Não sabemos, e não podemos fingir que sabemos. */
+  | 'desconhecido'
+
+/**
+ * Traduz o status do servidor para o que a tela pode AFIRMAR.
+ *
+ * A regra que importa: só `'pago'` autoriza dizer que a compra está
+ * confirmada. Qualquer outra coisa — inclusive silêncio do servidor — cai em
+ * um texto que não promete pagamento nenhum.
+ *
+ * Dizer "compra confirmada" para quem não pagou é a pior falha possível nesta
+ * tela: a pessoa fecha o Pix achando que terminou, o produto nunca chega, e o
+ * que era uma venda pendente vira uma reclamação de quem tem certeza de que
+ * pagou.
+ */
+export function situacaoDoPedido(
+  status: string | null | undefined
+): SituacaoPedido {
+  const limpo = typeof status === 'string' ? status.trim().toLowerCase() : ''
+
+  // 'aprovado' aparece no vocabulário da resposta de pagamento; 'pago' é o do
+  // banco. Os dois querem dizer a mesma coisa e os dois precisam ser aceitos.
+  if (limpo === 'pago' || limpo === 'aprovado') return 'pago'
+  if (limpo === 'aguardando' || limpo === 'pendente') return 'aguardando'
+  if (limpo === 'recusado' || limpo === 'rejeitado') return 'recusado'
+  if (limpo === 'reembolsado') return 'reembolsado'
+  return 'desconhecido'
 }
 
 export function rotuloDoTipo(tipo: TipoItem): string {
