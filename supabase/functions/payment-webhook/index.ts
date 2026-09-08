@@ -272,6 +272,12 @@ Deno.serve(async (req) => {
         status: 'pago',
         pago_em: new Date().toISOString().slice(0, 10),
         forma_pagamento: 'mercado_pago',
+        // Sem o id do pagamento no Mercado Pago não existe reembolso: a API de
+        // estorno é POST /v1/payments/{id}/refunds, e este é o único momento em
+        // que esse id passa por aqui. A coluna existe desde a migration de
+        // cobrança e ficou nula em TODAS as vendas até agora — o que deixou
+        // cada uma delas sem como ser estornada pelo sistema.
+        gateway_payment_id: String(payment.id),
       }),
     }
   )
