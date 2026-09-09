@@ -12,6 +12,14 @@ interface Props {
   cliente: ClienteCheckout
   erros: ErrosCliente
   exigeDocumento: boolean
+  /**
+   * Nome, e-mail e WhatsApp chegaram prontos da análise do Scan.
+   *
+   * Muda só o texto: campo que aparece cheio sem explicação parece defeito do
+   * navegador — ou, pior, dado de outra pessoa. Quem está com o cartão na mão
+   * precisa saber de onde veio aquilo, em uma linha.
+   */
+  preenchido?: boolean
   onChange: (campo: CampoCliente, valor: string) => void
 }
 
@@ -27,6 +35,7 @@ export default function DadosCliente({
   cliente,
   erros,
   exigeDocumento,
+  preenchido = false,
   onChange,
 }: Props) {
   return (
@@ -35,7 +44,9 @@ export default function DadosCliente({
       titulo="Seus dados"
       aside={
         <span className="text-xs font-light text-muted/80">
-          Usaremos seus dados apenas para o acesso.
+          {preenchido
+            ? 'Preenchemos com o que você informou na análise.'
+            : 'Usaremos seus dados apenas para o acesso.'}
         </span>
       }
     >
@@ -86,6 +97,9 @@ export default function DadosCliente({
           erro={erros.documento}
           placeholder="000.000.000-00"
           icone={<IdCard className="h-4 w-4" />}
+          dica={
+            preenchido ? 'É o único dado que a análise não pediu.' : undefined
+          }
           mascara={mascararDocumento}
           onChange={onChange}
         />

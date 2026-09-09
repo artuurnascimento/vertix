@@ -1967,6 +1967,7 @@ export type Database = {
       get_contract_by_token: { Args: { p_token: string }; Returns: Json }
       get_nps_by_token: { Args: { p_token: string }; Returns: Json }
       get_checkout_info: { Args: { p_slug: string }; Returns: Json }
+      get_checkout_prefill: { Args: { p_token: string }; Returns: Json }
       get_payment_info: { Args: { p_token: string }; Returns: Json }
       get_pedido_info: { Args: { p_pedido_id: string }; Returns: Json }
       get_portal_ads: { Args: { p_token: string }; Returns: Json }

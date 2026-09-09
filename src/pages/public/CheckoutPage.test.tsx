@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import CheckoutPage from './CheckoutPage'
 import type { CheckoutInfo } from '../../components/checkout/checkoutTypes'
 import { pagarCheckout } from '../../components/checkout/checkoutApi'
+import { buscarPrefill } from '../../components/checkout/prefillCliente'
 
 /**
  * O único ponto desta migração que muda o PRODUTO: com o formulário novo, o
@@ -72,6 +73,18 @@ vi.mock('../../components/checkout/checkoutApi', () => ({
  * Dublê da seção de pagamento. Expõe os dois fios que a página controla: a
  * troca de método e o envio — cada um num botão, para o teste poder puxá-los.
  */
+/**
+ * Só a busca entra dublada. `tokenValido` continua o de verdade: ele é quem
+ * decide se a chamada acontece, e um dublê aqui apagaria justamente o teste
+ * de que URL torta não vira requisição.
+ */
+vi.mock('../../components/checkout/prefillCliente', async (importarReal) => {
+  const real = await importarReal<
+    typeof import('../../components/checkout/prefillCliente')
+  >()
+  return { ...real, buscarPrefill: vi.fn() }
+})
+
 vi.mock('../../components/checkout/SecaoPagamento', () => ({
   default: (props: {
     erro: string | null
@@ -404,5 +417,162 @@ describe('análise de origem na URL', () => {
     const enviado = vi.mocked(pagarCheckout).mock.calls[0][0]
     expect(enviado.analysisId).toBeNull()
     expect(enviado.origem).toBeNull()
+  })
+})
+
+/**
+ * Preenchimento vindo da análise do Scan.
+ *
+ * Quem compra o Plano de Correção já entregou nome, e-mail e WhatsApp no
+ * portão da análise profunda. O checkout recebe o payment_token em `?t=` e
+ * devolve esses três campos prontos — do comprador sobra o CPF e o cartão.
+ *
+ * O teste que mais importa aqui é o do "não sobrescreve": a resposta é
+ * assíncrona, e uma que chegue tarde reescreveria por cima do que a pessoa já
+ * corrigiu. Não daria erro nenhum — o campo simplesmente voltaria ao valor
+ * antigo, e a cobrança sairia com o dado errado.
+ */
+describe('CheckoutPage — dados que vêm da análise', () => {
+  const TOKEN = '2f1c0a5e-7c3b-4a90-9c1d-6b0f5a8e4d21'
+  const DA_ANALISE = {
+    nome: 'Ana Souza',
+    email: 'ana@loja.com.br',
+    whatsapp: '(62) 99999-8888',
+  }
+  const AVISO = 'Preenchemos com o que você informou na análise.'
+  /** CPF com dígitos verificadores válidos — o formulário confere. */
+  const CPF = '52998224725'
+
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+    buscarCheckout.mockResolvedValue(INFO)
+    vi.mocked(buscarPrefill).mockResolvedValue(DA_ANALISE)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.clearAllMocks()
+    window.history.replaceState({}, '', '/')
+  })
+
+  /** Valor atual de um campo do formulário, pelo rótulo. */
+  function campo(rotulo: string): HTMLInputElement {
+    return screen.getByLabelText(rotulo) as HTMLInputElement
+  }
+
+  it('preenche nome, e-mail e WhatsApp com o token da compra', async () => {
+    renderizar(`?a=${TOKEN}&t=${TOKEN}`)
+    await esperarForm()
+
+    await waitFor(() => expect(campo('Nome completo').value).toBe('Ana Souza'))
+    expect(campo('E-mail').value).toBe('ana@loja.com.br')
+    expect(campo('WhatsApp').value).toBe('(62) 99999-8888')
+    expect(vi.mocked(buscarPrefill)).toHaveBeenCalledWith(TOKEN)
+  })
+
+  it('deixa só o CPF em branco — é o que a análise não pediu', async () => {
+    renderizar(`?t=${TOKEN}`)
+    await esperarForm()
+
+    await waitFor(() => expect(campo('Nome completo').value).toBe('Ana Souza'))
+    // Obrigatório, porque o padrão é cartão em Secure Fields — e é o único
+    // campo que ainda espera alguém digitar.
+    expect(campo(ROTULO_OBRIGATORIO).value).toBe('')
+    expect(
+      screen.getByText('É o único dado que a análise não pediu.')
+    ).toBeInTheDocument()
+  })
+
+  it('explica de onde vieram os dados', async () => {
+    // Campo cheio sem explicação parece autofill errado do navegador — e num
+    // formulário de pagamento isso é motivo para desconfiar e sair.
+    renderizar(`?t=${TOKEN}`)
+    await esperarForm()
+
+    await waitFor(() => expect(screen.getByText(AVISO)).toBeInTheDocument())
+  })
+
+  it('sem token na URL, não busca nada e o aviso não aparece', async () => {
+    renderizar()
+    await esperarForm()
+
+    expect(vi.mocked(buscarPrefill)).not.toHaveBeenCalled()
+    expect(campo('Nome completo').value).toBe('')
+    expect(screen.queryByText(AVISO)).not.toBeInTheDocument()
+  })
+
+  it('token de forma inválida não vira chamada', async () => {
+    renderizar('?t=colado-torto')
+    await esperarForm()
+
+    expect(vi.mocked(buscarPrefill)).not.toHaveBeenCalled()
+  })
+
+  it('compra sem prefill (token velho) segue com o formulário vazio', async () => {
+    vi.mocked(buscarPrefill).mockResolvedValue(null)
+
+    renderizar(`?t=${TOKEN}`)
+    await esperarForm()
+
+    await waitFor(() => expect(vi.mocked(buscarPrefill)).toHaveBeenCalled())
+    expect(campo('Nome completo').value).toBe('')
+    expect(screen.queryByText(AVISO)).not.toBeInTheDocument()
+  })
+
+  it('resposta atrasada NÃO apaga o que a pessoa já digitou', async () => {
+    let responder: (dados: typeof DA_ANALISE) => void = () => {}
+    vi.mocked(buscarPrefill).mockReturnValue(
+      new Promise((resolve) => {
+        responder = resolve
+      })
+    )
+
+    renderizar(`?t=${TOKEN}`)
+    await esperarForm()
+
+    await userEvent.type(campo('E-mail'), 'outro@meu.com.br')
+    responder(DA_ANALISE)
+
+    // O e-mail digitado fica; os campos que estavam vazios, esses sim, entram.
+    await waitFor(() => expect(campo('Nome completo').value).toBe('Ana Souza'))
+    expect(campo('E-mail').value).toBe('outro@meu.com.br')
+  })
+
+  it('paga com os dados preenchidos sem a pessoa tocar neles', async () => {
+    vi.mocked(pagarCheckout).mockResolvedValue({
+      pedidoId: 'ped-1',
+      status: 'aprovado',
+      totalCentavos: 19700,
+      pix: null,
+      cartaoSalvo: null,
+      erro: null,
+      mensagem: null,
+    })
+
+    renderizar(`?a=${TOKEN}&t=${TOKEN}`)
+    await esperarForm()
+    await waitFor(() => expect(campo('Nome completo').value).toBe('Ana Souza'))
+
+    // Único campo digitado — é exatamente o que sobra para o comprador.
+    await userEvent.type(campo(ROTULO_OBRIGATORIO), CPF)
+    await userEvent.click(screen.getByRole('button', { name: 'pagar' }))
+
+    await waitFor(() => expect(vi.mocked(pagarCheckout)).toHaveBeenCalled())
+    // `clienteParaEnvio` limpa a máscara: o servidor recebe só os dígitos.
+    expect(vi.mocked(pagarCheckout).mock.calls[0][0].cliente).toEqual({
+      nome: 'Ana Souza',
+      email: 'ana@loja.com.br',
+      whatsapp: '62999998888',
+      documento: CPF,
+    })
   })
 })

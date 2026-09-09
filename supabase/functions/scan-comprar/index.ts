@@ -76,9 +76,25 @@ const PAGAR_PUBLIC_BASE = 'https://pay.vertix.studio'
  */
 const CHECKOUT_PLANO_SLUG = 'plano-correcao'
 
-/** URL do checkout novo para uma análise. */
-function urlDoCheckout(analysisId: string): string {
-  return `${PAGAR_PUBLIC_BASE}/c/${CHECKOUT_PLANO_SLUG}?a=${encodeURIComponent(analysisId)}`
+/**
+ * URL do checkout novo para uma análise.
+ *
+ * O `t` é o payment_token do recebível, e serve para o checkout devolver ao
+ * comprador o nome, o e-mail e o WhatsApp que ele já digitou no portão da
+ * análise (RPC get_checkout_prefill) — assim sobra para ele só o CPF e o
+ * cartão.
+ *
+ * Vai o TOKEN, e não o analysis_id, porque o id da análise também está no link
+ * do relatório, que o lojista encaminha para sócio e agência; o token só
+ * existe nesta URL. Sem token, o checkout abre com o formulário vazio, que é
+ * o comportamento de antes.
+ */
+function urlDoCheckout(
+  analysisId: string,
+  paymentToken: string | null
+): string {
+  const base = `${PAGAR_PUBLIC_BASE}/c/${CHECKOUT_PLANO_SLUG}?a=${encodeURIComponent(analysisId)}`
+  return paymentToken ? `${base}&t=${encodeURIComponent(paymentToken)}` : base
 }
 
 const UUID_RE =
@@ -235,7 +251,9 @@ Deno.serve(async (req) => {
       if (res.ok) {
         const linhas = (await res.json()) as ReceivableRecord[]
         if (linhas[0]) {
-          paymentUrl = urlDoCheckout(analysisId)
+          // Mesmo token da primeira vez: quem clica de novo cai no mesmo
+          // checkout, com o formulário preenchido igual.
+          paymentUrl = urlDoCheckout(analysisId, linhas[0].payment_token)
         }
       } else {
         console.error(
@@ -445,7 +463,7 @@ Deno.serve(async (req) => {
   // ele), mas quem cobra agora é o checkout próprio: a página de /pagar é o
   // fluxo antigo, com o Brick do Mercado Pago e sem os selos, o desconto no
   // Pix e o cartão em Secure Fields que o checkout novo já tem no ar.
-  const paymentUrl = urlDoCheckout(analysisId)
+  const paymentUrl = urlDoCheckout(analysisId, paymentToken)
 
   const recebivelRes = await fetch(`${restBase}/receivables`, {
     method: 'POST',

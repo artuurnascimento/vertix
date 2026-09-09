@@ -25,6 +25,10 @@ import {
   type ErrosCliente,
 } from '../../components/checkout/clienteForm'
 import { usarFormularioNovo } from '../../components/checkout/flagFormularioNovo'
+import {
+  buscarPrefill,
+  tokenValido,
+} from '../../components/checkout/prefillCliente'
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
 import BannerTopo from '../../components/checkout/BannerTopo'
@@ -107,6 +111,10 @@ export default function CheckoutPage() {
   // Quem compra por link direto não tem análise, e isso é normal.
   const analysisId = parametrosDaUrl.get('a')?.trim() || null
   const origem = parametrosDaUrl.get('origem')?.trim() || (analysisId ? 'scan' : null)
+  // `?t=` é o payment_token da cobrança aberta pela `scan-comprar`. Com ele o
+  // formulário volta preenchido com o que a pessoa já digitou no portão da
+  // análise. Link sem `t` (compra direta, link antigo) abre vazio, como antes.
+  const tokenPrefill = parametrosDaUrl.get('t')?.trim() || null
   const navegar = useNavigate()
   const semMovimento = useReducedMotion()
 
@@ -136,6 +144,42 @@ export default function CheckoutPage() {
     staleTime: 60_000,
     queryFn: () => buscarCheckout(slug ?? ''),
   })
+
+  /**
+   * Dados do comprador, para o formulário não pedir de novo o que ele já deu.
+   *
+   * Não trava nada: `retry: false` e a busca devolve `null` em qualquer falha.
+   * Enquanto ela não responde, os campos ficam vazios e editáveis — ninguém
+   * espera por um preenchimento que é conveniência.
+   */
+  const { data: prefill } = useQuery({
+    queryKey: ['checkout-prefill', tokenPrefill],
+    enabled: tokenValido(tokenPrefill),
+    retry: false,
+    staleTime: Infinity,
+    queryFn: () => buscarPrefill(tokenPrefill ?? ''),
+  })
+
+  /**
+   * Aplica o preenchimento UMA vez, e só onde ainda não há nada digitado.
+   *
+   * As duas condições importam. Sem a primeira, o refetch do react-query (voltar
+   * para a aba, reconectar) reescreveria o formulário por cima; sem a segunda,
+   * uma resposta lenta chegaria depois de a pessoa já ter corrigido o telefone
+   * e desfaria a correção sem aviso — o campo volta ao valor antigo e ela paga
+   * sem perceber.
+   */
+  const prefillAplicado = useRef(false)
+  useEffect(() => {
+    if (!prefill || prefillAplicado.current) return
+    prefillAplicado.current = true
+    setCliente((atual) => ({
+      ...atual,
+      nome: atual.nome || prefill.nome,
+      email: atual.email || prefill.email,
+      whatsapp: atual.whatsapp || prefill.whatsapp,
+    }))
+  }, [prefill])
 
   // Desconto por método só existe no Pix; no cartão a taxa não deixa espaço.
   const descontoPixPercentual = info?.checkout.descontoPixPercentual ?? null
@@ -466,6 +510,7 @@ export default function CheckoutPage() {
                 cliente={cliente}
                 erros={erros}
                 exigeDocumento={exigeDocumento}
+                preenchido={prefill !== null && prefill !== undefined}
                 onChange={alterarCampo}
               />
             </div>
