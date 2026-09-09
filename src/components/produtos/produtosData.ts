@@ -11,7 +11,7 @@ import { catalogoSupabase, ehColunaAusente } from './catalogoSupabase'
 export const PRODUTO_TIPOS = ['principal', 'bump', 'upsell', 'downsell'] as const
 export type ProdutoTipo = (typeof PRODUTO_TIPOS)[number]
 
-export const PRODUTO_ENTREGAS = ['plano_scan', 'manual'] as const
+export const PRODUTO_ENTREGAS = ['plano_scan', 'manual', 'concorrentes_extra'] as const
 export type ProdutoEntrega = (typeof PRODUTO_ENTREGAS)[number]
 
 export const PRODUTO_TIPO_LABEL: Record<ProdutoTipo, string> = {
@@ -31,7 +31,18 @@ export const PRODUTO_TIPO_BADGE: Record<ProdutoTipo, string> = {
 export const PRODUTO_ENTREGA_LABEL: Record<ProdutoEntrega, string> = {
   plano_scan: 'Plano de Correção (Scan)',
   manual: 'Entrega manual',
+  concorrentes_extra: '+3 concorrentes no plano (Scan)',
 }
+
+/**
+ * Quantos concorrentes cada item de `concorrentes_extra` acrescenta ao bônus.
+ *
+ * Fica aqui e no worker (`CONCORRENTES_POR_UPSELL`), com o mesmo valor: é o
+ * catálogo que decide o que o produto entrega, e é o worker que decide quantos
+ * campos a página desenha. Trocar um sem o outro faz o cliente pagar por três
+ * e ver dois.
+ */
+export const CONCORRENTES_POR_UPSELL = 3
 
 export interface Produto {
   id: string
