@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import LogoMark from '../ui/LogoMark'
+import VertixCheckoutLogo from '../checkout/VertixCheckoutLogo'
 import RodapeCheckout from '../checkout/RodapeCheckout'
 
 /**
@@ -19,11 +19,14 @@ export function CheckoutShell({ children }: { children: ReactNode }) {
         className="app-ambient pointer-events-none fixed inset-0"
       />
       <div className="relative mx-auto w-full max-w-xl">
-        <header className="flex items-center justify-center gap-2.5">
-          <LogoMark className="h-7 w-7" />
-          <span className="text-sm font-semibold tracking-[0.35em] text-ink">
-            VERTIX
-          </span>
+        {/*
+          O lockup "VERTIX | CHECKOUT", o mesmo do cabeçalho da página de
+          pagamento. Aqui havia só o símbolo com a palavra VERTIX, e o efeito
+          era o comprador terminar a compra numa tela que não se identificava
+          como a mesma em que ele acabou de digitar o cartão.
+        */}
+        <header className="flex items-center justify-center">
+          <VertixCheckoutLogo symbolSize="clamp(24px, 6vw, 32px)" />
         </header>
         {children}
       </div>

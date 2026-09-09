@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import LogoMark from '../../components/ui/LogoMark'
+import VertixCheckoutLogo from '../../components/checkout/VertixCheckoutLogo'
 
 /**
  * Página de pagamento própria (alta conversão): resumo da cobrança à esquerda,
@@ -517,11 +517,13 @@ function Shell({
       <div
         className={`relative mx-auto w-full ${wide ? 'max-w-4xl' : 'max-w-xl'}`}
       >
-        <header className="flex items-center justify-center gap-2.5 md:justify-start">
-          <LogoMark className="h-7 w-7" />
-          <span className="text-sm font-semibold tracking-[0.35em] text-ink">
-            VERTIX
-          </span>
+        {/*
+          Tela de pagamento também é checkout: o lockup aqui é o mesmo de
+          /c/:slug e do pós-compra. Era o símbolo com a palavra VERTIX, e a
+          marca mudava de forma dependendo de por qual link o cliente entrou.
+        */}
+        <header className="flex items-center justify-center md:justify-start">
+          <VertixCheckoutLogo symbolSize="clamp(24px, 6vw, 32px)" />
         </header>
         {children}
       </div>

@@ -1,4 +1,4 @@
-import LogoMark from '../ui/LogoMark'
+import VertixCheckoutLogo from './VertixCheckoutLogo'
 import RodapeCheckout from './RodapeCheckout'
 
 /** Escada da marca, impressa de lado no canto do desktop. Puro enfeite. */
@@ -54,12 +54,14 @@ export default function CheckoutShell({
           estreito ? 'max-w-xl' : 'max-w-6xl'
         }`}
       >
+        {/*
+          Mesmo lockup do cabeçalho grande da página principal. Estas telas
+          (carregando, aviso, Pix) mostravam só o símbolo com a palavra VERTIX —
+          a marca trocava de forma no meio do próprio checkout.
+        */}
         {cabecalho && (
-          <header className="flex items-center justify-center gap-2.5">
-            <LogoMark className="h-6 w-6" />
-            <span className="text-xs font-semibold tracking-[0.35em] text-ink">
-              VERTIX
-            </span>
+          <header className="flex items-center justify-center">
+            <VertixCheckoutLogo symbolSize="clamp(22px, 5.5vw, 28px)" />
           </header>
         )}
 
