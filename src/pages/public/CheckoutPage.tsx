@@ -32,7 +32,6 @@ import {
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
 import BannerTopo from '../../components/checkout/BannerTopo'
-import BarraTotalMobile from '../../components/checkout/BarraTotalMobile'
 import CabecalhoCheckout from '../../components/checkout/CabecalhoCheckout'
 import CheckoutShell from '../../components/checkout/CheckoutShell'
 import Cronometro from '../../components/checkout/Cronometro'
@@ -73,9 +72,9 @@ import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
  *
  * O MÉTODO de pagamento entrou na conta: quando o checkout tem desconto no Pix
  * configurado, escolher Pix abate o percentual e o novo total aparece ao mesmo
- * tempo no resumo, na barra fixa do celular e dentro do botão de pagar — os
- * três leem o mesmo `total.totalCentavos`, então não existe estado em que um
- * mostre um número e outro mostre outro.
+ * tempo no resumo e dentro do botão de pagar — os dois leem o mesmo
+ * `total.totalCentavos`, então não existe estado em que um mostre um número e
+ * outro mostre outro.
  */
 
 const SECAO_PAGAMENTO_ID = 'pagamento'
@@ -431,8 +430,9 @@ export default function CheckoutPage() {
         initial={semMovimento ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-        // pb no celular: a barra fixa do total não pode cobrir o rodapé.
-        className="pb-28 md:pb-0"
+        // Respiro no pé só quando há um Pix esperando: é a única barra fixa
+        // que sobrou, e ela cobriria o fim da página em qualquer largura.
+        className={pix ? 'pb-28' : undefined}
       >
         {info.banner && (
           <div className="mb-7 sm:mb-9">
@@ -536,16 +536,18 @@ export default function CheckoutPage() {
         </div>
       </motion.div>
 
-      {/* A barra do total some quando existe um Pix: o pedido já foi criado,
-          e continuar oferecendo "ir para pagamento" convidaria a gerar um
-          segundo. Em lugar dela entra o caminho de volta ao código. */}
-      {!pix && (
-        <BarraTotalMobile
-          totalCentavos={total.totalCentavos}
-          alvoId={SECAO_PAGAMENTO_ID}
-        />
-      )}
+      {/*
+        Aqui havia uma barra fixa no rodapé, no celular, com o total e um botão
+        "Ir para pagamento". Ela saiu.
 
+        O que ela resolvia — total fora da tela no celular — já está resolvido:
+        o resumo ABRE a página no celular, e o próprio botão de pagar carrega o
+        valor. O que ela criava era pior: ficava por cima do conteúdo até o fim
+        da página (a garantia lia-se atrás dela) e continuava dizendo "Ir para
+        pagamento" com o cartão preenchido e a cobrança em PROCESSANDO dois
+        dedos abaixo — convite para voltar a um formulário que a pessoa acabou
+        de enviar.
+      */}
       {/* Fechou o painel sem pagar? O código continua valendo, e este é o
           caminho de volta. Sem ele, fechar significaria perder de vista um Pix
           que já existe no Mercado Pago — e a pessoa não teria como concluir
