@@ -45,6 +45,8 @@ export interface ProdutoFormValues {
   precoAncora: string
   tipo: (typeof PRODUTO_TIPOS)[number]
   entrega: (typeof PRODUTO_ENTREGAS)[number]
+  /** Tipo de serviço da Vertix. Vazio = não classificado. */
+  categoria: string
   ativo: boolean
 }
 
@@ -56,6 +58,7 @@ export const EMPTY_PRODUTO: ProdutoFormValues = {
   precoAncora: '',
   tipo: 'principal',
   entrega: 'manual',
+  categoria: '',
   ativo: true,
 }
 
@@ -86,6 +89,10 @@ export const produtoSchema = z
       .refine(precoOpcional, 'Preço de âncora inválido (ex.: 297,00).'),
     tipo: z.enum(PRODUTO_TIPOS),
     entrega: z.enum(PRODUTO_ENTREGAS),
+    // Opcional de propósito: exigir a taxonomia aqui travaria o cadastro de
+    // um produto novo por uma decisão gerencial que pode vir depois. O que
+    // não estiver classificado aparece como "Sem categoria" em Pedidos.
+    categoria: z.string().trim().max(60, 'Categoria muito longa (máx. 60).'),
     ativo: z.boolean(),
   })
   .refine(
@@ -113,6 +120,9 @@ export function produtoFormToPayload(values: ProdutoFormValues): ProdutoPayload 
     preco_ancora_centavos: reaisParaCentavos(values.precoAncora),
     tipo: values.tipo,
     entrega: values.entrega,
+    // Campo vazio vira NULL, não string vazia: `''` seria uma categoria com
+    // nome invisível na lista do filtro, separada de "sem categoria".
+    categoria: values.categoria.trim() === '' ? null : values.categoria.trim(),
     ativo: values.ativo,
   }
 }
@@ -127,6 +137,7 @@ export function produtoToFormValues(produto: Produto): ProdutoFormValues {
     precoAncora: centavosParaCampo(produto.preco_ancora_centavos),
     tipo: produto.tipo,
     entrega: produto.entrega,
+    categoria: produto.categoria ?? '',
     ativo: produto.ativo,
   }
 }

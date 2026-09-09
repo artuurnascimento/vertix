@@ -1,4 +1,4 @@
-import { catalogoSupabase } from './catalogoSupabase'
+import { catalogoSupabase, ehColunaAusente } from './catalogoSupabase'
 
 /**
  * Leitura e escrita de public.produtos — o catálogo que alimenta os
@@ -42,6 +42,19 @@ export interface Produto {
   preco_ancora_centavos: number | null
   tipo: ProdutoTipo
   entrega: ProdutoEntrega
+  /**
+   * Tipo de serviço da Vertix: tema, app, sistema, consultoria, plano.
+   * Texto livre — a linha de serviços muda, e uma lista fechada no código
+   * pediria deploy a cada serviço novo. É por aqui que a tela de Pedidos
+   * responde "quanto faturamos com tema sob medida".
+   *
+   * Diferente de `tipo`, que é o papel na oferta: o mesmo Plano de Correção
+   * é 'principal' num checkout e pode ser 'bump' em outro.
+   *
+   * `null` em produto ainda não classificado — e em toda base onde a
+   * migração `produtos_categoria` não rodou.
+   */
+  categoria: string | null
   ativo: boolean
   created_at: string
   updated_at: string
@@ -56,19 +69,57 @@ export interface ProdutoPayload {
   preco_ancora_centavos: number | null
   tipo: ProdutoTipo
   entrega: ProdutoEntrega
+  categoria: string | null
   ativo: boolean
 }
 
-const COLUNAS =
+const COLUNAS_BASE =
   'id, nome, slug, descricao, preco_centavos, preco_ancora_centavos, tipo, entrega, ativo, created_at, updated_at'
 
+const COLUNAS = `${COLUNAS_BASE}, categoria`
+
+/**
+ * O catálogo, mais novo primeiro.
+ *
+ * `categoria` é pedida na primeira tentativa e abandonada na segunda: a
+ * migração que a criou pode não ter rodado nesta base, e o catálogo não pode
+ * sumir da tela por causa de uma coluna de classificação gerencial. Quando ela
+ * falta, todo produto volta com `categoria: null` — que é exatamente o que a
+ * tela mostraria de qualquer forma antes de alguém classificar.
+ */
 export async function fetchProdutos(): Promise<Produto[]> {
-  const { data, error } = await catalogoSupabase
-    .from('produtos')
-    .select(COLUNAS)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return (data ?? []) as unknown as Produto[]
+  const consultar = async (colunas: string) => {
+    const { data, error } = await catalogoSupabase
+      .from('produtos')
+      .select(colunas)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as unknown as Produto[]
+  }
+
+  try {
+    return await consultar(COLUNAS)
+  } catch (erro) {
+    if (!ehColunaAusente(erro)) throw erro
+    const semCategoria = await consultar(COLUNAS_BASE)
+    return semCategoria.map((p) => ({ ...p, categoria: null }))
+  }
+}
+
+/**
+ * As categorias que já existem no catálogo, em ordem alfabética e sem repetir.
+ *
+ * Alimenta o `datalist` do formulário. O ponto é reaproveitar: sem sugestão,
+ * "Tema" e "tema sob medida" viram duas categorias que somam separado no
+ * relatório de Pedidos, e ninguém percebe até o número não bater.
+ */
+export function categoriasDoCatalogo(produtos: readonly Produto[]): string[] {
+  const nomes = new Set<string>()
+  for (const produto of produtos) {
+    const categoria = produto.categoria?.trim()
+    if (categoria) nomes.add(categoria)
+  }
+  return [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }
 
 export async function criarProduto(payload: ProdutoPayload): Promise<void> {

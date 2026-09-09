@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { mensagemDeErro } from './catalogoSupabase'
@@ -8,6 +8,7 @@ import {
   PRODUTO_TIPOS,
   PRODUTO_TIPO_LABEL,
   atualizarProduto,
+  categoriasDoCatalogo,
   criarProduto,
 } from './produtosData'
 import type { Produto } from './produtosData'
@@ -58,6 +59,14 @@ export default function ProdutoFormModal({
   const [slugManual, setSlugManual] = useState(false)
 
   const editando = Boolean(produto)
+
+  // O `datalist` precisa de um id único: dois modais montados na mesma página
+  // com o mesmo id fariam o navegador ligar o input à lista errada.
+  const idSugestoes = useId()
+  const sugestoesDeCategoria = useMemo(
+    () => categoriasDoCatalogo(produtos),
+    [produtos]
+  )
 
   useEffect(() => {
     if (!open) return
@@ -270,6 +279,31 @@ export default function ProdutoFormModal({
             </select>
           </label>
         </div>
+
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Tipo de serviço</span>
+          <input
+            type="text"
+            list={idSugestoes}
+            value={values.categoria}
+            onChange={(e) => setCampo('categoria', e.target.value)}
+            placeholder="Tema sob medida"
+            className={inputClass}
+          />
+          <datalist id={idSugestoes}>
+            {sugestoesDeCategoria.map((categoria) => (
+              <option key={categoria} value={categoria} />
+            ))}
+          </datalist>
+          <span className="text-xs font-light text-muted">
+            {sugestoesDeCategoria.length > 0
+              ? `Agrupa o faturamento em Pedidos. Já em uso: ${sugestoesDeCategoria.join(', ')}.`
+              : 'Agrupa o faturamento em Pedidos — tema, app, sistema, consultoria. Reaproveite o mesmo nome entre produtos.'}
+          </span>
+          {erros.categoria && (
+            <span className="text-xs text-red-400">{erros.categoria}</span>
+          )}
+        </label>
 
         <CampoAtivo
           ativo={values.ativo}

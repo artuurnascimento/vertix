@@ -21,6 +21,9 @@ const CODIGO_UNICO = '23505'
 /** Postgres: permissão negada / nenhuma policy de escrita para a equipe. */
 const CODIGO_SEM_PERMISSAO = '42501'
 
+/** Postgres: a coluna pedida não existe nesta base. */
+const CODIGO_COLUNA_AUSENTE = '42703'
+
 function codigo(erro: unknown): string | null {
   if (typeof erro !== 'object' || erro === null) return null
   const code = (erro as Partial<PostgrestError>).code
@@ -34,6 +37,18 @@ function codigo(erro: unknown): string | null {
 export function ehTabelaAusente(erro: unknown): boolean {
   const c = codigo(erro)
   return c !== null && CODIGOS_TABELA_AUSENTE.includes(c)
+}
+
+/**
+ * true quando a tabela existe mas a COLUNA pedida ainda não.
+ *
+ * Acontece entre uma migração e o deploy que a acompanha, e em qualquer base
+ * local que não rodou `db push`. Quem usa isso pede a coluna nova, e ao ouvir
+ * este código refaz a consulta sem ela — a tela abre com um campo a menos em
+ * vez de morrer inteira por causa de um `select`.
+ */
+export function ehColunaAusente(erro: unknown): boolean {
+  return codigo(erro) === CODIGO_COLUNA_AUSENTE
 }
 
 /**
@@ -60,6 +75,9 @@ export function mensagemDeErro(erro: unknown, duplicado: string): string {
   }
   if (ehTabelaAusente(erro)) {
     return 'As tabelas do checkout ainda não existem neste ambiente. Rode a migração antes de cadastrar.'
+  }
+  if (ehColunaAusente(erro)) {
+    return 'Este ambiente está atrás de uma migração: falta uma coluna que o formulário grava. Rode `supabase db push` antes de salvar.'
   }
   return 'Não foi possível salvar. Tente novamente.'
 }

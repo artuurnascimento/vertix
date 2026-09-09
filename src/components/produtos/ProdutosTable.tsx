@@ -29,7 +29,9 @@ export default function ProdutosTable({ produtos, onEditar, onExcluir }: Props) 
         <tr className="border-b border-white/5 text-[11px] uppercase tracking-widest text-muted/70">
           <th className="px-6 py-4 font-medium">Produto</th>
           <th className="px-4 py-4 font-medium">Preço</th>
-          <th className="hidden px-4 py-4 font-medium sm:table-cell">Tipo</th>
+          <th className="hidden px-4 py-4 font-medium sm:table-cell">
+            Tipo / serviço
+          </th>
           <th className="hidden px-4 py-4 font-medium lg:table-cell">Entrega</th>
           <th className="px-4 py-4 font-medium">Situação</th>
           <th className="px-4 py-4 text-right font-medium">
@@ -85,6 +87,20 @@ export default function ProdutosTable({ produtos, onEditar, onExcluir }: Props) 
                 >
                   {PRODUTO_TIPO_LABEL[produto.tipo]}
                 </span>
+                {/*
+                  O "—" aparece de propósito quando falta categoria: é a
+                  única pista de que aquele produto vai cair em "Sem
+                  categoria" no relatório de Pedidos. Esconder a ausência
+                  esconderia o trabalho que falta fazer.
+                */}
+                <p
+                  className={[
+                    'mt-1 text-xs font-light',
+                    produto.categoria ? 'text-muted' : 'text-muted/50',
+                  ].join(' ')}
+                >
+                  {produto.categoria ?? '— sem categoria'}
+                </p>
               </td>
               <td className="hidden px-4 py-4 text-muted lg:table-cell">
                 {PRODUTO_ENTREGA_LABEL[produto.entrega]}
