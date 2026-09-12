@@ -9,6 +9,9 @@ export const LEAD_STATUSES = [
   'contatado',
   'reuniao',
   'cliente',
+  // Recusou ou pediu para parar. É o que tira o lead da sequência de e-mails
+  // do worker — 'contatado' não tira, porque é só uma tentativa nossa.
+  'perdido',
 ] as const
 
 export type LeadStatus = (typeof LEAD_STATUSES)[number]

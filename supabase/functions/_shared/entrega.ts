@@ -46,6 +46,7 @@
  */
 
 import type { Db, PedidoItem } from './checkout.ts'
+import { enviarPurchaseMeta } from './meta-capi.ts'
 
 /**
  * Teto de espera pelo worker. Curto de propósito: em checkout-pagar esta
@@ -500,6 +501,19 @@ export async function concluirPedidoPago(
   }
 
   await avisarWorkerPedidoPago(pedido.id, rotulo)
+
+  // Purchase pelo servidor, com event_id = id do pedido (dedup). Não espera:
+  // a entrega não pode depender da Meta responder.
+  void enviarPurchaseMeta(
+    {
+      eventId: pedido.id,
+      valorCentavos: pedido.total_centavos,
+      email: pedido.cliente_email,
+      telefone: pedido.cliente_whatsapp,
+      contentName: pedido.itens.map((item) => item.nome).join(' + ') || 'pedido',
+    },
+    rotulo
+  )
 
   return { receivable_id: receivableId }
 }
