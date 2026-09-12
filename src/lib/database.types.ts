@@ -265,6 +265,9 @@ export type Database = {
           inicio: string
           project_id: string | null
           titulo: string
+          meet_url: string | null
+          google_event_id: string | null
+          lead_id: string | null
         }
         Insert: {
           cor?: string
@@ -276,6 +279,9 @@ export type Database = {
           inicio: string
           project_id?: string | null
           titulo: string
+          meet_url?: string | null
+          google_event_id?: string | null
+          lead_id?: string | null
         }
         Update: {
           cor?: string
@@ -287,6 +293,9 @@ export type Database = {
           inicio?: string
           project_id?: string | null
           titulo?: string
+          meet_url?: string | null
+          google_event_id?: string | null
+          lead_id?: string | null
         }
         Relationships: [
           {

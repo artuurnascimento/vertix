@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Trash2, X } from 'lucide-react'
+import { Check, Trash2, Video, X } from 'lucide-react'
 import {
   AGENDA_CORES,
   dayKey,
@@ -213,6 +213,41 @@ export default function AgendaEventModal({
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {/* Call marcada pelo Scan: o evento nasceu no Google Calendar com o
+                Meet, e o lead está no Raio-X. O link é o que importa na hora. */}
+            {event?.meet_url && (
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-sky-300">
+                    Call marcada pelo Scan
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    Convite enviado ao lead pelo Google Calendar.
+                    {event.lead_id && (
+                      <>
+                        {' '}
+                        <a
+                          href="/scan"
+                          className="text-sky-300 underline-offset-2 hover:underline"
+                        >
+                          Ver no Vertix Scan
+                        </a>
+                      </>
+                    )}
+                  </p>
+                </div>
+                <a
+                  href={event.meet_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-sky-400/20 px-3.5 py-2 text-sm font-medium text-sky-200 transition-colors duration-200 hover:bg-sky-400/30"
+                >
+                  <Video className="h-4 w-4" />
+                  Entrar no Meet
+                </a>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
               <label className="flex flex-col gap-1.5">

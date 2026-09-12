@@ -397,6 +397,11 @@ verify_jwt = false
 [functions.scan-comprar]
 verify_jwt = false
 
+# Marcação de call pelo Scan: mesmo modelo da scan-comprar (worker → admin
+# com x-vertix-token), sem JWT de usuário.
+[functions.scan-agendar]
+verify_jwt = false
+
 # Functions internas (triggers/cron do banco): o gate real é o header
 # x-edge-secret validado contra EDGE_SHARED_SECRET dentro de cada function.
 # A anon key deixou de ser aceita como credencial (é pública).
