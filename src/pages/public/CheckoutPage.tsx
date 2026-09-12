@@ -328,6 +328,7 @@ export default function CheckoutPage() {
         cupom: cupom?.codigo ?? null,
         cardTokenSalvar,
         analysisId,
+        tokenCompra: tokenPrefill,
         origem,
       })
 

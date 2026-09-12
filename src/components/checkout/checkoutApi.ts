@@ -202,6 +202,12 @@ export interface PedidoRequisicao {
    * trocar dinheiro por rigor.
    */
   analysisId: string | null
+  /**
+   * Token da compra (o `t` da URL do Scan). É por ele que a checkout-pagar
+   * descobre QUAL lead está comprando — a análise é compartilhada entre leads.
+   * Mesma tolerância do analysisId: sem ele a venda acontece igual.
+   */
+  tokenCompra: string | null
   /** De onde veio a compra ('scan', 'bio'...), para separar faturamento. */
   origem: string | null
 }
@@ -233,6 +239,7 @@ export async function pagarCheckout(
         ? { card_token_salvar: pedido.cardTokenSalvar }
         : {}),
       ...(pedido.analysisId ? { analysis_id: pedido.analysisId } : {}),
+      ...(pedido.tokenCompra ? { token_compra: pedido.tokenCompra } : {}),
       ...(pedido.origem ? { origem: pedido.origem } : {}),
     },
   })

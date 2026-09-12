@@ -397,6 +397,31 @@ describe('análise de origem na URL', () => {
     expect(enviado.origem).toBe('scan')
   })
 
+  /**
+   * O `t` é o token da compra: é por ele que a checkout-pagar descobre QUAL
+   * lead está pagando. A análise é compartilhada entre leads (o Scan a
+   * reaproveita por domínio), então sem o token o pedido ficaria amarrado a
+   * "alguém daquela análise", não a quem pagou.
+   */
+  it('repassa o ?t= como token da compra, para o pedido apontar para o lead certo', async () => {
+    vi.mocked(pagarCheckout).mockResolvedValue({
+      pedidoId: 'ped-1',
+      status: 'aprovado',
+      totalCentavos: 19700,
+      pix: null,
+      cartaoSalvo: null,
+      erro: null,
+      mensagem: null,
+    })
+
+    renderizar('?a=11111111-2222-3333-4444-555555555555&t=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee')
+    await esperarForm()
+    await preencherEPagar()
+
+    const enviado = vi.mocked(pagarCheckout).mock.calls[0][0]
+    expect(enviado.tokenCompra).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee')
+  })
+
   it('sem ?a= a venda acontece igual, sem análise e sem origem', async () => {
     // Quem compra por link direto não veio do Scan. Recusar o pagamento por
     // falta de um parâmetro de rastreio seria trocar dinheiro por rigor.
@@ -416,6 +441,7 @@ describe('análise de origem na URL', () => {
 
     const enviado = vi.mocked(pagarCheckout).mock.calls[0][0]
     expect(enviado.analysisId).toBeNull()
+    expect(enviado.tokenCompra).toBeNull()
     expect(enviado.origem).toBeNull()
   })
 })

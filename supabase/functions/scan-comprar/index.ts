@@ -18,11 +18,23 @@
  * tivesse o token de saída poderia criar cliente, projeto e cobrança aqui
  * dentro. Direções opostas, segredos opostos.
  *
- * Idempotência: a análise que já tem compra recebe de volta a MESMA compra e o
- * MESMO payment_url. Dois cliques no botão não geram dois clientes. A checagem
- * por leitura cobre o caso normal; o empate real (dois POSTs simultâneos) é
- * barrado pelo índice único parcial raiox_compras_analysis_ativa_key, e o
- * segundo insert cai no mesmo caminho de "já existe".
+ * Idempotência POR LEAD: o lead que já tem compra viva recebe de volta a MESMA
+ * compra e o MESMO payment_url. Dois cliques no botão não geram dois clientes.
+ * A checagem por leitura cobre o caso normal; o empate real (dois POSTs
+ * simultâneos) é barrado pelo índice único parcial
+ * raiox_compras_lead_ativa_key, e o segundo insert cai no mesmo caminho de "já
+ * existe".
+ *
+ * Por que por lead, e não por análise: o Scan reaproveita a análise por
+ * domínio, então duas PESSOAS podem estar no mesmo analysis_id — o dono e uma
+ * agência. Idempotência por análise devolvia à segunda pessoa a compra da
+ * primeira, com o payment_url (e o token que pré-preenche o checkout com nome,
+ * e-mail e WhatsApp) de quem chegou antes. O worker resolve o lead pelo
+ * report_code, que é único por lead, e manda o `lead_id` aqui.
+ *
+ * Uma pessoa que passou pelo portão duas vezes tem dois leads na mesma
+ * análise. Para ela também não abrir duas cobranças, a compra viva da análise
+ * cujo cliente tem o MESMO e-mail do comprador conta como "já existe".
  *
  * Criação parcial: se algo falha no meio, esta função DESFAZ o que criou
  * (recebível → projeto → cliente, e o cliente só quando foi criado agora) e
@@ -44,6 +56,8 @@
  */
 interface RequestBody {
   analysis_id?: string
+  /** Quem compra (public.leads.id). Obrigatório: é a chave da idempotência. */
+  lead_id?: string
   nome?: string
   email?: string
   whatsapp?: string
@@ -56,6 +70,9 @@ interface CompraRecord {
   receivable_id: string | null
   plano_code: string | null
   status: string
+  lead_id?: string | null
+  /** Embed do PostgREST pela FK client_id → clients. */
+  clients?: { email: string | null } | null
 }
 
 interface ReceivableRecord {
@@ -181,10 +198,20 @@ Deno.serve(async (req) => {
   // Validação da entrada
   // ------------------------------------------------------------------------
 
-  const analysisId = body.analysis_id
-  if (!analysisId || !UUID_RE.test(analysisId)) {
+  // Tipados como string depois da validação: as funções internas (closures)
+  // não enxergam o estreitamento do `if`, e `string | undefined` vazava para
+  // urlDoCheckout.
+  const analysisIdBruto = body.analysis_id
+  if (!analysisIdBruto || !UUID_RE.test(analysisIdBruto)) {
     return jsonResponse({ error: 'analysis_id_invalido' }, 400)
   }
+  const analysisId: string = analysisIdBruto
+
+  const leadIdBruto = body.lead_id
+  if (!leadIdBruto || !UUID_RE.test(leadIdBruto)) {
+    return jsonResponse({ error: 'lead_id_invalido' }, 400)
+  }
+  const leadId: string = leadIdBruto
 
   const nome = (body.nome ?? '').trim()
   if (!nome) {
@@ -272,15 +299,21 @@ Deno.serve(async (req) => {
   }
 
   /**
-   * Busca a compra VIVA desta análise, se houver. O filtro de status é o mesmo
-   * do índice único parcial raiox_compras_analysis_ativa_key — cancelada ou
-   * reembolsada não conta, e o lead pode comprar de novo.
+   * Busca a compra VIVA deste lead, se houver — ou, na mesma análise, a de um
+   * cliente com o mesmo e-mail (a mesma pessoa que passou pelo portão duas
+   * vezes). O filtro de status é o mesmo do índice único parcial
+   * raiox_compras_lead_ativa_key — cancelada ou reembolsada não conta, e o
+   * lead pode comprar de novo.
+   *
+   * O que NÃO entra: a compra viva de OUTRO lead com OUTRO e-mail na mesma
+   * análise. É outra pessoa, e ela recebe a compra dela.
    */
   async function buscarCompraExistente(): Promise<CompraRecord | null> {
     const res = await fetch(
       `${restBase}/raiox_compras?analysis_id=eq.${analysisId}` +
         '&status=in.(aguardando_pagamento,pago)' +
-        '&select=id,receivable_id,plano_code,status&limit=1',
+        '&select=id,receivable_id,plano_code,status,lead_id,clients(email)' +
+        '&order=created_at.desc&limit=20',
       { headers: authHeaders }
     )
     if (!res.ok) {
@@ -288,45 +321,16 @@ Deno.serve(async (req) => {
       return null
     }
     const linhas = (await res.json()) as CompraRecord[]
-    return linhas[0] ?? null
-  }
-
-  /**
-   * Lead que originou a análise, para o painel conseguir ir da compra de volta
-   * a quem a gerou. Uma análise pode ter mais de um lead (ver
-   * public.raiox_excluir_lead), então prefere o que casa com o e-mail do
-   * comprador — é ele quem está pagando — e cai no mais recente quando nenhum
-   * casa (lead anterior a 2026-09-05 tem email NULL e nunca casaria).
-   *
-   * NUNCA lança e nunca bloqueia: qualquer falha vira null e a venda segue.
-   */
-  async function buscarLeadDaAnalise(): Promise<string | null> {
-    try {
-      const res = await fetch(
-        `${restBase}/leads?analysis_id=eq.${analysisId}` +
-          '&select=id,email&order=created_at.desc&limit=10',
-        { headers: authHeaders }
-      )
-      if (!res.ok) {
-        console.error('[scan-comprar] Falha ao buscar lead da análise:', res.status)
-        return null
-      }
-      const leads = (await res.json()) as Array<{
-        id: string
-        email: string | null
-      }>
-      const porEmail = leads.find(
-        (lead) => lead.email?.trim().toLowerCase() === email
-      )
-      return (porEmail ?? leads[0])?.id ?? null
-    } catch (erro) {
-      console.error('[scan-comprar] Erro ao buscar lead da análise:', erro)
-      return null
-    }
+    const doLead = linhas.find((c) => c.lead_id === leadId)
+    if (doLead) return doLead
+    const mesmaPessoa = linhas.find(
+      (c) => c.clients?.email?.trim().toLowerCase() === email
+    )
+    return mesmaPessoa ?? null
   }
 
   // ------------------------------------------------------------------------
-  // 1. Idempotência: análise que já comprou recebe a mesma compra de volta
+  // 1. Idempotência: lead que já comprou recebe a mesma compra de volta
   // ------------------------------------------------------------------------
 
   const existente = await buscarCompraExistente()
@@ -497,13 +501,8 @@ Deno.serve(async (req) => {
   // ------------------------------------------------------------------------
   // 5. Compra — amarra análise, lead, cliente, projeto e recebível
   // ------------------------------------------------------------------------
-  // O lead é vínculo de painel, não pré-requisito da venda: o worker só chega
-  // aqui depois de já ter validado que existe lead com contato, então não
-  // achar um é corrida rara — e a entrega do plano não depende deste campo,
-  // porque o worker resolve o lead por analysis_id na hora de mandar o e-mail.
-  // Por isso `lead_id` null é resultado aceitável, nunca erro.
-
-  const leadId = await buscarLeadDaAnalise()
+  // O lead veio no corpo, validado: é ele que o índice único vigia e é a ele
+  // que o worker volta na hora de entregar (plataforma, faturamento, e-mail).
 
   const compraRes = await fetch(`${restBase}/raiox_compras`, {
     method: 'POST',
@@ -524,8 +523,9 @@ Deno.serve(async (req) => {
     const detalhe = await compraRes.text()
 
     // 23505 = violação de unicidade. Na prática só o índice parcial por
-    // analysis_id: outra requisição simultânea ganhou a corrida. Desfaz o que
-    // esta criou e devolve a compra da outra — o comprador vê um link só.
+    // lead_id: outra requisição simultânea do MESMO lead ganhou a corrida.
+    // Desfaz o que esta criou e devolve a compra da outra — o comprador vê um
+    // link só.
     if (compraRes.status === 409 && detalhe.includes('23505')) {
       await desfazer()
       const vencedora = await buscarCompraExistente()

@@ -56,6 +56,15 @@
  *   fora do formato uuid é ignorado em silêncio: um query string malformado
  *   não pode recusar um pagamento.
  *
+ * Sobre o `token_compra` (opcional no corpo):
+ *   O `t` da mesma URL — o payment_token do recebível que a scan-comprar
+ *   criou. Por ele esta função descobre QUAL LEAD está comprando
+ *   (raiox_compras.lead_id) e grava em `pedidos.lead_id`. Importa porque a
+ *   análise é compartilhada entre leads (cache por domínio) e o worker escreve
+ *   o plano com a plataforma e o faturamento de quem pagou. Mesma tolerância
+ *   do analysis_id: token inválido ou desconhecido vira lead_id null, nunca
+ *   recusa.
+ *
  * Depois da aprovação (ver _shared/entrega.ts): a venda vira recebível já pago
  * no Financeiro e o worker do Scan é avisado para entregar. Nenhuma das duas
  * coisas pode derrubar a cobrança — o dinheiro já entrou, e ambas são
@@ -128,6 +137,8 @@ interface RequestBody {
   origem?: string
   /** Análise do Scan que originou a venda (/c/:slug?a=<uuid>). Opcional. */
   analysis_id?: string
+  /** Token da compra (o `t` da URL), para achar o lead do Scan. */
+  token_compra?: string
 }
 
 interface PedidoRow {
@@ -135,6 +146,27 @@ interface PedidoRow {
 }
 
 const PIX_EXPIRATION_MS = 60 * 60 * 1000
+
+/**
+ * raiox_compras.lead_id da compra cujo recebível tem este payment_token.
+ * Duas leituras pequenas; qualquer falha vira null e a venda segue.
+ */
+async function leadDoTokenDeCompra(db: Db, token: string): Promise<string | null> {
+  try {
+    const recebiveis = await db.select<{ id: string }>(
+      `receivables?payment_token=eq.${token}&select=id&limit=1`
+    )
+    const receivableId = recebiveis[0]?.id
+    if (!receivableId) return null
+    const compras = await db.select<{ lead_id: string | null }>(
+      `raiox_compras?receivable_id=eq.${receivableId}&select=lead_id&limit=1`
+    )
+    return compras[0]?.lead_id ?? null
+  } catch (erro) {
+    console.error('[checkout-pagar] Falha ao resolver o lead da compra:', erro)
+    return null
+  }
+}
 
 /**
  * Centavos → número em reais para o `transaction_amount` do MP. A conta é
@@ -308,6 +340,9 @@ Deno.serve(
     const analysisIdBruto = (body.analysis_id ?? '').trim()
     const analysisId = UUID_RE.test(analysisIdBruto) ? analysisIdBruto : null
 
+    const tokenCompraBruto = (body.token_compra ?? '').trim()
+    const tokenCompra = UUID_RE.test(tokenCompraBruto) ? tokenCompraBruto : null
+
     const formData = body.formData
     if (!formData?.payment_method_id) {
       return jsonResponse({ erro: 'dados_pagamento_incompletos' }, 400)
@@ -322,6 +357,10 @@ Deno.serve(
     }
 
     const db: Db = criarDb(supabaseUrl, serviceRoleKey)
+
+    // Lead do Scan que está comprando, pelo token da compra. Nunca derruba o
+    // pagamento: sem lead, o worker cai no lead mais recente da análise.
+    const leadId = tokenCompra ? await leadDoTokenDeCompra(db, tokenCompra) : null
 
     // ----------------------------------------------------------------------
     // 2. Preço — resolvido no servidor, do catálogo
@@ -441,6 +480,7 @@ Deno.serve(
         status: 'aguardando',
         origem: (body.origem ?? '').trim() || null,
         analysis_id: analysisId,
+        lead_id: leadId,
       })
     } catch {
       return jsonResponse({ erro: 'falha_ao_criar_pedido' }, 502)
