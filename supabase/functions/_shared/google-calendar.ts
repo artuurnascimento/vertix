@@ -150,8 +150,9 @@ export async function criarEventoComMeet(
 // ---------------------------------------------------------------------------
 
 export const DURACAO_MIN = 30
+/** Expediente de call: 9h às 22h de Brasília, todo dia da semana. */
 export const HORA_INICIO = 9
-export const HORA_FIM = 18
+export const HORA_FIM = 22
 /** Só marca a partir de amanhã, no mínimo 24 h à frente. */
 export const ANTECEDENCIA_MIN_MS = 24 * 60 * 60 * 1000
 export const DIAS_A_FRENTE = 10
@@ -199,7 +200,7 @@ function sobrepoe(aIni: number, aFim: number, bIni: number, bFim: number): boole
 }
 
 /**
- * Todos os horários de 30 min, seg–sex 9h–18h (SP), a partir de 24 h de
+ * Todos os horários de 30 min, todo dia, 9h–22h (SP), a partir de 24 h de
  * `agora`, nos próximos `DIAS_A_FRENTE` dias, que não batem em nenhum período
  * ocupado. Saída em ISO absoluto, ordenada.
  */
@@ -210,7 +211,6 @@ export function horariosLivres(agora: Date, ocupadosLista: Periodo[]): string[] 
   for (let d = 1; d <= DIAS_A_FRENTE + 1; d++) {
     const diaRef = new Date(agora.getTime() + d * 24 * 60 * 60 * 1000)
     const p = partesSP(diaRef)
-    if (p.diaSemana === 0 || p.diaSemana === 6) continue
     for (let h = HORA_INICIO; h < HORA_FIM; h++) {
       for (let m = 0; m < 60; m += DURACAO_MIN) {
         const ini = dataSP(p.ano, p.mes, p.dia, h, m)

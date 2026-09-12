@@ -16,16 +16,18 @@ function diaSemanaSP(iso: string): string {
 // Terça-feira, 15/09/2026 10:00 em São Paulo (13:00Z).
 const AGORA = new Date('2026-09-15T13:00:00.000Z')
 
-Deno.test('só dias úteis, só entre 9h e 18h de São Paulo, de 30 em 30 min', () => {
+Deno.test('todo dia da semana, só entre 9h e 22h de São Paulo, de 30 em 30 min', () => {
   const livres = horariosLivres(AGORA, [])
   assert(livres.length > 0)
+  const dias = new Set(livres.map(diaSemanaSP))
+  assert(dias.has('Sat') && dias.has('Sun'), 'fim de semana entra na agenda')
   for (const iso of livres) {
-    const dia = diaSemanaSP(iso)
-    assert(dia !== 'Sat' && dia !== 'Sun', `fim de semana: ${iso}`)
     const [h, m] = horaSP(iso).split(':').map(Number)
-    assert(h >= 9 && h < 18, `fora do expediente: ${iso}`)
+    assert(h >= 9 && h < 22, `fora do expediente: ${iso}`)
     assert(m % DURACAO_MIN === 0, `fora da grade: ${iso}`)
   }
+  // Último horário do dia começa às 21:30 e termina às 22:00.
+  assert(livres.some((iso) => horaSP(iso) === '21:30'))
   // Ordenado.
   const ts = livres.map((i) => Date.parse(i))
   assertEquals([...ts].sort((a, b) => a - b), ts)

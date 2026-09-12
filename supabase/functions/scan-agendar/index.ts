@@ -8,8 +8,8 @@
  * Duas ações no mesmo endpoint:
  *
  *   { acao: 'horarios' }
- *     → { horarios: string[] }   ISOs livres nos próximos dias, seg–sex,
- *       9h–18h de São Paulo, de 30 em 30 min, a partir de 24 h. "Livre" =
+ *     → { horarios: string[] }   ISOs livres nos próximos dias, todo dia,
+ *       9h–22h de São Paulo, de 30 em 30 min, a partir de 24 h. "Livre" =
  *       não bate em nada do Google Calendar da Vertix NEM da Agenda do
  *       painel (agenda_events) — as duas agendas contam.
  *
