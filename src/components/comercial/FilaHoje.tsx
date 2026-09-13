@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlarmClockOff, ArrowRight, Check, Clock3, Sparkles } from 'lucide-react'
+import { AlarmClockOff, ArrowRight, Check, ChevronLeft, ChevronRight, Clock3, Sparkles } from 'lucide-react'
 import DashboardCard from '../dashboard/DashboardCard'
 import { CardEmptyState, CardErrorState, CardSkeleton } from '../dashboard/CardStates'
 import { useAtualizarComercial, useFilaComercial } from './comercialData'
-import { formatarReais, hojeLocal, ordenarFila, somarDias, type ItemOrdenado, type Secao } from './fila'
+import { formatarReais, hojeLocal, ordenarFila, paginar, somarDias, type ItemOrdenado, type Secao } from './fila'
 
 const TITULO_DA_SECAO: Record<Secao, string> = {
   vencidas: 'Venceu',
@@ -26,6 +26,11 @@ export default function FilaHoje() {
   const atualizar = useAtualizarComercial()
   const hoje = hojeLocal()
   const itens = useMemo(() => ordenarFila(fila.data ?? [], hoje), [fila.data, hoje])
+  // A fila é longa (toda oportunidade parada entra); mostra 6 por vez. A
+  // página pedida é ajustada ao total, então "feito" na última página não
+  // deixa a tela vazia.
+  const [paginaPedida, setPaginaPedida] = useState(1)
+  const pagina = useMemo(() => paginar(itens, paginaPedida), [itens, paginaPedida])
   const [proximaDe, setProximaDe] = useState<string | null>(null)
   const [textoProxima, setTextoProxima] = useState('')
   const [dataProxima, setDataProxima] = useState(somarDias(hoje, 1))
@@ -48,7 +53,7 @@ export default function FilaHoje() {
   let secaoAnterior: Secao | null = null
 
   return (
-    <DashboardCard title="Hoje" subtitle="Quem contatar, por quê e até quando">
+    <DashboardCard title="Hoje" subtitle="Quem contatar, por quê e até quando" className="mb-7">
       {fila.isLoading && <CardSkeleton rows={4} rowClassName="h-10" />}
       {fila.isError && <CardErrorState />}
       {!fila.isLoading && !fila.isError && itens.length === 0 && (
@@ -60,7 +65,7 @@ export default function FilaHoje() {
       )}
       {itens.length > 0 && (
         <ol className="flex flex-col gap-1">
-          {itens.map((item) => {
+          {pagina.itens.map((item) => {
             const novaSecao = item.secao !== secaoAnterior
             secaoAnterior = item.secao
             const Icone = item.secao === 'sinais' ? Sparkles : item.secao === 'sem_passo' ? AlarmClockOff : Clock3
@@ -166,6 +171,47 @@ export default function FilaHoje() {
             )
           })}
         </ol>
+      )}
+      {pagina.totalPaginas > 1 && (
+        <nav aria-label="Páginas da fila" className="mt-3 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+          <p className="text-xs tabular-nums text-muted">
+            {pagina.inicio}–{pagina.fim} de {pagina.total}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPaginaPedida(pagina.pagina - 1)}
+              disabled={pagina.pagina === 1}
+              aria-label="Página anterior"
+              className="rounded-lg p-1.5 text-muted hover:bg-white/5 hover:text-ink disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronLeft aria-hidden className="h-4 w-4" />
+            </button>
+            {Array.from({ length: pagina.totalPaginas }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setPaginaPedida(n)}
+                aria-label={`Página ${n}`}
+                aria-current={n === pagina.pagina ? 'page' : undefined}
+                className={`min-w-7 rounded-lg px-2 py-1 text-xs tabular-nums ${
+                  n === pagina.pagina ? 'bg-accent font-semibold text-white' : 'text-muted hover:bg-white/5 hover:text-ink'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPaginaPedida(pagina.pagina + 1)}
+              disabled={pagina.pagina === pagina.totalPaginas}
+              aria-label="Próxima página"
+              className="rounded-lg p-1.5 text-muted hover:bg-white/5 hover:text-ink disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronRight aria-hidden className="h-4 w-4" />
+            </button>
+          </div>
+        </nav>
       )}
     </DashboardCard>
   )

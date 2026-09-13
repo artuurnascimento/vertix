@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ordenarFila, sinaisDoScan, somarDias, type ItemDaFila } from './fila'
+import { ordenarFila, paginar, sinaisDoScan, somarDias, type ItemDaFila } from './fila'
 
 const HOJE = '2026-09-13'
 const item = (o: Partial<ItemDaFila>): ItemDaFila => ({
@@ -75,5 +75,27 @@ describe('somarDias', () => {
   it('vira o mês e o ano', () => {
     expect(somarDias('2026-09-30', 1)).toBe('2026-10-01')
     expect(somarDias('2026-12-31', 7)).toBe('2027-01-07')
+  })
+})
+
+describe('paginar', () => {
+  const quinze = Array.from({ length: 15 }, (_, i) => i + 1)
+
+  it('fatia de 6 em 6 e conta de onde até onde', () => {
+    expect(paginar(quinze, 1)).toMatchObject({ itens: [1, 2, 3, 4, 5, 6], pagina: 1, totalPaginas: 3, inicio: 1, fim: 6, total: 15 })
+    expect(paginar(quinze, 3)).toMatchObject({ itens: [13, 14, 15], pagina: 3, inicio: 13, fim: 15 })
+    expect(paginar(quinze, 2, 10).itens).toEqual([11, 12, 13, 14, 15])
+  })
+
+  it('página fora do intervalo cai na última ou na primeira — a fila encolhe sem página vazia', () => {
+    expect(paginar(quinze, 9)).toMatchObject({ pagina: 3, itens: [13, 14, 15] })
+    expect(paginar(quinze, 0)).toMatchObject({ pagina: 1, itens: [1, 2, 3, 4, 5, 6] })
+    expect(paginar(quinze, Number.NaN).pagina).toBe(1)
+    expect(paginar(quinze, 2.7).pagina).toBe(2)
+  })
+
+  it('lista vazia é uma página só, sem posições', () => {
+    expect(paginar([], 4)).toEqual({ itens: [], pagina: 1, totalPaginas: 1, inicio: 0, fim: 0, total: 0 })
+    expect(paginar([1, 2], 1).totalPaginas).toBe(1)
   })
 })

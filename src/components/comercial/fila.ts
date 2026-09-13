@@ -126,3 +126,31 @@ export function somarDias(hoje: string, dias: number): string {
 export function hojeLocal(agora: Date = new Date()): string {
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`
 }
+
+/** Linhas por página do bloco "Hoje" — cabe na tela sem empurrar o resto do painel. */
+export const POR_PAGINA = 6
+
+export interface Pagina<T> {
+  itens: T[]
+  /** Página em vigor (a partir de 1), já ajustada ao total. */
+  pagina: number
+  totalPaginas: number
+  /** Posição da primeira e da última linha mostradas (a partir de 1; 0 quando vazio). */
+  inicio: number
+  fim: number
+  total: number
+}
+
+/**
+ * Fatia da fila para a página pedida. A página é ajustada ao total — pedir a
+ * 5 de 2 devolve a 2; 0 ou negativa devolve a 1 — para a fila encolher
+ * ("feito" tira a linha) sem deixar a pessoa numa página vazia.
+ */
+export function paginar<T>(itens: readonly T[], pagina: number, porPagina = POR_PAGINA): Pagina<T> {
+  const total = itens.length
+  const totalPaginas = Math.max(1, Math.ceil(total / porPagina))
+  const atual = Math.min(Math.max(1, Math.floor(pagina) || 1), totalPaginas)
+  const inicio = (atual - 1) * porPagina
+  const fatia = itens.slice(inicio, inicio + porPagina)
+  return { itens: fatia, pagina: atual, totalPaginas, inicio: total === 0 ? 0 : inicio + 1, fim: inicio + fatia.length, total }
+}

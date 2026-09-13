@@ -81,6 +81,32 @@ describe('FilaHoje', () => {
     })
   })
 
+  test('fila longa vem de 6 em 6, com a seção repetida quando continua na página seguinte', () => {
+    estado.itens = [
+      item({ project_id: 'v1', cliente: 'Vencida', proxima_acao_em: dia(2), proxima_acao: 'Ligar' }),
+      ...Array.from({ length: 14 }, (_, i) =>
+        item({ project_id: `s${i}`, cliente: `Parada ${i}`, updated_at: new Date(Date.now() - (i + 1) * 864e5).toISOString() })
+      ),
+    ]
+    montar()
+    expect(screen.getAllByRole('listitem')).toHaveLength(6)
+    expect(screen.getByText('1–6 de 15')).toBeInTheDocument()
+    expect(screen.getByText('Venceu')).toBeInTheDocument()
+    expect(screen.getByText('Sem próximo passo')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }))
+    expect(screen.getByText('7–12 de 15')).toBeInTheDocument()
+    expect(screen.queryByText('Venceu')).not.toBeInTheDocument()
+    expect(screen.getByText('Sem próximo passo')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Página 2' })).toHaveAttribute('aria-current', 'page')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Página 3' }))
+    expect(screen.getByText('13–15 de 15')).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(3)
+    expect(screen.getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+  })
+
   test('sinal do Scan entra sem data combinada e explica o porquê', () => {
     estado.itens = [item({ comprou_plano: true, pediu_ajuda: 'não consigo aplicar o passo 3' })]
     montar()
