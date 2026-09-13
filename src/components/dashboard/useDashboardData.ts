@@ -30,6 +30,12 @@ export type DashboardReceivable = Pick<
   | 'project_id'
 >
 
+/** Pedido do checkout próprio (pay.vertix.studio) — os Planos vendidos. */
+export type DashboardPedido = Pick<
+  Tables<'pedidos'>,
+  'id' | 'status' | 'created_at' | 'total_centavos'
+>
+
 export type DashboardBriefing = Pick<
   Tables<'briefings'>,
   'id' | 'status' | 'project_id'
@@ -77,6 +83,19 @@ export function useDashboardReceivables() {
       const { data, error } = await supabase
         .from('receivables')
         .select('id, descricao, valor, vencimento, status, pago_em, project_id')
+      if (error) throw new Error(error.message)
+      return data
+    },
+  })
+}
+
+export function useDashboardPedidos() {
+  return useQuery({
+    queryKey: ['dashboard', 'pedidos'],
+    queryFn: async (): Promise<DashboardPedido[]> => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select('id, status, created_at, total_centavos')
       if (error) throw new Error(error.message)
       return data
     },

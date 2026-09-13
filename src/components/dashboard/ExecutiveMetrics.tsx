@@ -1,139 +1,151 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { BarChart3, DollarSign, Folder, Users } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import type { UseQueryResult } from '@tanstack/react-query'
 import {
-  Banknote,
-  ChartNoAxesCombined,
-  FileCheck2,
-  FolderKanban,
-} from 'lucide-react'
-import {
+  useDashboardPedidos,
   useDashboardProjects,
   useDashboardProposals,
   useDashboardReceivables,
 } from './useDashboardData'
-import { isActiveStatus } from '../../lib/format'
 import { formatBRL } from '../../lib/commercial'
 import { monthlyReceipts } from './receiptSeries'
+import {
+  distribuicaoProjetos,
+  negociacaoMensal,
+  planosMensal,
+  variacaoPercentual,
+} from './metricas'
+import { Barras, Donut, Linha, ValorMoeda, Variacao } from './MetricaGraficos'
 
+const COMPACTO = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
+const inteiro = (n: number) => String(n)
+
+interface Card {
+  label: string
+  icon: LucideIcon
+  to: string
+  query: UseQueryResult<unknown>
+  /** Valor lido pelo leitor de tela e mostrado no title. */
+  valorTexto: string
+  valor: ReactNode
+  /** Versão curta para o celular; sem ela, `valor` serve nos dois. */
+  valorCompacto?: ReactNode
+  variacao?: ReactNode
+  legenda: string
+  grafico: ReactNode
+}
+
+/**
+ * Os quatro cards do topo do painel, como no mockup: variação contra o mês
+ * anterior em cada um, e um gráfico por card — barras 3D da receita, barras
+ * mensais do que está em negociação, linha dos planos vendidos no checkout,
+ * donut dos projetos por etapa.
+ */
 export default function ExecutiveMetrics() {
   const projects = useDashboardProjects()
   const proposals = useDashboardProposals()
   const receivables = useDashboardReceivables()
-  const months = monthlyReceipts(receivables.data ?? [], new Date())
-  const revenue = months[months.length - 1].total
-  const previous = months[months.length - 2].total
-  const compactMoney = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  })
-  const negotiation = (proposals.data ?? [])
-    .filter((p) => p.status === 'enviada')
-    .reduce((s, p) => s + p.valor_total, 0)
-  const delta = previous > 0 ? ((revenue - previous) / previous) * 100 : null
-  const cards = [
+  const pedidos = useDashboardPedidos()
+  const agora = new Date()
+
+  const receita = monthlyReceipts(receivables.data ?? [], agora)
+  const negociacao = negociacaoMensal(proposals.data ?? [], agora)
+  const planos = planosMensal(pedidos.data ?? [], agora)
+  const projetos = distribuicaoProjetos((projects.data ?? []).map((p) => p.status))
+
+  const ultimo = (s: { total: number }[]) => s[s.length - 1].total
+  const penultimo = (s: { total: number }[]) => s[s.length - 2].total
+  const variacaoDe = (s: { total: number }[]) => variacaoPercentual(ultimo(s), penultimo(s))
+
+  const cards: Card[] = [
     {
-      label: 'Recebido no mês',
-      value: formatBRL(revenue),
-      caption:
-        delta === null
-          ? 'Pagamentos confirmados'
-          : `${delta >= 0 ? '+' : ''}${delta.toFixed(0)}% vs. mês anterior`,
-      icon: Banknote,
+      label: 'Receita do mês',
+      icon: DollarSign,
       to: '/admin/financeiro',
       query: receivables,
+      valorTexto: formatBRL(ultimo(receita)),
+      valor: <ValorMoeda valor={ultimo(receita)} />,
+      valorCompacto: COMPACTO.format(ultimo(receita)),
+      variacao: <Variacao valor={variacaoDe(receita)} tom="verde" />,
+      legenda: variacaoDe(receita) === null ? 'Pagamentos confirmados' : 'em relação ao mês anterior',
+      grafico: <Barras serie={receita} formatar={formatBRL} prisma />,
     },
     {
       label: 'Em negociação',
-      value: formatBRL(
-        (proposals.data ?? [])
-          .filter((p) => p.status === 'enviada')
-          .reduce((s, p) => s + p.valor_total, 0)
-      ),
-      caption: 'Propostas aguardando aceite',
-      icon: ChartNoAxesCombined,
+      icon: BarChart3,
       to: '/admin/propostas',
       query: proposals,
+      valorTexto: formatBRL(ultimo(negociacao)),
+      valor: <ValorMoeda valor={ultimo(negociacao)} />,
+      valorCompacto: COMPACTO.format(ultimo(negociacao)),
+      variacao: <Variacao valor={variacaoDe(negociacao)} tom="roxo" />,
+      legenda:
+        variacaoDe(negociacao) === null ? 'Propostas aguardando aceite' : 'em relação ao mês anterior',
+      grafico: <Barras serie={negociacao} formatar={formatBRL} rotulos />,
     },
     {
-      label: 'Propostas aceitas',
-      value: String(
-        (proposals.data ?? []).filter((p) => p.status === 'aceita').length
-      ),
-      caption: 'Total registrado',
-      icon: FileCheck2,
-      to: '/admin/propostas',
-      query: proposals,
+      label: 'Planos vendidos',
+      icon: Users,
+      to: '/admin/pedidos',
+      query: pedidos,
+      valorTexto: inteiro(ultimo(planos)),
+      valor: inteiro(ultimo(planos)),
+      variacao: <Variacao valor={variacaoDe(planos)} tom="ciano" />,
+      legenda: variacaoDe(planos) === null ? 'Pedidos pagos no checkout' : 'em relação ao mês anterior',
+      grafico: <Linha serie={planos} formatar={inteiro} />,
     },
     {
       label: 'Projetos ativos',
-      value: String(
-        (projects.data ?? []).filter((p) => isActiveStatus(p.status)).length
-      ),
-      caption: 'Da captação à revisão',
-      icon: FolderKanban,
+      icon: Folder,
       to: '/admin/projetos',
       query: projects,
+      valorTexto: inteiro(projetos.andamento + projetos.revisao),
+      valor: null,
+      legenda: '',
+      grafico: <Donut dados={projetos} />,
     },
   ]
-  const max = Math.max(...months.map((m) => m.total), 1)
+
   return (
     <div className="vx-metrics">
-      {cards.map(({ label, value, caption, icon: Icon, to, query }, i) => (
+      {cards.map((c) => (
         <Link
-          key={label}
-          to={to}
+          key={c.label}
+          to={c.to}
           className="vx-metric vx-glass"
-          aria-label={`${label}: ${query.isLoading ? 'Carregando' : query.isError ? 'Indisponível' : value}`}
+          aria-label={`${c.label}: ${c.query.isLoading ? 'Carregando' : c.query.isError ? 'Indisponível' : c.valorTexto}`}
         >
           <div className="vx-metric-heading">
-            <span>{label}</span>
+            <span>{c.label}</span>
             <span className="vx-metric-icon">
-              <Icon size={20} />
+              <c.icon size={20} />
             </span>
           </div>
-          {query.isLoading ? (
+          {c.query.isLoading ? (
             <div className="vx-loading" aria-label="Carregando indicador" />
-          ) : query.isError ? (
+          ) : c.query.isError ? (
             <p role="alert" className="vx-metric-error">
               Dados indisponíveis
             </p>
           ) : (
             <>
-              <strong title={value}>
-                <span className="vx-value-full">{value}</span>
-                <span className="vx-value-compact">
-                  {i === 0
-                    ? compactMoney.format(revenue)
-                    : i === 1
-                      ? compactMoney.format(negotiation)
-                      : value}
-                </span>
-              </strong>
-              <small>{caption}</small>
-              {i === 0 && (
-                <div
-                  className="vx-mini-bars"
-                  role="img"
-                  aria-label={months
-                    .map((m) => `${m.label}: ${formatBRL(m.total)}`)
-                    .join('; ')}
-                >
-                  {months.map((m) => (
-                    <span key={m.key}>
-                      <i
-                        style={{
-                          height: `${Math.max((m.total / max) * 100, 3)}%`,
-                        }}
-                      />
-                      <em>{m.label}</em>
-                    </span>
-                  ))}
-                </div>
+              {c.variacao}
+              {c.valor !== null && (
+                <strong title={c.valorTexto}>
+                  <span className={c.valorCompacto ? 'vx-value-full' : undefined}>{c.valor}</span>
+                  {c.valorCompacto && <span className="vx-value-compact">{c.valorCompacto}</span>}
+                </strong>
               )}
-              {i !== 0 && (
-                <Icon className="vx-metric-watermark" aria-hidden="true" />
-              )}
+              {c.legenda && <small>{c.legenda}</small>}
+              {c.grafico}
             </>
           )}
         </Link>
