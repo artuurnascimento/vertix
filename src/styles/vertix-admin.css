@@ -173,14 +173,18 @@
   color: #abb3cd;
 }
 /* Título das páginas do painel: caixa alta, só o contorno (traço de 1px),
-   sem preenchimento — o nome aparece uma vez, grande, como marca d'água
-   firme; a descrição embaixo continua em texto normal. O tamanho aqui
-   vence o das classes utilitárias das páginas (text-4xl/5xl). */
+   sem preenchimento — o nome aparece uma vez, grande. Em Kanit de
+   propósito, e não na fonte do sistema como o resto do painel: o traço
+   segue cada contorno do glifo, e as fontes variáveis do sistema têm
+   contornos sobrepostos (a diagonal do N cruzando as hastes) que viram
+   riscos dentro das letras. A Kanit do Google é estática, sem sobreposição. */
 .vx-admin h1.hero-heading {
-  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-family: 'Kanit', sans-serif;
+  font-weight: 800;
+  font-size: clamp(3.25rem, 7vw, 6.5rem);
   line-height: 1;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: transparent;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 1px #f4f4f0;
