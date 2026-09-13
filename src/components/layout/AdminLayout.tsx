@@ -38,7 +38,6 @@ import {
 import { MotionConfig } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import QuickSearch from './QuickSearch'
-import { GlassNavLink } from '../ui/glass-button'
 import NotificationBell from './NotificationBell'
 import AvisoAtualizacao from './AvisoAtualizacao'
 import { useAuth } from '../../lib/auth'
@@ -206,9 +205,14 @@ export default function AdminLayout() {
           </Link>
           <nav className="vx-topnav" aria-label="Áreas do sistema">
             {TOP_NAV.map((item) => (
-              <GlassNavLink key={item.to} to={item.to} size="sm" ativo={isGroupActive(item.label)}>
+              <Link
+                key={item.to}
+                to={item.to}
+                className={isGroupActive(item.label) ? 'is-active' : ''}
+                aria-current={isGroupActive(item.label) ? 'true' : undefined}
+              >
                 {item.label}
-              </GlassNavLink>
+              </Link>
             ))}
           </nav>
           <div className="vx-header-tools">
@@ -270,9 +274,9 @@ export default function AdminLayout() {
                   abaixo — repetir aqui era o mesmo nome duas vezes. */}
               <nav aria-label="Módulos desta área">
                 {currentGroup?.itens.map((i) => (
-                  <GlassNavLink key={i.to} to={i.to} end={i.end} size="sm">
+                  <NavLink key={i.to} to={i.to} end={i.end}>
                     {i.label}
-                  </GlassNavLink>
+                  </NavLink>
                 ))}
               </nav>
             </div>

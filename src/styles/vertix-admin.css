@@ -73,19 +73,23 @@
 }
 .vx-topnav {
   display: flex;
-  gap: 6px;
   padding: 5px;
   border: 1px solid #a6b2e02b;
   border-radius: 999px;
   background: linear-gradient(120deg, #161e37b3, #0a1020cc);
 }
-/* Menu do topo e abas da área: pílulas de vidro (src/index.css,
-   .glass-button-*). Aqui só as medidas de cada lugar. */
-.vx-topnav .glass-button-text {
-  padding: 11px 20px;
+.vx-topnav a {
+  padding: 12px 22px;
   white-space: nowrap;
   font-size: 14px;
+  border-radius: 999px;
+  color: #c4cae0;
+  transition: background 0.18s;
 }
+.vx-topnav a:hover {
+  background-color: #ffffff09;
+}
+.vx-topnav .is-active,
 .vx-rail .is-active,
 .vx-bottom-nav .active,
 .vx-workspace-tabs .is-active {
@@ -187,12 +191,14 @@
   gap: 5px;
   flex-wrap: wrap;
 }
-.vx-section-nav nav {
-  gap: 6px;
-}
-.vx-section-nav .glass-button-text {
-  padding: 9px 16px;
+.vx-section-nav a {
+  padding: 10px 16px;
+  border-radius: 999px;
   font-size: 13px;
+}
+.vx-section-nav a.active {
+  color: #d8caff;
+  background: #947aff1f;
 }
 .vx-greeting {
   display: flex;
