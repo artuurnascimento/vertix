@@ -11,6 +11,8 @@ interface Props {
   /** Página de acompanhamento do pedido, já com o id. */
   linkPedido: string | null
   onFechar: () => void
+  /** Rastreio: a pessoa copiou o código (o sinal mais forte de que vai pagar). */
+  onCopiar?: () => void
 }
 
 /**
@@ -40,6 +42,7 @@ export default function PixModal({
   totalCentavos,
   linkPedido,
   onFechar,
+  onCopiar,
 }: Props) {
   const caixa = useRef<HTMLDivElement>(null)
   const focoAnterior = useRef<HTMLElement | null>(null)
@@ -124,6 +127,7 @@ export default function PixModal({
           pix={pix}
           totalCentavos={totalCentavos}
           linkPedido={linkPedido}
+          onCopiar={onCopiar}
         />
       </div>
     </div>,

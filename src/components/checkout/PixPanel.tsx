@@ -9,6 +9,8 @@ interface Props {
   totalCentavos: number
   /** Página de acompanhamento do pedido, já com o id. */
   linkPedido: string | null
+  /** Avisa quem rastreia que o código foi copiado. */
+  onCopiar?: () => void
 }
 
 /**
@@ -27,13 +29,14 @@ function fonteImagem(qr: string): string {
  * fingir que "detectou" o pagamento, ela entrega o caminho honesto: o QR e o
  * link para acompanhar o pedido.
  */
-export default function PixPanel({ pix, totalCentavos, linkPedido }: Props) {
+export default function PixPanel({ pix, totalCentavos, linkPedido, onCopiar }: Props) {
   const [copiado, setCopiado] = useState(false)
 
   const copiar = async () => {
     if (!pix.copiaCola) return
     try {
       await navigator.clipboard.writeText(pix.copiaCola)
+      onCopiar?.()
       setCopiado(true)
       window.setTimeout(() => setCopiado(false), 2000)
     } catch {

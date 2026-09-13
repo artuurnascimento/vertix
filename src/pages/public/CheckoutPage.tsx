@@ -30,6 +30,7 @@ import {
   tokenValido,
 } from '../../components/checkout/prefillCliente'
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
+import { useRastreioCheckout } from '../../components/checkout/rastreio/useRastreio'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
 import BannerTopo from '../../components/checkout/BannerTopo'
 import CabecalhoCheckout from '../../components/checkout/CabecalhoCheckout'
@@ -145,6 +146,14 @@ export default function CheckoutPage() {
   })
 
   /**
+   * Rastreio ao vivo: a sessão nasce já aqui (batimento, aba, saída), e a
+   * chegada, a seção olhada e o campo em foco começam quando a oferta existe.
+   * Os passos explícitos (bump, cupom, método, pagar, pagamento, Pix) são
+   * disparados nos handlers abaixo. Nunca lança, nunca atrasa nada.
+   */
+  const rastreio = useRastreioCheckout(slug, Boolean(info))
+
+  /**
    * Dados do comprador, para o formulário não pedir de novo o que ele já deu.
    *
    * Não trava nada: `retry: false` e a busca devolve `null` em qualquer falha.
@@ -178,7 +187,12 @@ export default function CheckoutPage() {
       email: atual.email || prefill.email,
       whatsapp: atual.whatsapp || prefill.whatsapp,
     }))
-  }, [prefill])
+    // O painel já sabe quem é: o contato veio da análise, não do teclado.
+    for (const campo of ['nome', 'email', 'whatsapp'] as const) {
+      const valor = prefill[campo]?.trim()
+      if (valor) rastreio.rastrear('preencheu', { campo, valor, origem: 'analise' })
+    }
+  }, [prefill, rastreio])
 
   // Desconto por método só existe no Pix; no cartão a taxa não deixa espaço.
   const descontoPixPercentual = info?.checkout.descontoPixPercentual ?? null
@@ -301,10 +315,21 @@ export default function CheckoutPage() {
   ) => {
     if (!info || !slug) return
 
+    rastreio.rastrear('clicou_pagar', {
+      metodo,
+      total_centavos: total.totalCentavos,
+      bump: bumpMarcado,
+      cupom: cupom?.codigo ?? null,
+    })
+
     const errosCliente = validarCliente(cliente, exigeDocumento)
     if (Object.keys(errosCliente).length > 0) {
       setErros(errosCliente)
       setErroPagamento('Confira seus dados acima antes de pagar.')
+      rastreio.rastrear('erro', {
+        erro: 'dados_invalidos',
+        mensagem: Object.keys(errosCliente).join(', '),
+      })
       formRef.current?.scrollIntoView({ block: 'center' })
       const primeiro = Object.keys(errosCliente)[0]
       document.getElementById(`cliente-${primeiro}`)?.focus({
@@ -339,29 +364,44 @@ export default function CheckoutPage() {
         setTotalCobrado(resposta.totalCentavos)
       }
 
+      const passo = {
+        pedido_id: resposta.pedidoId,
+        total_centavos: resposta.totalCentavos,
+        metodo,
+      }
       if (resposta.pix) {
         // Sem `setEstado`: o Pix abre POR CIMA do checkout. Trocar a página
         // inteira apagava o contexto — a pessoa sumia do formulário que acabou
         // de preencher e, se fechasse sem pagar, não tinha para onde voltar.
+        rastreio.rastrear('pagamento', { ...passo, resultado: 'pix_gerado' })
         setPix(resposta.pix)
         setPixAberto(true)
+        rastreio.rastrear('pix', { acao: 'abriu' })
         return
       }
       if (resposta.status === 'aprovado' && resposta.pedidoId) {
+        rastreio.rastrear('pagamento', { ...passo, resultado: 'aprovado' })
         navegar(destinoPos(resposta.pedidoId), { replace: true })
         return
       }
       if (resposta.status === 'pendente') {
+        rastreio.rastrear('pagamento', { ...passo, resultado: 'pendente' })
         setEstado('analise')
         return
       }
 
+      rastreio.rastrear('pagamento', {
+        ...passo,
+        resultado: 'recusado',
+        erro: resposta.erro ?? 'pagamento_recusado',
+      })
       setErroPagamento(mensagemDeErro(resposta.erro, resposta.mensagem))
       mensagemExibida = true
       throw new Error(resposta.erro ?? 'pagamento_recusado')
     } catch (erro) {
       if (erro instanceof Error && erro.message === 'dados_invalidos') throw erro
       if (!mensagemExibida) {
+        rastreio.rastrear('pagamento', { resultado: 'falha', erro: 'servidor' })
         setErroPagamento(
           'Não conseguimos falar com o servidor de pagamento. Tente de novo em instantes.'
         )
@@ -474,47 +514,71 @@ export default function CheckoutPage() {
               JavaScript a cada mudança do resumo, do cupom e do bump.
               Rolando junto com a página, o comportamento é o mesmo do celular,
               é previsível, e tudo aparece. */}
+          {/* `data-secao` é o que o rastreio ao vivo observa: a seção no
+              centro da tela vira "onde a pessoa está olhando" no painel. */}
           <div className="flex flex-col gap-5 lg:order-2">
-            <ResumoPedido
-              produto={produto}
-              bump={bump}
-              bumpMarcado={bumpMarcado}
-              cupomCodigo={cupom?.codigo ?? null}
-              metodo={metodo}
-              descontoPixPercentual={descontoPixPercentual}
-              total={total}
-              padraoAberto={checkout.resumoAberto}
-            />
-            {avaliacoes && <div className="hidden lg:block">{avaliacoes}</div>}
+            <div data-secao="resumo">
+              <ResumoPedido
+                produto={produto}
+                bump={bump}
+                bumpMarcado={bumpMarcado}
+                cupomCodigo={cupom?.codigo ?? null}
+                metodo={metodo}
+                descontoPixPercentual={descontoPixPercentual}
+                total={total}
+                padraoAberto={checkout.resumoAberto}
+              />
+            </div>
+            {avaliacoes && (
+              <div className="hidden lg:block" data-secao="avaliacoes">
+                {avaliacoes}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-5 lg:order-1">
             {bump && (
-              <OrderBump
-                bump={bump}
-                marcado={bumpMarcado}
-                onChange={setBumpMarcado}
-              />
+              <div data-secao="bump">
+                <OrderBump
+                  bump={bump}
+                  marcado={bumpMarcado}
+                  onChange={(marcado) => {
+                    setBumpMarcado(marcado)
+                    rastreio.rastrear('bump', { marcado })
+                  }}
+                />
+              </div>
             )}
 
-            <CupomField
-              slug={checkout.slug}
-              aplicado={cupom?.codigo ?? null}
-              bumpMarcado={bumpMarcado}
-              metodo={metodo}
-              descontoCentavos={total.descontoCentavos}
-              onAplicar={(codigo, resposta) =>
-                setCupom({
-                  codigo,
-                  resposta,
-                  bumpNaValidacao: bumpMarcado,
-                  metodoNaValidacao: metodo,
-                })
-              }
-              onRemover={() => setCupom(null)}
-            />
+            <div data-secao="cupom">
+              <CupomField
+                slug={checkout.slug}
+                aplicado={cupom?.codigo ?? null}
+                bumpMarcado={bumpMarcado}
+                metodo={metodo}
+                descontoCentavos={total.descontoCentavos}
+                onAplicar={(codigo, resposta) =>
+                  setCupom({
+                    codigo,
+                    resposta,
+                    bumpNaValidacao: bumpMarcado,
+                    metodoNaValidacao: metodo,
+                  })
+                }
+                onTentativa={(codigo, valido) =>
+                  rastreio.rastrear('cupom', { acao: 'aplicou', codigo, valido })
+                }
+                onRemover={() => {
+                  rastreio.rastrear('cupom', {
+                    acao: 'removeu',
+                    codigo: cupom?.codigo ?? null,
+                  })
+                  setCupom(null)
+                }}
+              />
+            </div>
 
-            <div ref={formRef}>
+            <div ref={formRef} data-secao="dados">
               <DadosCliente
                 cliente={cliente}
                 erros={erros}
@@ -524,23 +588,41 @@ export default function CheckoutPage() {
               />
             </div>
 
-            <SecaoPagamento
-              id={SECAO_PAGAMENTO_ID}
-              totalCentavos={total.totalCentavos}
-              metodo={metodo}
-              onMetodo={setMetodo}
-              descontoPixPercentual={descontoPixPercentual}
-              emailInicial={cliente.email}
-              documento={cliente.documento}
-              processando={processando}
-              erro={erroPagamento}
-              onSubmit={enviarPagamento}
-              onErroCarregamento={setErroPagamento}
-            />
+            <div data-secao="pagamento">
+              <SecaoPagamento
+                id={SECAO_PAGAMENTO_ID}
+                totalCentavos={total.totalCentavos}
+                metodo={metodo}
+                onMetodo={(novo) => {
+                  setMetodo(novo)
+                  rastreio.rastrear('metodo', { metodo: novo })
+                }}
+                descontoPixPercentual={descontoPixPercentual}
+                emailInicial={cliente.email}
+                documento={cliente.documento}
+                processando={processando}
+                erro={erroPagamento}
+                onSubmit={enviarPagamento}
+                onErroCarregamento={(mensagem) => {
+                  setErroPagamento(mensagem)
+                  if (mensagem) {
+                    rastreio.rastrear('erro', { erro: 'pagamento_sdk', mensagem })
+                  }
+                }}
+              />
+            </div>
 
-            <GarantiaCard garantia={garantia} />
-            {avaliacoes && <div className="lg:hidden">{avaliacoes}</div>}
-            <SelosGrid selos={prova?.selos ?? []} />
+            <div data-secao="garantia">
+              <GarantiaCard garantia={garantia} />
+            </div>
+            {avaliacoes && (
+              <div className="lg:hidden" data-secao="avaliacoes-celular">
+                {avaliacoes}
+              </div>
+            )}
+            <div data-secao="selos">
+              <SelosGrid selos={prova?.selos ?? []} />
+            </div>
           </div>
         </div>
       </motion.div>
@@ -573,7 +655,10 @@ export default function CheckoutPage() {
             </p>
             <button
               type="button"
-              onClick={() => setPixAberto(true)}
+              onClick={() => {
+                setPixAberto(true)
+                rastreio.rastrear('pix', { acao: 'abriu' })
+              }}
               className="shrink-0 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               Ver código Pix
@@ -588,7 +673,11 @@ export default function CheckoutPage() {
           pix={pix}
           totalCentavos={totalCobrado ?? total.totalCentavos}
           linkPedido={pedidoId ? `/c/${slug}/obrigado/${pedidoId}` : null}
-          onFechar={() => setPixAberto(false)}
+          onFechar={() => {
+            setPixAberto(false)
+            rastreio.rastrear('pix', { acao: 'fechou' })
+          }}
+          onCopiar={() => rastreio.rastrear('pix', { acao: 'copiou' })}
         />
       )}
     </CheckoutShell>

@@ -15,6 +15,7 @@ import CheckoutsTable from '../components/checkouts/CheckoutsTable'
 import CheckoutFormModal from '../components/checkouts/CheckoutFormModal'
 import CuponsPanel from '../components/checkouts/CuponsPanel'
 import CupomFormModal from '../components/checkouts/CupomFormModal'
+import AoVivoTab from '../components/aoVivo/AoVivoTab'
 import ConfirmacaoModal from '../components/ui/ConfirmacaoModal'
 import Toast, { useToast } from '../components/ui/Toast'
 
@@ -97,8 +98,13 @@ export default function Checkouts() {
     ehTabelaAusente(checkoutsQuery.error) || ehTabelaAusente(produtosQuery.error)
   const semProdutos = !produtosQuery.isLoading && produtos.length === 0
   const naAbaCupons = aba === 'cupons'
+  const naAbaAoVivo = aba === 'ao-vivo'
   const carregando = naAbaCupons ? cuponsQuery.isLoading : checkoutsQuery.isLoading
   const comErro = naAbaCupons ? cuponsQuery.isError : checkoutsQuery.isError
+  const nomesDosCheckouts = useMemo(
+    () => new Map(checkouts.map((c) => [c.id, c.titulo])),
+    [checkouts]
+  )
 
   const abrirNovo = () => {
     setEmEdicao(null)
@@ -121,6 +127,7 @@ export default function Checkouts() {
             garantia e cronômetro.
           </p>
         </div>
+        {!naAbaAoVivo && (
         <button
           type="button"
           onClick={naAbaCupons ? abrirNovoCupom : abrirNovo}
@@ -130,12 +137,20 @@ export default function Checkouts() {
           <Plus className="h-4 w-4" />
           {naAbaCupons ? 'Novo cupom' : 'Novo checkout'}
         </button>
+        )}
       </div>
 
       <div className="mt-8">
         <CheckoutsAbas valor={aba} onChange={setAba} />
       </div>
 
+      {naAbaAoVivo && (
+        <div className="mt-6">
+          <AoVivoTab nomesDosCheckouts={nomesDosCheckouts} />
+        </div>
+      )}
+
+      {!naAbaAoVivo && (
       <div className="mt-6 overflow-x-auto rounded-2xl border border-white/5 bg-surface-1">
         {carregando && (
           <div className="divide-y divide-white/5" aria-label="Carregando">
@@ -243,6 +258,7 @@ export default function Checkouts() {
           />
         )}
       </div>
+      )}
 
       <CheckoutFormModal
         open={formAberto}

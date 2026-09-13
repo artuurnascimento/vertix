@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import {
@@ -14,6 +14,7 @@ import {
   useStatusPedido,
 } from '../../components/upsell/checkoutDados'
 import { useCampoCvv } from '../../components/upsell/useCampoCvv'
+import { useRastreioSessao } from '../../components/checkout/rastreio/useRastreio'
 import { temCartaoSalvo } from '../../components/upsell/pedidoResumo'
 import {
   ehBugDeContrato,
@@ -57,6 +58,10 @@ export default function UpsellPage() {
   const [processando, setProcessando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
+  // Continua a sessão do checkout (mesma aba). Aberto por link direto, sem
+  // sessão, o rastreio fica mudo — não é uma visita ao checkout.
+  const rastreio = useRastreioSessao(slug, 'continuar')
+
   /**
    * Trava síncrona contra clique duplo. `processando` desabilita o botão, mas
    * o estado do React só chega no próximo render: dois cliques rápidos (ou um
@@ -75,6 +80,13 @@ export default function UpsellPage() {
     Boolean(oferta),
     oferta?.etapa ?? 'nenhuma'
   )
+
+  // Cada oferta mostrada (upsell, depois o downsell) é um passo da visita.
+  const etapaVista = oferta?.etapa ?? null
+  useEffect(() => {
+    if (!etapaVista) return
+    rastreio.rastrear('upsell', { acao: 'viu', etapa: etapaVista, pedido_id: pedidoId })
+  }, [etapaVista, pedidoId, rastreio])
 
   function irParaObrigado(estado?: EstadoObrigado) {
     void navigate(linkPedido, { replace: true, state: estado })
@@ -108,6 +120,12 @@ export default function UpsellPage() {
       })
 
       if (resposta.ok) {
+        rastreio.rastrear('upsell', {
+          acao: 'aceitou',
+          etapa: oferta.etapa,
+          pedido_id: pedidoId,
+          total_centavos: resposta.total_centavos ?? null,
+        })
         irParaObrigado({
           upsellAceito: {
             produtoId: oferta.produtoId,
@@ -131,8 +149,15 @@ export default function UpsellPage() {
         return
       }
 
+      rastreio.rastrear('upsell', {
+        acao: 'erro',
+        etapa: oferta.etapa,
+        pedido_id: pedidoId,
+        erro: resposta.erro ?? 'recusado',
+      })
       setErro(mensagemErroUpsell(resposta))
     } catch {
+      rastreio.rastrear('upsell', { acao: 'erro', etapa: oferta.etapa, erro: 'falha_rede' })
       setErro(mensagemErroUpsell({ erro: 'falha_rede' }))
     } finally {
       emVooRef.current = false
@@ -142,6 +167,7 @@ export default function UpsellPage() {
 
   function recusar() {
     if (emVooRef.current) return
+    rastreio.rastrear('upsell', { acao: 'recusou', etapa, pedido_id: pedidoId })
     const proxima = proximaEtapaAoRecusar(etapa, info, status?.plataforma)
     if (proxima === 'fim') {
       irParaObrigado()

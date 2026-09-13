@@ -16,6 +16,8 @@ interface Props {
   /** Método escolhido: o total do servidor depende dele também. */
   metodo: MetodoPagamento
   onAplicar: (codigo: string, resposta: RespostaCupom) => void
+  /** Rastreio: toda tentativa, válida ou não (a inválida não chega em onAplicar). */
+  onTentativa?: (codigo: string, valido: boolean) => void
   onRemover: () => void
   descontoCentavos: number
 }
@@ -42,6 +44,7 @@ export default function CupomField({
   bumpMarcado,
   metodo,
   onAplicar,
+  onTentativa,
   onRemover,
   descontoCentavos,
 }: Props) {
@@ -59,6 +62,7 @@ export default function CupomField({
     setMensagem(null)
     try {
       const resposta = await validarCupom(slug, limpo, bumpMarcado, metodo)
+      onTentativa?.(limpo.toUpperCase(), resposta.valido)
       if (resposta.valido) {
         onAplicar(limpo.toUpperCase(), resposta)
         setMensagem(null)

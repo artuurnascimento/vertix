@@ -527,6 +527,188 @@ export type Database = {
           },
         ]
       }
+      checkout_eventos: {
+        Row: {
+          criado_em: string
+          dados: Json
+          id: number
+          sessao_id: string
+          tipo: string
+        }
+        Insert: {
+          criado_em?: string
+          dados?: Json
+          id?: never
+          sessao_id: string
+          tipo: string
+        }
+        Update: {
+          criado_em?: string
+          dados?: Json
+          id?: never
+          sessao_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_eventos_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "checkout_sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkout_sessoes: {
+        Row: {
+          agente: string | null
+          altura: number | null
+          aprovado_em: string | null
+          bot: boolean
+          bot_motivo: string | null
+          bump: boolean
+          checkout_id: string
+          cidade: string | null
+          cupom: string | null
+          dados_em: string | null
+          dispositivo: string | null
+          documento_preenchido: boolean
+          email: string | null
+          encerrada_em: string | null
+          estado: string | null
+          etapa: string
+          eventos: number
+          foco: string | null
+          id: string
+          iniciado_em: string
+          interagiu_em: string | null
+          largura: number | null
+          latitude: number | null
+          longitude: number | null
+          metodo: string | null
+          navegador: string | null
+          nome: string | null
+          obrigado_em: string | null
+          pagamento_em: string | null
+          pagar_em: string | null
+          pais: string | null
+          pedido_id: string | null
+          referrer: string | null
+          secao: string | null
+          so: string | null
+          total_centavos: number | null
+          ultimo_evento_em: string
+          updated_at: string
+          utm: Json
+          visitante_id: string | null
+          visivel: boolean
+          whatsapp: string | null
+        }
+        Insert: {
+          agente?: string | null
+          altura?: number | null
+          aprovado_em?: string | null
+          bot?: boolean
+          bot_motivo?: string | null
+          bump?: boolean
+          checkout_id: string
+          cidade?: string | null
+          cupom?: string | null
+          dados_em?: string | null
+          dispositivo?: string | null
+          documento_preenchido?: boolean
+          email?: string | null
+          encerrada_em?: string | null
+          estado?: string | null
+          etapa?: string
+          eventos?: number
+          foco?: string | null
+          id: string
+          iniciado_em?: string
+          interagiu_em?: string | null
+          largura?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          metodo?: string | null
+          navegador?: string | null
+          nome?: string | null
+          obrigado_em?: string | null
+          pagamento_em?: string | null
+          pagar_em?: string | null
+          pais?: string | null
+          pedido_id?: string | null
+          referrer?: string | null
+          secao?: string | null
+          so?: string | null
+          total_centavos?: number | null
+          ultimo_evento_em?: string
+          updated_at?: string
+          utm?: Json
+          visitante_id?: string | null
+          visivel?: boolean
+          whatsapp?: string | null
+        }
+        Update: {
+          agente?: string | null
+          altura?: number | null
+          aprovado_em?: string | null
+          bot?: boolean
+          bot_motivo?: string | null
+          bump?: boolean
+          checkout_id?: string
+          cidade?: string | null
+          cupom?: string | null
+          dados_em?: string | null
+          dispositivo?: string | null
+          documento_preenchido?: boolean
+          email?: string | null
+          encerrada_em?: string | null
+          estado?: string | null
+          etapa?: string
+          eventos?: number
+          foco?: string | null
+          id?: string
+          iniciado_em?: string
+          interagiu_em?: string | null
+          largura?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          metodo?: string | null
+          navegador?: string | null
+          nome?: string | null
+          obrigado_em?: string | null
+          pagamento_em?: string | null
+          pagar_em?: string | null
+          pais?: string | null
+          pedido_id?: string | null
+          referrer?: string | null
+          secao?: string | null
+          so?: string | null
+          total_centavos?: number | null
+          ultimo_evento_em?: string
+          updated_at?: string
+          utm?: Json
+          visitante_id?: string | null
+          visivel?: boolean
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_sessoes_checkout_id_fkey"
+            columns: ["checkout_id"]
+            isOneToOne: false
+            referencedRelation: "checkouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessoes_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkouts: {
         Row: {
           ativo: boolean
@@ -2721,6 +2903,7 @@ export type Database = {
         Args: { p_body: Json; p_function: string }
         Returns: undefined
       }
+      _cron_checkout_rastreio_limpar: { Args: never; Returns: undefined }
       _cron_generate_receivables: { Args: never; Returns: undefined }
       _cron_payment_reminders: { Args: never; Returns: undefined }
       _cron_scan_nudges: { Args: never; Returns: undefined }
@@ -2751,6 +2934,15 @@ export type Database = {
       checkout_item_reservar: {
         Args: { p_item: Json; p_pedido_id: string }
         Returns: boolean
+      }
+      checkout_rastrear: {
+        Args: {
+          p_dados?: Json
+          p_sessao: string
+          p_slug: string
+          p_tipo: string
+        }
+        Returns: undefined
       }
       converter_lead_em_cliente: {
         Args: { p_lead_id: string }

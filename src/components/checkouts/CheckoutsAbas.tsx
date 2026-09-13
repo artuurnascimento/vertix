@@ -1,6 +1,7 @@
 export const ABAS = [
   { key: 'checkouts', label: 'Checkouts' },
   { key: 'cupons', label: 'Cupons' },
+  { key: 'ao-vivo', label: 'Ao vivo' },
 ] as const
 
 export type AbaCheckout = (typeof ABAS)[number]['key']
@@ -33,6 +34,9 @@ export default function CheckoutsAbas({
               : 'text-muted hover:bg-white/5 hover:text-ink',
           ].join(' ')}
         >
+          {key === 'ao-vivo' && (
+            <span aria-hidden className="mr-2 inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 align-middle" />
+          )}
           {label}
         </button>
       ))}

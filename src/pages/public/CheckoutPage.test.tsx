@@ -339,7 +339,10 @@ describe('CheckoutPage — banner e avaliações', () => {
     await esperarForm()
 
     const resumo = screen.getByRole('region', { name: 'Seu pedido' })
-    const colunaDireita = resumo.parentElement as HTMLElement
+    // O resumo vive dentro do bloco `data-secao="resumo"` (rastreio ao vivo);
+    // a coluna é o pai desse bloco.
+    const colunaDireita = resumo.closest('[data-secao="resumo"]')
+      ?.parentElement as HTMLElement
     // A cópia de desktop mora junto do resumo — é o vazio que sobrava ali.
     expect(
       within(colunaDireita).getByRole('list', { name: 'Depoimentos' })

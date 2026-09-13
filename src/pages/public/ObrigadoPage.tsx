@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
 import {
@@ -21,6 +22,7 @@ import {
 } from "../../components/upsell/pedidoResumo";
 import CorrecaoAplicadaPassos from "../../components/upsell/CorrecaoAplicadaPassos";
 import { lerEstadoObrigado } from "../../components/upsell/estadoObrigado";
+import { useRastreioSessao } from "../../components/checkout/rastreio/useRastreio";
 
 /**
  * O que a tela afirma em cada situação.
@@ -92,6 +94,13 @@ export default function ObrigadoPage() {
     useStatusPedido(pedidoId, true);
 
   const { upsellAceito, totalCentavos } = lerEstadoObrigado(state);
+
+  // Fecha o rastro da visita: chegou à confirmação. Sem sessão (link
+  // direto, outra aba) fica mudo.
+  const rastreio = useRastreioSessao(slug, "continuar");
+  useEffect(() => {
+    rastreio.rastrear("obrigado", { pedido_id: pedidoId });
+  }, [rastreio, pedidoId]);
 
   const resumo = montarResumo({
     info,
