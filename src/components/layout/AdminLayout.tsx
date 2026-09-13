@@ -38,6 +38,7 @@ import {
 import { MotionConfig } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import QuickSearch from './QuickSearch'
+import { NavBar } from '../ui/tubelight-navbar'
 import NotificationBell from './NotificationBell'
 import AvisoAtualizacao from './AvisoAtualizacao'
 import { useAuth } from '../../lib/auth'
@@ -204,16 +205,14 @@ export default function AdminLayout() {
             <span>VERTIX</span>
           </Link>
           <nav className="vx-topnav" aria-label="Áreas do sistema">
-            {TOP_NAV.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={isGroupActive(item.label) ? 'is-active' : ''}
-                aria-current={isGroupActive(item.label) ? 'true' : undefined}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <NavBar
+              items={TOP_NAV.map((item) => ({
+                name: item.label,
+                url: item.to,
+                icon: item.icon,
+                ativo: isGroupActive(item.label),
+              }))}
+            />
           </nav>
           <div className="vx-header-tools">
             <div className="vx-search">
