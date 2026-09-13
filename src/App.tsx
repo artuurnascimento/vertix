@@ -2,7 +2,9 @@ import { Suspense, lazy, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import SplashScreen from './components/ui/SplashScreen'
+import FronteiraDeErro from './components/ui/FronteiraDeErro'
 import { isPublicLinkHost } from './lib/publicUrls'
+import { carregarPagina } from './lib/carregarPagina'
 import AdminLayout from './components/layout/AdminLayout'
 import HostToken from './pages/public/HostToken'
 import HostRoot, { BioRoute } from './pages/public/HostRoot'
@@ -11,39 +13,39 @@ import HostRoot, { BioRoute } from './pages/public/HostRoot'
  * Telas carregadas sob demanda: sem isso, quem abre uma pagina publica
  * (link de bio, proposta, pagamento) baixa o painel inteiro junto.
  */
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const Clientes = lazy(() => import('./pages/Clientes'))
-const ClientDetail = lazy(() => import('./pages/ClientDetail'))
-const Projetos = lazy(() => import('./pages/Projetos'))
-const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
-const Agenda = lazy(() => import('./pages/Agenda'))
-const Propostas = lazy(() => import('./pages/Propostas'))
-const Briefings = lazy(() => import('./pages/Briefings'))
-const Financeiro = lazy(() => import('./pages/Financeiro'))
-const Relatorios = lazy(() => import('./pages/Relatorios'))
-const Automacoes = lazy(() => import('./pages/Automacoes'))
-const Contratos = lazy(() => import('./pages/Contratos'))
-const Suporte = lazy(() => import('./pages/Suporte'))
-const Configuracoes = lazy(() => import('./pages/Configuracoes'))
-const Trafego = lazy(() => import('./pages/Trafego'))
-const Lojas = lazy(() => import('./pages/Lojas'))
-const LeadsRaiox = lazy(() => import('./pages/LeadsRaiox'))
-const VertixScan = lazy(() => import('./pages/VertixScan'))
-const BioAdmin = lazy(() => import('./pages/Bio'))
-const BriefingForm = lazy(() => import('./pages/public/BriefingForm'))
-const Proposta = lazy(() => import('./pages/public/Proposta'))
-const Portal = lazy(() => import('./pages/public/Portal'))
-const ContractSign = lazy(() => import('./pages/public/ContractSign'))
-const NpsSurvey = lazy(() => import('./pages/public/NpsSurvey'))
-const PagarPage = lazy(() => import('./pages/public/PagarPage'))
-const CheckoutPage = lazy(() => import('./pages/public/CheckoutPage'))
-const UpsellPage = lazy(() => import('./pages/public/UpsellPage'))
-const ObrigadoPage = lazy(() => import('./pages/public/ObrigadoPage'))
-const TermosPage = lazy(() => import('./pages/public/TermosPage'))
-const PrivacidadePage = lazy(() => import('./pages/public/PrivacidadePage'))
-const Produtos = lazy(() => import('./pages/Produtos'))
-const Checkouts = lazy(() => import('./pages/Checkouts'))
-const Pedidos = lazy(() => import('./pages/Pedidos'))
+const Dashboard = lazy(() => carregarPagina(() => import('./pages/Dashboard')))
+const Clientes = lazy(() => carregarPagina(() => import('./pages/Clientes')))
+const ClientDetail = lazy(() => carregarPagina(() => import('./pages/ClientDetail')))
+const Projetos = lazy(() => carregarPagina(() => import('./pages/Projetos')))
+const ProjectDetail = lazy(() => carregarPagina(() => import('./pages/ProjectDetail')))
+const Agenda = lazy(() => carregarPagina(() => import('./pages/Agenda')))
+const Propostas = lazy(() => carregarPagina(() => import('./pages/Propostas')))
+const Briefings = lazy(() => carregarPagina(() => import('./pages/Briefings')))
+const Financeiro = lazy(() => carregarPagina(() => import('./pages/Financeiro')))
+const Relatorios = lazy(() => carregarPagina(() => import('./pages/Relatorios')))
+const Automacoes = lazy(() => carregarPagina(() => import('./pages/Automacoes')))
+const Contratos = lazy(() => carregarPagina(() => import('./pages/Contratos')))
+const Suporte = lazy(() => carregarPagina(() => import('./pages/Suporte')))
+const Configuracoes = lazy(() => carregarPagina(() => import('./pages/Configuracoes')))
+const Trafego = lazy(() => carregarPagina(() => import('./pages/Trafego')))
+const Lojas = lazy(() => carregarPagina(() => import('./pages/Lojas')))
+const LeadsRaiox = lazy(() => carregarPagina(() => import('./pages/LeadsRaiox')))
+const VertixScan = lazy(() => carregarPagina(() => import('./pages/VertixScan')))
+const BioAdmin = lazy(() => carregarPagina(() => import('./pages/Bio')))
+const BriefingForm = lazy(() => carregarPagina(() => import('./pages/public/BriefingForm')))
+const Proposta = lazy(() => carregarPagina(() => import('./pages/public/Proposta')))
+const Portal = lazy(() => carregarPagina(() => import('./pages/public/Portal')))
+const ContractSign = lazy(() => carregarPagina(() => import('./pages/public/ContractSign')))
+const NpsSurvey = lazy(() => carregarPagina(() => import('./pages/public/NpsSurvey')))
+const PagarPage = lazy(() => carregarPagina(() => import('./pages/public/PagarPage')))
+const CheckoutPage = lazy(() => carregarPagina(() => import('./pages/public/CheckoutPage')))
+const UpsellPage = lazy(() => carregarPagina(() => import('./pages/public/UpsellPage')))
+const ObrigadoPage = lazy(() => carregarPagina(() => import('./pages/public/ObrigadoPage')))
+const TermosPage = lazy(() => carregarPagina(() => import('./pages/public/TermosPage')))
+const PrivacidadePage = lazy(() => carregarPagina(() => import('./pages/public/PrivacidadePage')))
+const Produtos = lazy(() => carregarPagina(() => import('./pages/Produtos')))
+const Checkouts = lazy(() => carregarPagina(() => import('./pages/Checkouts')))
+const Pedidos = lazy(() => carregarPagina(() => import('./pages/Pedidos')))
 
 const SPLASH_SESSION_KEY = 'vx-splash-shown'
 
@@ -85,6 +87,10 @@ export default function App() {
           }}
         />
       )}
+      {/* Fronteira por fora do Suspense: um chunk que falhou duas vezes (ver
+          lib/carregarPagina) ou qualquer erro de render vira uma tela com
+          saída, não o <div id="root"> vazio. */}
+      <FronteiraDeErro>
       <Suspense fallback={<div className="min-h-screen bg-bg" />}>
       <Routes>
       {/* /login antigo redireciona para a raiz (o login mora em "/"). */}
@@ -143,6 +149,7 @@ export default function App() {
       <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
       </Suspense>
+      </FronteiraDeErro>
     </>
   )
 }
