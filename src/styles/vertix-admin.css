@@ -24,27 +24,22 @@
 .vx-admin a {
   -webkit-tap-highlight-color: transparent;
 }
+/* Fundo do painel: a arte das ondas de luz (public/admin/fundo-*.webp), uma
+   versão paisagem e uma retrato — a mesma arte esticada nos dois formatos
+   perderia as ondas, que ficam na borda direita. Fixa e cobrindo a viewport;
+   a cor de base é a do body, para nada piscar enquanto a imagem chega.
+   `orientation` e não largura: um tablet em pé também é retrato. */
 .vx-atmosphere {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  background:
-    radial-gradient(ellipse at 100% 42%, #6334d928, transparent 50%),
-    radial-gradient(ellipse at 10% 0%, #323d701f, transparent 45%);
+  background: #070b1a url('/admin/fundo-desktop.webp') center / cover no-repeat;
 }
-.vx-atmosphere::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.3;
-  background: repeating-radial-gradient(
-    ellipse at 140% 75%,
-    transparent 0 24px,
-    #8a65ed45 25px,
-    transparent 26px 48px
-  );
-  mask-image: linear-gradient(110deg, transparent 40%, #000);
+@media (orientation: portrait) {
+  .vx-atmosphere {
+    background-image: url('/admin/fundo-mobile.webp');
+  }
 }
 .vx-admin .font-kanit {
   font-family: inherit;
