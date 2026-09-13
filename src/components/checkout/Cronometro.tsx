@@ -30,7 +30,7 @@ export default function Cronometro(fonte: FonteDoCronometro) {
     <div
       data-testid="cronometro"
       data-urgente={urgente || undefined}
-      className="vx-cronometro relative isolate flex items-center justify-center gap-3 overflow-hidden bg-gradient-to-r from-accent-2 via-accent to-[#8f7aff] px-4 py-2.5 text-white shadow-[0_10px_34px_-14px_rgba(108,91,242,0.85)] sm:gap-4 sm:py-3"
+      className="vx-cronometro relative isolate flex items-center justify-center gap-5 overflow-hidden bg-gradient-to-r from-accent-2 via-accent to-[#8f7aff] px-4 py-3 text-white shadow-[0_10px_34px_-14px_rgba(108,91,242,0.85)] sm:gap-8 sm:py-3.5"
     >
       {/* Brilho diagonal parado: dá volume à faixa sem chamar atenção. */}
       <span
@@ -41,7 +41,7 @@ export default function Cronometro(fonte: FonteDoCronometro) {
           A descrição textual é lida uma vez, no rótulo. */}
       <p
         aria-label={`Tempo restante: ${contagem.descricao}`}
-        className={`text-2xl font-bold leading-none tabular-nums tracking-tight sm:text-[28px] ${
+        className={`text-2xl font-semibold leading-none tabular-nums tracking-[0.08em] sm:text-[28px] ${
           urgente ? 'vx-cronometro-pulso' : ''
         }`}
       >
