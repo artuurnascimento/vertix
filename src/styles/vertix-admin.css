@@ -47,7 +47,10 @@
   justify-content: space-between;
   gap: 24px;
   padding: 18px 28px;
-  background: #070b1ae6;
+  /* Sem fundo: o Dark Veil passa por trás da logo, do menu e da busca. O
+     desfoque fica, para o conteúdo que rola por baixo da barra não brigar
+     com o texto dela. */
+  background: transparent;
   backdrop-filter: blur(20px);
 }
 .vx-brand {
