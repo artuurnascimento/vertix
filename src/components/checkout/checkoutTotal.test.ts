@@ -168,6 +168,14 @@ describe('formatarContagem', () => {
     expect(contagem.minutos).toBe('05')
     expect(contagem.segundos).toBe('09')
     expect(contagem.descricao).toBe('2 horas, 5 minutos, 9 segundos')
+    expect(contagem.compacta).toBe('2:05:09')
+  })
+
+  test('sem horas, mostra só minutos e segundos — nada de "00:" na frente', () => {
+    const contagem = formatarContagem((14 * 60 + 52) * 1000)
+
+    expect(contagem.compacta).toBe('14:52')
+    expect(contagem.descricao).toBe('14 minutos, 52 segundos')
   })
 })
 

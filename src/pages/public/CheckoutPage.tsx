@@ -426,7 +426,16 @@ export default function CheckoutPage() {
     ) : null
 
   return (
-    <CheckoutShell cabecalho={false}>
+    <CheckoutShell
+      cabecalho={false}
+      topo={
+        <Cronometro
+          ate={info.cronometroAte}
+          minutos={info.cronometroMinutos}
+          slug={info.checkout.slug}
+        />
+      }
+    >
       <motion.div
         initial={semMovimento ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -445,14 +454,6 @@ export default function CheckoutPage() {
           titulo={checkout.titulo}
           subtitulo={checkout.subtitulo}
         />
-
-        <div className="mx-auto mt-6 max-w-md">
-          <Cronometro
-            ate={info.cronometroAte}
-            minutos={info.cronometroMinutos}
-            slug={info.checkout.slug}
-          />
-        </div>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] lg:items-start lg:gap-6">
           {/* Resumo primeiro no DOM = primeiro na tela do celular, que é onde

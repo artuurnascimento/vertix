@@ -13,6 +13,11 @@ interface Props {
    * cabeçalho grande dela — duas marcas empilhadas viram ruído.
    */
   cabecalho?: boolean
+  /**
+   * Faixa colada no topo da página, de ponta a ponta e fora do respiro da
+   * coluna — o cronômetro. Fica presa ao rolar, para a urgência não sumir.
+   */
+  topo?: React.ReactNode
 }
 
 /**
@@ -24,50 +29,56 @@ export default function CheckoutShell({
   children,
   estreito = false,
   cabecalho = true,
+  topo,
 }: Props) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-bg px-4 py-8 font-kanit sm:px-6 sm:py-12">
-      <div
-        aria-hidden
-        className="app-ambient pointer-events-none fixed inset-0"
-      />
-      {/* Atmosfera dos dois cantos de cima: difusa e de baixa opacidade — é
-          profundidade, não protagonismo. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed -right-40 -top-56 h-[32rem] w-[32rem] rounded-full bg-accent/[0.13] blur-[130px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed -left-48 -top-64 h-[28rem] w-[28rem] rounded-full bg-accent-2/[0.10] blur-[130px]"
-      />
+    <div className="min-h-screen bg-bg font-kanit">
+      {/* Fora da caixa com overflow-hidden de propósito: dentro dela o
+          `sticky` não prende. */}
+      {topo && <div className="sticky top-0 z-40">{topo}</div>}
+      <div className="relative overflow-hidden px-4 py-8 sm:px-6 sm:py-12">
+        <div
+          aria-hidden
+          className="app-ambient pointer-events-none fixed inset-0"
+        />
+        {/* Atmosfera dos dois cantos de cima: difusa e de baixa opacidade — é
+            profundidade, não protagonismo. */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed -right-40 -top-56 h-[32rem] w-[32rem] rounded-full bg-accent/[0.13] blur-[130px]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none fixed -left-48 -top-64 h-[28rem] w-[28rem] rounded-full bg-accent-2/[0.10] blur-[130px]"
+        />
 
-      <span
-        aria-hidden
-        className="pointer-events-none fixed right-3 top-1/2 hidden -translate-y-1/2 select-none text-[10px] font-light uppercase tracking-[0.45em] text-ink/[0.06] [writing-mode:vertical-rl] xl:block"
-      >
-        {PALAVRAS_VERTICAIS}
-      </span>
+        <span
+          aria-hidden
+          className="pointer-events-none fixed right-3 top-1/2 hidden -translate-y-1/2 select-none text-[10px] font-light uppercase tracking-[0.45em] text-ink/[0.06] [writing-mode:vertical-rl] xl:block"
+        >
+          {PALAVRAS_VERTICAIS}
+        </span>
 
-      <div
-        className={`relative mx-auto w-full ${
-          estreito ? 'max-w-xl' : 'max-w-6xl'
-        }`}
-      >
-        {/*
-          Mesmo lockup do cabeçalho grande da página principal. Estas telas
-          (carregando, aviso, Pix) mostravam só o símbolo com a palavra VERTIX —
-          a marca trocava de forma no meio do próprio checkout.
-        */}
-        {cabecalho && (
-          <header className="flex items-center justify-center">
-            <VertixCheckoutLogo symbolSize="clamp(22px, 5.5vw, 28px)" />
-          </header>
-        )}
+        <div
+          className={`relative mx-auto w-full ${
+            estreito ? 'max-w-xl' : 'max-w-6xl'
+          }`}
+        >
+          {/*
+            Mesmo lockup do cabeçalho grande da página principal. Estas telas
+            (carregando, aviso, Pix) mostravam só o símbolo com a palavra VERTIX —
+            a marca trocava de forma no meio do próprio checkout.
+          */}
+          {cabecalho && (
+            <header className="flex items-center justify-center">
+              <VertixCheckoutLogo symbolSize="clamp(22px, 5.5vw, 28px)" />
+            </header>
+          )}
 
-        {children}
+          {children}
 
-        <RodapeCheckout comAceite />
+          <RodapeCheckout comAceite />
+        </div>
       </div>
     </div>
   )

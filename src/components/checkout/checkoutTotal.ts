@@ -251,6 +251,8 @@ export interface ContagemFormatada {
   segundos: string
   /** Rótulo para leitor de tela ("2 horas, 5 minutos e 9 segundos"). */
   descricao: string
+  /** "14:52" — e "2:05:09" só quando há horas; "00:" na frente é ruído. */
+  compacta: string
 }
 
 function plural(valor: number, singular: string, pluralPalavra: string): string {
@@ -269,9 +271,14 @@ export function formatarContagem(ms: number): ContagemFormatada {
     minutos: doisDigitos(minutos),
     segundos: doisDigitos(segundos),
     descricao: [
-      plural(horas, 'hora', 'horas'),
+      ...(horas > 0 ? [plural(horas, 'hora', 'horas')] : []),
       plural(minutos, 'minuto', 'minutos'),
       plural(segundos, 'segundo', 'segundos'),
     ].join(', '),
+    compacta: [
+      ...(horas > 0 ? [String(horas)] : []),
+      doisDigitos(minutos),
+      doisDigitos(segundos),
+    ].join(':'),
   }
 }

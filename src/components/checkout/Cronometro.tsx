@@ -3,9 +3,10 @@ import { formatarContagem } from './checkoutTotal'
 import { useCronometro, type FonteDoCronometro } from './useCronometro'
 
 /**
- * Contagem regressiva. No modo de data, se o prazo já passou o componente não
- * renderiza NADA — sem zerar, sem reiniciar. No modo por visitante (minutos),
- * a contagem parte da primeira abertura e recomeça ao zerar; é o dono da
+ * Contagem regressiva — a faixa roxa colada no topo da página, de ponta a
+ * ponta. No modo de data, se o prazo já passou o componente não renderiza
+ * NADA — sem zerar, sem reiniciar. No modo por visitante (minutos), a
+ * contagem parte da primeira abertura e recomeça ao zerar; é o dono da
  * oferta quem escolhe o modo, e o painel diz o que cada um faz.
  */
 export default function Cronometro(fonte: FonteDoCronometro) {
@@ -15,32 +16,20 @@ export default function Cronometro(fonte: FonteDoCronometro) {
   const contagem = formatarContagem(restante)
 
   return (
-    <div className="flex items-center justify-center gap-3 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-2.5 text-amber-200">
-      <Timer aria-hidden className="h-4 w-4 shrink-0" />
-      <p className="text-xs font-light">Esta oferta termina em</p>
+    <div
+      data-testid="cronometro"
+      className="flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent-2 via-accent to-[#8f7aff] px-4 py-2.5 text-white shadow-[0_8px_30px_-12px_rgba(108,91,242,0.7)]"
+    >
+      <Timer aria-hidden className="h-4 w-4 shrink-0 opacity-90" />
+      <p className="text-[13px] font-light tracking-wide sm:text-sm">Esta oferta termina em</p>
       {/* aria-live off: um leitor de tela anunciando cada segundo é tortura.
           A descrição textual é lida uma vez, no rótulo. */}
       <p
         aria-label={`Tempo restante: ${contagem.descricao}`}
-        className="flex items-center gap-1 text-sm font-semibold tabular-nums"
+        className="text-base font-semibold tabular-nums tracking-wider sm:text-lg"
       >
-        <Bloco valor={contagem.horas} />
-        <span aria-hidden>:</span>
-        <Bloco valor={contagem.minutos} />
-        <span aria-hidden>:</span>
-        <Bloco valor={contagem.segundos} />
+        <span aria-hidden>{contagem.compacta}</span>
       </p>
     </div>
-  )
-}
-
-function Bloco({ valor }: { valor: string }) {
-  return (
-    <span
-      aria-hidden
-      className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-amber-100"
-    >
-      {valor}
-    </span>
   )
 }
