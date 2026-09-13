@@ -24,6 +24,8 @@ import {
 } from '../../components/portal/portalData'
 import { parsePortalAds } from '../../components/portal/adsData'
 import PortalAds from '../../components/portal/PortalAds'
+import PortalAntesDepois from '../../components/portal/PortalAntesDepois'
+import { parseAntesDepois } from '../../components/portal/antesDepoisData'
 import type {
   PortalData,
   PortalProposta,
@@ -308,6 +310,21 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
     ads && (ads.serie_30d.length > 0 || ads.mes_atual.gasto > 0)
   )
 
+  // Antes → depois do Scan: só para cliente que veio do Scan e já tem uma
+  // medição/reanálise depois da original. null (ou erro) = card não aparece.
+  const { data: antesDepois } = useQuery({
+    queryKey: ['portal-antes-depois', token],
+    enabled: Boolean(token),
+    retry: false,
+    queryFn: async () => {
+      const { data: payload, error } = await supabase.rpc('get_portal_antes_depois', {
+        p_token: token,
+      })
+      if (error) return null
+      return parseAntesDepois(payload)
+    },
+  })
+
   let cardIndex = 0
 
   return (
@@ -379,6 +396,12 @@ function PortalContent({ data, token }: { data: PortalData; token: string }) {
                 <ProposalRow key={proposta.token} proposta={proposta} />
               ))}
             </ul>
+          </PortalCard>
+        )}
+
+        {antesDepois && (
+          <PortalCard index={cardIndex++} title="Antes e depois">
+            <PortalAntesDepois dados={antesDepois} />
           </PortalCard>
         )}
 

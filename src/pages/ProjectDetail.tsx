@@ -419,7 +419,7 @@ export default function ProjectDetail() {
         <FilesCard projectId={project.id} />
       </div>
       <div className="mt-6">
-        <HoursCard projectId={project.id} />
+        <HoursCard projectId={project.id} horasEstimadas={project.horas_estimadas} />
       </div>
 
       {/* Atividade */}

@@ -46,6 +46,19 @@ export const projectSchema = z.object({
     error: 'Selecione o tipo de serviço.',
   }),
   client_id: z.uuid('Selecione o cliente.'),
+  /** Horas combinadas ("12", "12,5"); vazio = sem estimativa. */
+  horas_estimadas: z
+    .string()
+    .trim()
+    .transform((texto, ctx) => {
+      if (texto === '') return null
+      const n = Number(texto.replace(',', '.'))
+      if (!Number.isFinite(n) || n < 0) {
+        ctx.addIssue({ code: 'custom', message: 'Use um número de horas, como 12 ou 12,5.' })
+        return z.NEVER
+      }
+      return Math.round(n * 10) / 10
+    }),
 })
 
 export type ProjectFormValues = z.infer<typeof projectSchema>

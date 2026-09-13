@@ -33,6 +33,7 @@ interface FormState {
   nome: string
   tipo_servico: ProjectTipo | ''
   client_id: string
+  horas_estimadas: string
 }
 
 type FieldErrors = Partial<Record<keyof FormState, string>>
@@ -53,6 +54,7 @@ export default function ProjectFormModal({
     nome: '',
     tipo_servico: '',
     client_id: lockedClient?.id ?? '',
+    horas_estimadas: '',
   })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [rootError, setRootError] = useState<string | null>(null)
@@ -63,6 +65,7 @@ export default function ProjectFormModal({
         nome: '',
         tipo_servico: '',
         client_id: lockedClient?.id ?? '',
+        horas_estimadas: '',
       })
       setErrors({})
       setRootError(null)
@@ -97,6 +100,7 @@ export default function ProjectFormModal({
       nome: string
       tipo_servico: ProjectTipo
       client_id: string
+      horas_estimadas: number | null
     }) => {
       const { data: created, error } = await supabase
         .from('projects')
@@ -265,6 +269,22 @@ export default function ProjectFormModal({
                 )}
                 {errors.client_id && (
                   <span className="text-xs text-red-400">{errors.client_id}</span>
+                )}
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className={labelClass}>Horas estimadas</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  name="horas_estimadas"
+                  value={values.horas_estimadas}
+                  onChange={(e) => setField('horas_estimadas', e.target.value)}
+                  placeholder="opcional — ex.: 12"
+                  className={inputClass}
+                />
+                {errors.horas_estimadas && (
+                  <span className="text-xs text-red-400">{errors.horas_estimadas}</span>
                 )}
               </label>
 

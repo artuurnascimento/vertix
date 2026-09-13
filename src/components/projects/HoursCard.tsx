@@ -13,6 +13,8 @@ type TimeEntry = Tables<'time_entries'> & {
 
 interface HoursCardProps {
   projectId: string
+  /** projects.horas_estimadas — null = sem estimativa combinada. */
+  horasEstimadas?: number | null
 }
 
 const RECENT_ENTRIES_LIMIT = 8
@@ -26,7 +28,15 @@ function formatEntryDate(iso: string): string {
 }
 
 /** Card de horas do projeto — registro rápido, últimas entradas e rentabilidade. */
-export default function HoursCard({ projectId }: HoursCardProps) {
+/** "12,5" | "12.5" | "" → horas (uma casa) ou null; inválido = undefined. */
+function horasDoTexto(texto: string): number | null | undefined {
+  const limpo = texto.trim().replace(',', '.')
+  if (limpo === '') return null
+  const n = Number(limpo)
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 10) / 10 : undefined
+}
+
+export default function HoursCard({ projectId, horasEstimadas = null }: HoursCardProps) {
   const queryClient = useQueryClient()
   const { user, profile } = useAuth()
   const shouldReduceMotion = useReducedMotion()
@@ -73,6 +83,40 @@ export default function HoursCard({ projectId }: HoursCardProps) {
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['time-entries', projectId] })
+
+  // Estimado × realizado: a estimativa é editável aqui mesmo, porque é aqui
+  // que a pessoa vê que estourou — e a margem da Correção Aplicada depende
+  // de alguém ter escrito o número.
+  const [estimativa, setEstimativa] = useState<string | null>(null)
+  const [erroEstimativa, setErroEstimativa] = useState<string | null>(null)
+  const estimativaMutation = useMutation({
+    mutationFn: async (horas: number | null) => {
+      const { error } = await supabase
+        .from('projects')
+        .update({ horas_estimadas: horas })
+        .eq('id', projectId)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: async () => {
+      setEstimativa(null)
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+    },
+    onError: () => setErroEstimativa('Não deu para salvar a estimativa. Tente de novo.'),
+  })
+  const salvarEstimativa = () => {
+    if (estimativa === null) return
+    const horas = horasDoTexto(estimativa)
+    if (horas === undefined) {
+      setErroEstimativa('Use um número de horas, como 12 ou 12,5.')
+      return
+    }
+    setErroEstimativa(null)
+    if (horas === horasEstimadas) {
+      setEstimativa(null)
+      return
+    }
+    estimativaMutation.mutate(horas)
+  }
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -225,6 +269,61 @@ export default function HoursCard({ projectId }: HoursCardProps) {
           ))}
         </ul>
       )}
+
+      <div className="mt-4 border-t border-white/5 pt-4" data-testid="estimado-realizado">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-muted">
+            Estimado × realizado
+          </p>
+          <label className="flex items-center gap-2 text-xs text-muted">
+            Estimativa
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label="Horas estimadas"
+              value={estimativa ?? (horasEstimadas === null ? '' : String(horasEstimadas).replace('.', ','))}
+              onChange={(e) => setEstimativa(e.target.value)}
+              onBlur={salvarEstimativa}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  e.currentTarget.blur()
+                }
+              }}
+              placeholder="— h"
+              className="w-20 rounded-lg border border-white/5 bg-surface-2 px-2 py-1 text-right text-xs text-ink outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
+        </div>
+        {erroEstimativa && <p className="mt-1 text-xs text-red-400">{erroEstimativa}</p>}
+        {horasEstimadas !== null && horasEstimadas > 0 ? (
+          <>
+            <div
+              className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2"
+              role="progressbar"
+              aria-valuenow={Math.round(totalHoras * 10) / 10}
+              aria-valuemin={0}
+              aria-valuemax={horasEstimadas}
+              aria-label={`${totalHoras} de ${horasEstimadas} horas estimadas`}
+            >
+              <div
+                className={`h-full rounded-full ${totalHoras > horasEstimadas ? 'bg-red-400' : totalHoras / horasEstimadas > 0.8 ? 'bg-amber-400' : 'bg-accent'}`}
+                style={{ width: `${Math.min(100, (totalHoras / horasEstimadas) * 100)}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-xs tabular-nums text-muted">
+              {totalHoras}h de {String(horasEstimadas).replace('.', ',')}h
+              {totalHoras > horasEstimadas
+                ? ` · estourou ${Math.round((totalHoras - horasEstimadas) * 10) / 10}h`
+                : ` · faltam ${Math.round((horasEstimadas - totalHoras) * 10) / 10}h`}
+            </p>
+          </>
+        ) : (
+          <p className="mt-1.5 text-xs font-light text-muted">
+            Sem estimativa combinada. Escreva as horas para acompanhar o realizado contra o previsto.
+          </p>
+        )}
+      </div>
 
       <div className="mt-4 border-t border-white/5 pt-4">
         <p className="text-[11px] font-medium uppercase tracking-widest text-muted">

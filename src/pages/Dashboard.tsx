@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AcoesPendentes from '../components/dashboard/AcoesPendentes'
 import TodayAgenda from '../components/dashboard/TodayAgenda'
 import DonutTipos from '../components/dashboard/DonutTipos'
+import CargaPorPessoa from '../components/dashboard/CargaPorPessoa'
 import ProjectsWorkspace from '../components/dashboard/ProjectsWorkspace'
 import PrioritiesWorkspace from '../components/dashboard/PrioritiesWorkspace'
 import GreetingHeader from '../components/dashboard/GreetingHeader'
@@ -120,6 +121,7 @@ export default function Dashboard() {
       </div>
       {/* Os nudges moram no ranking de Prioridades (um cartão por cliente, sem repetir). */}
       <div className="vx-secondary-grid">
+        <CargaPorPessoa />
         <DonutTipos />
       </div>
       <ResumoFinanceiro />

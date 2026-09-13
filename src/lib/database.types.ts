@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -60,6 +40,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "activity_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "activity_log_project_id_fkey"
             columns: ["project_id"]
@@ -261,13 +248,13 @@ export type Database = {
           criado_por: string | null
           descricao: string | null
           fim: string
+          google_event_id: string | null
           id: string
           inicio: string
+          lead_id: string | null
+          meet_url: string | null
           project_id: string | null
           titulo: string
-          meet_url: string | null
-          google_event_id: string | null
-          lead_id: string | null
         }
         Insert: {
           cor?: string
@@ -275,13 +262,13 @@ export type Database = {
           criado_por?: string | null
           descricao?: string | null
           fim: string
+          google_event_id?: string | null
           id?: string
           inicio: string
+          lead_id?: string | null
+          meet_url?: string | null
           project_id?: string | null
           titulo: string
-          meet_url?: string | null
-          google_event_id?: string | null
-          lead_id?: string | null
         }
         Update: {
           cor?: string
@@ -289,13 +276,13 @@ export type Database = {
           criado_por?: string | null
           descricao?: string | null
           fim?: string
+          google_event_id?: string | null
           id?: string
           inicio?: string
+          lead_id?: string | null
+          meet_url?: string | null
           project_id?: string | null
           titulo?: string
-          meet_url?: string | null
-          google_event_id?: string | null
-          lead_id?: string | null
         }
         Relationships: [
           {
@@ -309,10 +296,59 @@ export type Database = {
             foreignKeyName: "agenda_events_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "agenda_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
+      }
+      analyses: {
+        Row: {
+          created_at: string | null
+          deep_attempts: number
+          deep_result: Json | null
+          domain: string
+          error: string | null
+          id: string
+          light_result: Json | null
+          score: number | null
+          status: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          deep_attempts?: number
+          deep_result?: Json | null
+          domain: string
+          error?: string | null
+          id?: string
+          light_result?: Json | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          deep_attempts?: number
+          deep_result?: Json | null
+          domain?: string
+          error?: string | null
+          id?: string
+          light_result?: Json | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
       }
       bio_events: {
         Row: {
@@ -472,6 +508,13 @@ export type Database = {
             foreignKeyName: "briefings_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "briefings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -487,11 +530,18 @@ export type Database = {
       checkouts: {
         Row: {
           ativo: boolean
+          banner: Json
+          bump_imagem: Json
           bump_produto_id: string | null
           bump_texto: string | null
           bump_titulo: string | null
           created_at: string
           cronometro_ate: string | null
+          cronometro_cor_fundo: string | null
+          cronometro_cor_texto: string | null
+          cronometro_minutos: number | null
+          cronometro_texto: string | null
+          desconto_pix_percentual: number | null
           downsell_produto_id: string | null
           downsell_texto: string | null
           downsell_titulo: string | null
@@ -500,6 +550,7 @@ export type Database = {
           id: string
           produto_id: string
           prova: Json
+          resumo_aberto: boolean
           slug: string
           subtitulo: string | null
           titulo: string
@@ -510,11 +561,18 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          banner?: Json
+          bump_imagem?: Json
           bump_produto_id?: string | null
           bump_texto?: string | null
           bump_titulo?: string | null
           created_at?: string
           cronometro_ate?: string | null
+          cronometro_cor_fundo?: string | null
+          cronometro_cor_texto?: string | null
+          cronometro_minutos?: number | null
+          cronometro_texto?: string | null
+          desconto_pix_percentual?: number | null
           downsell_produto_id?: string | null
           downsell_texto?: string | null
           downsell_titulo?: string | null
@@ -523,6 +581,7 @@ export type Database = {
           id?: string
           produto_id: string
           prova?: Json
+          resumo_aberto?: boolean
           slug: string
           subtitulo?: string | null
           titulo: string
@@ -533,11 +592,18 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          banner?: Json
+          bump_imagem?: Json
           bump_produto_id?: string | null
           bump_texto?: string | null
           bump_titulo?: string | null
           created_at?: string
           cronometro_ate?: string | null
+          cronometro_cor_fundo?: string | null
+          cronometro_cor_texto?: string | null
+          cronometro_minutos?: number | null
+          cronometro_texto?: string | null
+          desconto_pix_percentual?: number | null
           downsell_produto_id?: string | null
           downsell_texto?: string | null
           downsell_titulo?: string | null
@@ -546,6 +612,7 @@ export type Database = {
           id?: string
           produto_id?: string
           prova?: Json
+          resumo_aberto?: boolean
           slug?: string
           subtitulo?: string | null
           titulo?: string
@@ -556,13 +623,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "checkouts_produto_id_fkey"
-            columns: ["produto_id"]
-            isOneToOne: false
-            referencedRelation: "produtos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "checkouts_bump_produto_id_fkey"
             columns: ["bump_produto_id"]
             isOneToOne: false
@@ -570,15 +630,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "checkouts_upsell_produto_id_fkey"
-            columns: ["upsell_produto_id"]
+            foreignKeyName: "checkouts_downsell_produto_id_fkey"
+            columns: ["downsell_produto_id"]
             isOneToOne: false
             referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "checkouts_downsell_produto_id_fkey"
-            columns: ["downsell_produto_id"]
+            foreignKeyName: "checkouts_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_upsell_produto_id_fkey"
+            columns: ["upsell_produto_id"]
             isOneToOne: false
             referencedRelation: "produtos"
             referencedColumns: ["id"]
@@ -642,7 +709,9 @@ export type Database = {
           proposal_id: string | null
           signed_at: string | null
           signer_document: string | null
+          signer_ip: unknown
           signer_name: string | null
+          signer_user_agent: string | null
           status: string
           token: string
         }
@@ -654,7 +723,9 @@ export type Database = {
           proposal_id?: string | null
           signed_at?: string | null
           signer_document?: string | null
+          signer_ip?: unknown
           signer_name?: string | null
+          signer_user_agent?: string | null
           status?: string
           token?: string
         }
@@ -666,11 +737,20 @@ export type Database = {
           proposal_id?: string | null
           signed_at?: string | null
           signer_document?: string | null
+          signer_ip?: unknown
           signer_name?: string | null
+          signer_user_agent?: string | null
           status?: string
           token?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contracts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "contracts_project_id_fkey"
             columns: ["project_id"]
@@ -734,6 +814,30 @@ export type Database = {
           },
         ]
       }
+      esforco_por_regra: {
+        Row: {
+          ativo: boolean
+          horas: number
+          regra: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          horas: number
+          regra: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          horas?: number
+          regra?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           categoria: string
@@ -770,10 +874,35 @@ export type Database = {
             foreignKeyName: "expenses_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
+      }
+      internal_config: {
+        Row: {
+          created_at: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: string
+        }
+        Relationships: []
       }
       job_runs: {
         Row: {
@@ -802,23 +931,147 @@ export type Database = {
         }
         Relationships: []
       }
+      job_status: {
+        Row: {
+          erro: string | null
+          itens: number | null
+          job: string
+          origem: string
+          ultimo_erro: string | null
+          ultimo_inicio: string | null
+          ultimo_ok: string | null
+          updated_at: string
+        }
+        Insert: {
+          erro?: string | null
+          itens?: number | null
+          job: string
+          origem?: string
+          ultimo_erro?: string | null
+          ultimo_inicio?: string | null
+          ultimo_ok?: string | null
+          updated_at?: string
+        }
+        Update: {
+          erro?: string | null
+          itens?: number | null
+          job?: string
+          origem?: string
+          ultimo_erro?: string | null
+          ultimo_inicio?: string | null
+          ultimo_ok?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_submissions: {
         Row: {
           created_at: string
           email: string
           id: string
+          ip: unknown
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
+          ip?: unknown
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          ip?: unknown
         }
         Relationships: []
+      }
+      leads: {
+        Row: {
+          analysis_id: string
+          client_id: string | null
+          created_at: string | null
+          dor: string | null
+          email: string | null
+          emails_sequencia: number
+          faturamento_mensal: number | null
+          id: string
+          name: string
+          origem: Json | null
+          plataforma: string | null
+          relatorio_aberto_em: string | null
+          relatorio_enviado_em: string | null
+          report_code: string | null
+          report_token: string | null
+          reuniao_em: string | null
+          status: string
+          ultimo_email_em: string | null
+          whatsapp: string
+        }
+        Insert: {
+          analysis_id: string
+          client_id?: string | null
+          created_at?: string | null
+          dor?: string | null
+          email?: string | null
+          emails_sequencia?: number
+          faturamento_mensal?: number | null
+          id?: string
+          name: string
+          origem?: Json | null
+          plataforma?: string | null
+          relatorio_aberto_em?: string | null
+          relatorio_enviado_em?: string | null
+          report_code?: string | null
+          report_token?: string | null
+          reuniao_em?: string | null
+          status?: string
+          ultimo_email_em?: string | null
+          whatsapp: string
+        }
+        Update: {
+          analysis_id?: string
+          client_id?: string | null
+          created_at?: string | null
+          dor?: string | null
+          email?: string | null
+          emails_sequencia?: number
+          faturamento_mensal?: number | null
+          id?: string
+          name?: string
+          origem?: Json | null
+          plataforma?: string | null
+          relatorio_aberto_em?: string | null
+          relatorio_enviado_em?: string | null
+          report_code?: string | null
+          report_token?: string | null
+          reuniao_em?: string | null
+          status?: string
+          ultimo_email_em?: string | null
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "leads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loja_apps: {
         Row: {
@@ -992,6 +1245,13 @@ export type Database = {
             foreignKeyName: "nps_surveys_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: true
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "nps_surveys_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -1059,73 +1319,233 @@ export type Database = {
             foreignKeyName: "nudges_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "nudges_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedido_entregas: {
+        Row: {
+          concluida_em: string | null
+          contato_em: string | null
+          created_at: string
+          email_enviado_em: string | null
+          entrega: string
+          id: string
+          observacoes: string | null
+          pedido_id: string
+          produto_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          concluida_em?: string | null
+          contato_em?: string | null
+          created_at?: string
+          email_enviado_em?: string | null
+          entrega: string
+          id?: string
+          observacoes?: string | null
+          pedido_id: string
+          produto_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          concluida_em?: string | null
+          contato_em?: string | null
+          created_at?: string
+          email_enviado_em?: string | null
+          entrega?: string
+          id?: string
+          observacoes?: string | null
+          pedido_id?: string
+          produto_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_entregas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_entregas_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedido_medicoes: {
+        Row: {
+          agendada_para: string
+          analysis_id: string | null
+          created_at: string
+          email_enviado_em: string | null
+          id: string
+          pedido_id: string
+          semana: number
+          tentativas: number
+        }
+        Insert: {
+          agendada_para: string
+          analysis_id?: string | null
+          created_at?: string
+          email_enviado_em?: string | null
+          id?: string
+          pedido_id: string
+          semana: number
+          tentativas?: number
+        }
+        Update: {
+          agendada_para?: string
+          analysis_id?: string | null
+          created_at?: string
+          email_enviado_em?: string | null
+          id?: string
+          pedido_id?: string
+          semana?: number
+          tentativas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_medicoes_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_medicoes_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
             referencedColumns: ["id"]
           },
         ]
       }
       pedidos: {
         Row: {
+          acompanhamento_enviado_em: string | null
+          analysis_id: string | null
           checkout_id: string
+          client_id: string | null
           cliente_documento: string | null
           cliente_email: string
           cliente_nome: string
           cliente_whatsapp: string | null
+          concorrentes: string[] | null
           created_at: string
           cupom_id: string | null
           desconto_centavos: number
+          desconto_metodo_centavos: number
+          entregue_em: string | null
           id: string
           itens: Json
+          lead_id: string | null
           mp_card_id: string | null
           mp_customer_id: string | null
           mp_payment_id: string | null
           origem: string | null
+          passos_feitos: Json
+          plano: Json | null
           plano_code: string | null
+          plano_gerado_em: string | null
           receivable_id: string | null
+          recibo_enviado_em: string | null
+          reembolsado_em: string | null
+          reembolso_iniciado_em: string | null
+          reembolso_mp_id: string | null
+          reembolso_por: string | null
+          reembolso_valor_centavos: number | null
           status: string
           subtotal_centavos: number
           total_centavos: number
           updated_at: string
         }
         Insert: {
+          acompanhamento_enviado_em?: string | null
+          analysis_id?: string | null
           checkout_id: string
+          client_id?: string | null
           cliente_documento?: string | null
           cliente_email: string
           cliente_nome: string
           cliente_whatsapp?: string | null
+          concorrentes?: string[] | null
           created_at?: string
           cupom_id?: string | null
           desconto_centavos?: number
+          desconto_metodo_centavos?: number
+          entregue_em?: string | null
           id?: string
           itens?: Json
+          lead_id?: string | null
           mp_card_id?: string | null
           mp_customer_id?: string | null
           mp_payment_id?: string | null
           origem?: string | null
+          passos_feitos?: Json
+          plano?: Json | null
           plano_code?: string | null
+          plano_gerado_em?: string | null
           receivable_id?: string | null
+          recibo_enviado_em?: string | null
+          reembolsado_em?: string | null
+          reembolso_iniciado_em?: string | null
+          reembolso_mp_id?: string | null
+          reembolso_por?: string | null
+          reembolso_valor_centavos?: number | null
           status?: string
           subtotal_centavos?: number
           total_centavos?: number
           updated_at?: string
         }
         Update: {
+          acompanhamento_enviado_em?: string | null
+          analysis_id?: string | null
           checkout_id?: string
+          client_id?: string | null
           cliente_documento?: string | null
           cliente_email?: string
           cliente_nome?: string
           cliente_whatsapp?: string | null
+          concorrentes?: string[] | null
           created_at?: string
           cupom_id?: string | null
           desconto_centavos?: number
+          desconto_metodo_centavos?: number
+          entregue_em?: string | null
           id?: string
           itens?: Json
+          lead_id?: string | null
           mp_card_id?: string | null
           mp_customer_id?: string | null
           mp_payment_id?: string | null
           origem?: string | null
+          passos_feitos?: Json
+          plano?: Json | null
           plano_code?: string | null
+          plano_gerado_em?: string | null
           receivable_id?: string | null
+          recibo_enviado_em?: string | null
+          reembolsado_em?: string | null
+          reembolso_iniciado_em?: string | null
+          reembolso_mp_id?: string | null
+          reembolso_por?: string | null
+          reembolso_valor_centavos?: number | null
           status?: string
           subtotal_centavos?: number
           total_centavos?: number
@@ -1137,6 +1557,20 @@ export type Database = {
             columns: ["checkout_id"]
             isOneToOne: false
             referencedRelation: "checkouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "pedidos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
@@ -1153,11 +1587,19 @@ export type Database = {
             referencedRelation: "receivables"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pedidos_reembolso_por_fkey"
+            columns: ["reembolso_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       produtos: {
         Row: {
           ativo: boolean
+          categoria: string | null
           created_at: string
           descricao: string | null
           entrega: string
@@ -1171,6 +1613,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          categoria?: string | null
           created_at?: string
           descricao?: string | null
           entrega?: string
@@ -1184,6 +1627,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          categoria?: string | null
           created_at?: string
           descricao?: string | null
           entrega?: string
@@ -1257,6 +1701,13 @@ export type Database = {
             foreignKeyName: "project_files_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -1289,6 +1740,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_status_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "project_status_history_project_id_fkey"
             columns: ["project_id"]
@@ -1334,6 +1792,13 @@ export type Database = {
             foreignKeyName: "project_tasks_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -1350,32 +1815,59 @@ export type Database = {
         Row: {
           client_id: string
           created_at: string
+          horas_estimadas: number | null
           id: string
+          motivo_perda: string | null
           nome: string
+          origem: string | null
+          perdido_em: string | null
           portal_token: string
+          previsao_fechamento: string | null
+          proxima_acao: string | null
+          proxima_acao_em: string | null
+          responsavel_id: string | null
           status: string
           tipo_servico: string
           updated_at: string
+          valor_estimado: number | null
         }
         Insert: {
           client_id: string
           created_at?: string
+          horas_estimadas?: number | null
           id?: string
+          motivo_perda?: string | null
           nome: string
+          origem?: string | null
+          perdido_em?: string | null
           portal_token?: string
+          previsao_fechamento?: string | null
+          proxima_acao?: string | null
+          proxima_acao_em?: string | null
+          responsavel_id?: string | null
           status?: string
           tipo_servico: string
           updated_at?: string
+          valor_estimado?: number | null
         }
         Update: {
           client_id?: string
           created_at?: string
+          horas_estimadas?: number | null
           id?: string
+          motivo_perda?: string | null
           nome?: string
+          origem?: string | null
+          perdido_em?: string | null
           portal_token?: string
+          previsao_fechamento?: string | null
+          proxima_acao?: string | null
+          proxima_acao_em?: string | null
+          responsavel_id?: string | null
           status?: string
           tipo_servico?: string
           updated_at?: string
+          valor_estimado?: number | null
         }
         Relationships: [
           {
@@ -1390,6 +1882,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1421,7 +1920,10 @@ export type Database = {
       proposals: {
         Row: {
           accepted_at: string | null
+          aceite_ip: unknown
           aceite_nome: string | null
+          aceite_user_agent: string | null
+          apresentacao: Json | null
           condicoes: string | null
           created_at: string
           desconto: number
@@ -1439,7 +1941,10 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          aceite_ip?: unknown
           aceite_nome?: string | null
+          aceite_user_agent?: string | null
+          apresentacao?: Json | null
           condicoes?: string | null
           created_at?: string
           desconto?: number
@@ -1457,7 +1962,10 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          aceite_ip?: unknown
           aceite_nome?: string | null
+          aceite_user_agent?: string | null
+          apresentacao?: Json | null
           condicoes?: string | null
           created_at?: string
           desconto?: number
@@ -1478,7 +1986,144 @@ export type Database = {
             foreignKeyName: "proposals_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raiox_compras: {
+        Row: {
+          acompanhamento_enviado_em: string | null
+          analysis_id: string
+          client_id: string | null
+          concorrentes: string[] | null
+          created_at: string
+          id: string
+          lead_id: string | null
+          pago_em: string | null
+          passos_feitos: Json
+          plano: Json | null
+          plano_code: string | null
+          plano_gerado_em: string | null
+          project_id: string | null
+          reanalise_agendada_em: string | null
+          reanalise_analysis_id: string | null
+          receivable_id: string | null
+          recibo_enviado_em: string | null
+          recuperacao_enviada_em: string | null
+          reembolsado_em: string | null
+          reembolso_iniciado_em: string | null
+          reembolso_mp_id: string | null
+          reembolso_por: string | null
+          reembolso_valor_centavos: number | null
+          status: string
+          updated_at: string
+          valor_centavos: number
+        }
+        Insert: {
+          acompanhamento_enviado_em?: string | null
+          analysis_id: string
+          client_id?: string | null
+          concorrentes?: string[] | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          pago_em?: string | null
+          passos_feitos?: Json
+          plano?: Json | null
+          plano_code?: string | null
+          plano_gerado_em?: string | null
+          project_id?: string | null
+          reanalise_agendada_em?: string | null
+          reanalise_analysis_id?: string | null
+          receivable_id?: string | null
+          recibo_enviado_em?: string | null
+          recuperacao_enviada_em?: string | null
+          reembolsado_em?: string | null
+          reembolso_iniciado_em?: string | null
+          reembolso_mp_id?: string | null
+          reembolso_por?: string | null
+          reembolso_valor_centavos?: number | null
+          status?: string
+          updated_at?: string
+          valor_centavos: number
+        }
+        Update: {
+          acompanhamento_enviado_em?: string | null
+          analysis_id?: string
+          client_id?: string | null
+          concorrentes?: string[] | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          pago_em?: string | null
+          passos_feitos?: Json
+          plano?: Json | null
+          plano_code?: string | null
+          plano_gerado_em?: string | null
+          project_id?: string | null
+          reanalise_agendada_em?: string | null
+          reanalise_analysis_id?: string | null
+          receivable_id?: string | null
+          recibo_enviado_em?: string | null
+          recuperacao_enviada_em?: string | null
+          reembolsado_em?: string | null
+          reembolso_iniciado_em?: string | null
+          reembolso_mp_id?: string | null
+          reembolso_por?: string | null
+          reembolso_valor_centavos?: number | null
+          status?: string
+          updated_at?: string
+          valor_centavos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raiox_compras_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "raiox_compras_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raiox_compras_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "raiox_compras_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raiox_compras_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raiox_compras_reembolso_por_fkey"
+            columns: ["reembolso_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1491,12 +2136,15 @@ export type Database = {
           forma_pagamento: string | null
           gateway_payment_id: string | null
           id: string
+          lembretes_enviados: number
+          origem: string | null
           pago_em: string | null
           payment_link: string | null
           payment_token: string
           project_id: string
           proposal_id: string | null
           status: string
+          ultimo_lembrete_em: string | null
           valor: number
           vencimento: string
         }
@@ -1507,12 +2155,15 @@ export type Database = {
           forma_pagamento?: string | null
           gateway_payment_id?: string | null
           id?: string
+          lembretes_enviados?: number
+          origem?: string | null
           pago_em?: string | null
           payment_link?: string | null
           payment_token?: string
           project_id: string
           proposal_id?: string | null
           status?: string
+          ultimo_lembrete_em?: string | null
           valor: number
           vencimento: string
         }
@@ -1523,12 +2174,15 @@ export type Database = {
           forma_pagamento?: string | null
           gateway_payment_id?: string | null
           id?: string
+          lembretes_enviados?: number
+          origem?: string | null
           pago_em?: string | null
           payment_link?: string | null
           payment_token?: string
           project_id?: string
           proposal_id?: string | null
           status?: string
+          ultimo_lembrete_em?: string | null
           valor?: number
           vencimento?: string
         }
@@ -1546,6 +2200,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "receivables_project_id_fkey"
@@ -1631,6 +2292,13 @@ export type Database = {
             foreignKeyName: "subscriptions_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -1671,6 +2339,13 @@ export type Database = {
           titulo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "support_tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "support_tickets_project_id_fkey"
             columns: ["project_id"]
@@ -1736,6 +2411,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "time_entries_project_id_fkey"
@@ -1876,6 +2558,92 @@ export type Database = {
         }
         Relationships: []
       }
+      client_timeline: {
+        Row: {
+          client_id: string | null
+          detalhe: string | null
+          link: string | null
+          quando: string | null
+          ref_id: string | null
+          tipo: string | null
+          titulo: string | null
+        }
+        Relationships: []
+      }
+      entregas_pendentes: {
+        Row: {
+          cliente: string | null
+          email: string | null
+          faltando: string | null
+          id: string | null
+          pago_em: string | null
+          plano_code: string | null
+          tipo: string | null
+          valor: number | null
+        }
+        Relationships: []
+      }
+      fila_comercial: {
+        Row: {
+          client_id: string | null
+          cliente: string | null
+          comprou_plano: boolean | null
+          empresa: string | null
+          pediu_ajuda: string | null
+          previsao_fechamento: string | null
+          project_id: string | null
+          projeto: string | null
+          proxima_acao: string | null
+          proxima_acao_em: string | null
+          relatorio_aberto_em: string | null
+          responsavel: string | null
+          responsavel_id: string | null
+          reuniao_em: string | null
+          status: string | null
+          tickets_abertos: number | null
+          updated_at: string | null
+          valor_estimado: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_health"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funil_pessoas: {
+        Row: {
+          campanha: string | null
+          compra_em: string | null
+          contratado_em: string | null
+          email: string | null
+          lead_em: string | null
+          origem: string | null
+          receita_contratos: number | null
+          receita_plano: number | null
+          recorrencia_em: string | null
+          relatorio_em: string | null
+          reuniao_em: string | null
+        }
+        Relationships: []
+      }
       nps_summary: {
         Row: {
           detratores: number | null
@@ -1935,6 +2703,13 @@ export type Database = {
             foreignKeyName: "support_tickets_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "fila_comercial"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "support_tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -1942,6 +2717,10 @@ export type Database = {
       }
     }
     Functions: {
+      _call_edge: {
+        Args: { p_body: Json; p_function: string }
+        Returns: undefined
+      }
       _cron_generate_receivables: { Args: never; Returns: undefined }
       _cron_payment_reminders: { Args: never; Returns: undefined }
       _cron_scan_nudges: { Args: never; Returns: undefined }
@@ -1952,9 +2731,34 @@ export type Database = {
       _scan_nudges: { Args: never; Returns: number }
       approve_project_stage: { Args: { p_token: string }; Returns: Json }
       bio_zerar_eventos: { Args: never; Returns: number }
-      raiox_reprocessar_analise: {
-        Args: { p_analysis_id: string }
+      checkout_item_baixar: {
+        Args: {
+          p_aprovado: boolean
+          p_mp_payment_id?: string
+          p_pedido_id: string
+          p_produto_id: string
+        }
         Returns: boolean
+      }
+      checkout_item_recebivel: {
+        Args: {
+          p_pedido_id: string
+          p_produto_id: string
+          p_receivable_id: string
+        }
+        Returns: boolean
+      }
+      checkout_item_reservar: {
+        Args: { p_item: Json; p_pedido_id: string }
+        Returns: boolean
+      }
+      converter_lead_em_cliente: {
+        Args: { p_lead_id: string }
+        Returns: {
+          client_id: string
+          cliente_criado: boolean
+          project_id: string
+        }[]
       }
       create_lead: {
         Args: {
@@ -1970,23 +2774,47 @@ export type Database = {
         Args: { p_descricao: string; p_titulo: string; p_token: string }
         Returns: Json
       }
+      cupom_registrar_uso: { Args: { p_cupom_id: string }; Returns: boolean }
       generate_subscription_receivables: { Args: never; Returns: number }
       get_bio_links: { Args: never; Returns: Json }
       get_briefing_by_token: { Args: { t: string }; Returns: Json }
-      get_contract_by_token: { Args: { p_token: string }; Returns: Json }
-      get_nps_by_token: { Args: { p_token: string }; Returns: Json }
       get_checkout_info: { Args: { p_slug: string }; Returns: Json }
       get_checkout_prefill: { Args: { p_token: string }; Returns: Json }
+      get_contract_by_token: { Args: { p_token: string }; Returns: Json }
+      get_nps_by_token: { Args: { p_token: string }; Returns: Json }
       get_payment_info: { Args: { p_token: string }; Returns: Json }
       get_pedido_info: { Args: { p_pedido_id: string }; Returns: Json }
       get_portal_ads: { Args: { p_token: string }; Returns: Json }
+      get_portal_antes_depois: { Args: { p_token: string }; Returns: Json }
       get_portal_by_token: { Args: { t: string }; Returns: Json }
       get_portal_files: { Args: { p_token: string }; Returns: Json }
       get_proposal_by_token: { Args: { t: string }; Returns: Json }
+      internal_secret: { Args: { p_key: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      is_service_role: { Args: never; Returns: boolean }
       is_team_member: { Args: never; Returns: boolean }
       is_visible_client_file: {
         Args: { p_storage_path: string }
+        Returns: boolean
+      }
+      pedido_reembolso_concluir: {
+        Args: {
+          p_mp_refund_id?: string
+          p_pedido_id: string
+          p_valor_centavos?: number
+        }
+        Returns: Json
+      }
+      pedido_reembolso_iniciar: {
+        Args: {
+          p_pedido_id: string
+          p_retomar_apos?: string
+          p_usuario_id?: string
+        }
+        Returns: Json
+      }
+      pedido_reembolso_liberar: {
+        Args: { p_pedido_id: string }
         Returns: boolean
       }
       push_notification: {
@@ -2011,6 +2839,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      raiox_excluir_lead: { Args: { p_lead_id: string }; Returns: undefined }
+      raiox_reprocessar_analise: {
+        Args: { p_analysis_id: string }
+        Returns: boolean
+      }
+      raiox_zerar_tudo: {
+        Args: never
+        Returns: {
+          analises_apagadas: number
+          leads_apagados: number
+        }[]
+      }
       registrar_evento_bio: {
         Args: {
           p_campaign?: string
@@ -2022,12 +2862,38 @@ export type Database = {
         }
         Returns: Json
       }
+      request_client_ip: { Args: never; Returns: unknown }
+      request_user_agent: { Args: never; Returns: string }
+      respond_proposal: {
+        Args: { p_aceite: boolean; p_nome: string; t: string }
+        Returns: Json
+      }
       revert_proposal_acceptance: {
         Args: { p_proposal_id: string }
         Returns: Json
       }
-      respond_proposal: {
-        Args: { p_aceite: boolean; p_nome: string; t: string }
+      scan_compra_reembolso_concluir: {
+        Args: {
+          p_compra_id: string
+          p_mp_refund_id?: string
+          p_valor_centavos?: number
+        }
+        Returns: Json
+      }
+      scan_compra_reembolso_iniciar: {
+        Args: {
+          p_compra_id: string
+          p_retomar_apos?: string
+          p_usuario_id?: string
+        }
+        Returns: Json
+      }
+      scan_compra_reembolso_liberar: {
+        Args: { p_compra_id: string }
+        Returns: boolean
+      }
+      scan_compra_reembolso_pagamento: {
+        Args: { p_gateway_payment_id: string; p_receivable_id: string }
         Returns: Json
       }
       sign_contract: {
@@ -2084,12 +2950,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2113,11 +2979,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2138,11 +3004,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2163,11 +3029,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2180,11 +3046,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2194,11 +3060,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
-
