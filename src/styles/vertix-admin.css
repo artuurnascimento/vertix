@@ -181,14 +181,24 @@
 .vx-admin h1.hero-heading {
   font-family: 'Kanit', sans-serif;
   font-weight: 800;
-  font-size: clamp(3.25rem, 7vw, 6.5rem);
+  /* No celular, "CONFIGURAÇÕES" precisa caber em 358px de largura; no
+     desktop o título é o maior elemento da página. Nome de cliente ou de
+     projeto pode ser qualquer coisa: quebra dentro da palavra antes de
+     vazar. */
+  font-size: clamp(2rem, 8.5vw, 8.5rem);
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  overflow-wrap: anywhere;
   color: transparent;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 1px #f4f4f0;
   paint-order: stroke fill;
+}
+@media (min-width: 1024px) {
+  .vx-admin h1.hero-heading {
+    font-size: clamp(6rem, 9.5vw, 8.5rem);
+  }
 }
 .vx-section-nav nav {
   display: flex;
@@ -1550,7 +1560,8 @@
   }
 }
 
-.vx-main h1:not(.sr-only) {
+/* Os títulos das páginas (h1.hero-heading) têm regra própria, acima. */
+.vx-main h1:not(.sr-only):not(.hero-heading) {
   font-size: clamp(28px, 3vw, 40px);
   font-weight: 600;
   letter-spacing: -0.035em;
