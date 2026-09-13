@@ -6,7 +6,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { PessoaNoFunil } from './funil'
+import type { PessoaComReceita, SessaoResumida } from './origem'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../lib/database.types'
 
@@ -65,13 +65,38 @@ export function useReportProposals() {
 export function useFunilPessoas() {
   return useQuery({
     queryKey: ['reports', 'funil-pessoas'],
-    queryFn: async (): Promise<PessoaNoFunil[]> => {
-      // A view não está em database.types.ts; a forma é a do módulo funil.ts.
+    queryFn: async (): Promise<PessoaComReceita[]> => {
+      // A view não está em database.types.ts; a forma é a do módulo funil.ts
+      // (+ receita_plano/receita_contratos da fase 4, em origem.ts).
       const { data, error } = await (supabase as unknown as SupabaseClient)
         .from('funil_pessoas')
         .select('*')
       if (error) throw new Error(error.message)
-      return (data ?? []) as PessoaNoFunil[]
+      return (data ?? []) as PessoaComReceita[]
+    },
+  })
+}
+
+/** Sessões com UTM, só o que o funil por campanha precisa (campanha e fonte). */
+export function useSessoesUtm() {
+  return useQuery({
+    queryKey: ['reports', 'sessoes-utm'],
+    queryFn: async (): Promise<SessaoResumida[]> => {
+      const { data, error } = await supabase.from('utm_sessions').select('utm_campaign, utm_source')
+      if (error) throw new Error(error.message)
+      return data
+    },
+  })
+}
+
+/** Gasto total em anúncios (ad_metrics_daily, todas as contas) — o numerador do CAC. */
+export function useGastoEmAnuncios() {
+  return useQuery({
+    queryKey: ['reports', 'gasto-anuncios'],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.from('ad_metrics_daily').select('gasto')
+      if (error) throw new Error(error.message)
+      return data.reduce((soma, linha) => soma + (Number(linha.gasto) || 0), 0)
     },
   })
 }

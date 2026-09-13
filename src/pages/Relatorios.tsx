@@ -1,4 +1,5 @@
 import FunilComercial from '../components/reports/FunilComercial'
+import FunilOrigem from '../components/reports/FunilOrigem'
 import ReceitaPorTipo from '../components/reports/ReceitaPorTipo'
 import TempoMedioEtapas from '../components/reports/TempoMedioEtapas'
 import TopClientes from '../components/reports/TopClientes'
@@ -13,14 +14,17 @@ export default function Relatorios() {
           Relatórios
         </h1>
         <p className="mt-2 text-sm font-light text-muted">
-          Funil comercial, receita, tempo de execução e resultado financeiro
-          da Vertix.
+          Funil comercial, origem das vendas, receita, tempo de execução e
+          resultado financeiro da Vertix.
         </p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <FunilComercial />
         <ReceitaPorTipo />
+        <div className="lg:col-span-2">
+          <FunilOrigem />
+        </div>
         <TempoMedioEtapas />
         <TopClientes />
         <div className="lg:col-span-2">
