@@ -104,8 +104,22 @@ export default function ScanComprasTable({
                   </p>
                 </div>
 
-                <span className="tabular-nums text-sm font-semibold text-ink">
-                  {formatCentavos(compra.valor_centavos)}
+                <span className="flex flex-col items-end text-right">
+                  <span className="tabular-nums text-sm font-semibold text-ink">
+                    {formatCentavos(compra.total_centavos)}
+                  </span>
+                  {/* Com order bump o total é maior que o plano: a tela diz o
+                      que veio junto em vez de deixar a conta para quem lê. */}
+                  {compra.extras.length > 0 && (
+                    <span
+                      className="max-w-[20rem] truncate text-[11px] font-light text-muted"
+                      title={`Plano ${formatCentavos(compra.valor_centavos)} + ${compra.extras
+                        .map((e) => `${e.nome} ${formatCentavos(e.preco_centavos)}`)
+                        .join(' + ')}`}
+                    >
+                      {`+ ${compra.extras.map((e) => `${e.nome} ${formatCentavos(e.preco_centavos)}`).join(' + ')}`}
+                    </span>
+                  )}
                 </span>
 
                 <span
@@ -154,7 +168,7 @@ export default function ScanComprasTable({
                     <RotateCcw aria-hidden className="h-3.5 w-3.5" />
                     Reembolsar
                     <span className="sr-only">
-                      {` ${formatCentavos(compra.valor_centavos)} de ${compra.comprador ?? 'comprador não identificado'}`}
+                      {` ${formatCentavos(compra.total_centavos)} de ${compra.comprador ?? 'comprador não identificado'}`}
                     </span>
                   </button>
                 )}

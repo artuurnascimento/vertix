@@ -42,7 +42,7 @@ export default function ScanReembolsoModal({
   return (
     <ReembolsoDialog
       chave={compra.id}
-      valorCentavos={compra.valor_centavos}
+      valorCentavos={compra.total_centavos}
       // Compra sem lead casado não tem nome. "este comprador" é feio e é
       // honesto; inventar um nome numa tela de devolver dinheiro, não.
       nome={compra.comprador ?? 'este comprador'}

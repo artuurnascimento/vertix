@@ -34,6 +34,8 @@ const COMPRA: ScanCompra = {
   reanalise_analysis_id: null,
   receivable_id: '48f8b0ae-6d7a-466c-9020-1309dcca7415',
   reembolsado_em: null,
+  total_centavos: 19700,
+  extras: [],
 }
 
 function botaoConfirmar() {
@@ -156,7 +158,7 @@ describe('ScanReembolsoModal — confirmação forte', () => {
   it('o valor certo de OUTRA venda não libera esta', async () => {
     render(
       <ScanReembolsoModal
-        compra={{ ...COMPRA, valor_centavos: 29700 }}
+        compra={{ ...COMPRA, valor_centavos: 29700, total_centavos: 29700 }}
         onConfirm={vi.fn()}
         onClose={vi.fn()}
       />

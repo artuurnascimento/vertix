@@ -7,6 +7,7 @@ import {
   formatCentavos,
   resumoDasCompras,
   taxaDeConversao,
+  totaisDaVenda,
 } from './comprasResumo'
 import type { ScanCompra } from './comprasData'
 
@@ -35,6 +36,8 @@ function compra(over: Partial<ScanCompra> = {}): ScanCompra {
     reanalise_analysis_id: null,
     receivable_id: 'rec-1',
     reembolsado_em: null,
+    total_centavos: over.valor_centavos ?? 19700,
+    extras: [],
     ...over,
   }
 }
@@ -51,6 +54,14 @@ describe('resumoDasCompras', () => {
     expect(r.pagas).toBe(2)
     expect(r.receitaCentavos).toBe(39400)
     expect(r.aguardando).toBe(1)
+  })
+
+  test('a receita é o que foi pago: com order bump o pedido vale mais que o plano', () => {
+    const r = resumoDasCompras([
+      compra({ id: 'a', status: 'pago', valor_centavos: 19700, total_centavos: 24400 }),
+      compra({ id: 'b', status: 'reembolsado', valor_centavos: 19700, total_centavos: 24400 }),
+    ])
+    expect(r.receitaCentavos).toBe(24400)
   })
 
   test('lista vazia devolve zeros', () => {
@@ -164,5 +175,32 @@ describe('formatCentavos e compraStatusMeta', () => {
   test('status desconhecido não quebra a pill', () => {
     expect(compraStatusMeta('pago').label).toBe('Pago')
     expect(compraStatusMeta('estranho').label).toBe('estranho')
+  })
+})
+
+describe('totaisDaVenda', () => {
+  test('com pedido: o total é o do pedido e os extras são os itens pagos além do principal', () => {
+    const pedido = {
+        total_centavos: 24400,
+        itens: [
+          { nome: 'Plano de Correção', tipo: 'principal', preco_centavos: 19700, pago: true },
+          { nome: 'Acompanhamento de 30 dias', tipo: 'bump', preco_centavos: 4700, pago: true },
+          { nome: 'Correção Aplicada', tipo: 'upsell', preco_centavos: 149700, pago: false },
+        ],
+      }
+    expect(totaisDaVenda({ valor_centavos: 19700, status: 'pago' }, pedido)).toEqual({
+      total_centavos: 24400,
+      extras: [{ nome: 'Acompanhamento de 30 dias', preco_centavos: 4700 }],
+    })
+    // O checkout abandonado da mesma análise não herda o pedido pago de outra tentativa.
+    expect(totaisDaVenda({ valor_centavos: 19700, status: 'aguardando_pagamento' }, pedido)).toEqual({
+      total_centavos: 19700,
+      extras: [],
+    })
+  })
+
+  test('sem pedido (fluxo antigo): o total é o plano, sem extras', () => {
+    expect(totaisDaVenda({ valor_centavos: 19700, status: 'pago' }, null)).toEqual({ total_centavos: 19700, extras: [] })
+    expect(totaisDaVenda({ valor_centavos: 19700, status: 'pago' }, undefined).extras).toEqual([])
   })
 })

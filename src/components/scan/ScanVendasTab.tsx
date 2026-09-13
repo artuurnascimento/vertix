@@ -73,7 +73,7 @@ export default function ScanVendasTab({
         texto:
           resultado === 'ja_reembolsado'
             ? `Esta venda para ${quem} já estava reembolsada. A lista foi atualizada.`
-            : `${formatCentavos(compra.valor_centavos)} devolvidos a ${quem}. Acesso ao plano revogado.`,
+            : `${formatCentavos(compra.total_centavos)} devolvidos a ${quem}. Acesso ao plano revogado.`,
       })
     },
     onError: (erro: unknown) => {

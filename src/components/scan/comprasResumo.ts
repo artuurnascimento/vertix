@@ -33,12 +33,57 @@ export function resumoDasCompras(compras: ScanCompra[]): ResumoVendas {
   return compras.reduce<ResumoVendas>(
     (acc, c) => ({
       pagas: acc.pagas + (c.status === 'pago' ? 1 : 0),
+      // O que entrou de verdade: com order bump o pedido vale mais que o plano.
       receitaCentavos:
-        acc.receitaCentavos + (c.status === 'pago' ? c.valor_centavos : 0),
+        acc.receitaCentavos + (c.status === 'pago' ? c.total_centavos : 0),
       aguardando: acc.aguardando + (c.status === 'aguardando_pagamento' ? 1 : 0),
     }),
     { pagas: 0, receitaCentavos: 0, aguardando: 0 }
   )
+}
+
+/** Item do pedido do checkout que pagou esta compra (o que a tela precisa). */
+export interface ItemDoPedido {
+  nome: string
+  /** 'principal' | 'bump' | 'upsell' | 'downsell'. */
+  tipo: string
+  preco_centavos: number
+  pago: boolean
+}
+
+export interface PedidoDaCompra {
+  total_centavos: number
+  itens: ItemDoPedido[]
+}
+
+/** Extra comprado junto (bump, upsell, downsell), como a tela lista. */
+export interface ExtraDaVenda {
+  nome: string
+  preco_centavos: number
+}
+
+/** Só uma compra que chegou a ser paga herda o pedido (e o que veio junto). */
+const STATUS_COM_PEDIDO = new Set(['pago', 'reembolsado'])
+
+/**
+ * Quanto a venda valeu de fato e o que veio junto. A compra do Scan guarda só
+ * o preço do plano; quem passou pelo checkout novo pagou um PEDIDO, que pode
+ * ter order bump ("Acompanhamento de 30 dias") e upsell. Sem pedido — o fluxo
+ * antigo, direto pelo /pagar — o total é o próprio plano e não há extras. Um
+ * checkout abandonado da mesma análise também fica só com o plano: o pedido
+ * pago é de outra tentativa, não dele.
+ */
+export function totaisDaVenda(
+  compra: Pick<ScanCompra, 'valor_centavos' | 'status'>,
+  pedido: PedidoDaCompra | null | undefined
+): { total_centavos: number; extras: ExtraDaVenda[] } {
+  if (!pedido || !STATUS_COM_PEDIDO.has(compra.status)) {
+    return { total_centavos: compra.valor_centavos, extras: [] }
+  }
+  const extras = pedido.itens
+    .filter((item) => item.pago && item.tipo !== 'principal')
+    .map((item) => ({ nome: item.nome, preco_centavos: item.preco_centavos }))
+  return { total_centavos: pedido.total_centavos, extras }
 }
 
 /**

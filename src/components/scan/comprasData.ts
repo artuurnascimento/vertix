@@ -1,4 +1,6 @@
 import { raioxSupabase } from '../leadsRaiox/raioxSupabase'
+import { parseItens } from '../pedidos/pedidosData'
+import { totaisDaVenda, type ExtraDaVenda, type PedidoDaCompra } from './comprasResumo'
 import {
   criarMensagemDoCorpo,
   invocarReembolso,
@@ -49,6 +51,14 @@ export interface ScanCompra {
   receivable_id: string | null
   /** Quando o reembolso foi feito. NULL enquanto a coluna não existir. */
   reembolsado_em: string | null
+  /**
+   * O que foi pago de fato. Pelo checkout novo a venda é um PEDIDO, que pode
+   * levar order bump e upsell; `valor_centavos` é só o plano. Sem pedido
+   * (fluxo antigo, direto pelo /pagar) os dois são iguais.
+   */
+  total_centavos: number
+  /** Extras pagos junto (bump, upsell, downsell), na ordem do pedido. */
+  extras: ExtraDaVenda[]
 }
 
 export interface ScanComprasResponse {
@@ -89,6 +99,36 @@ interface LinhaCompra {
   created_at: string
   receivable_id: string | null
   reembolsado_em?: string | null
+}
+
+/**
+ * O pedido do checkout que pagou cada análise — o mais recente entre os pagos
+ * ou reembolsados (o abandonado não conta: ainda não pagou nada). É dele que
+ * saem o total com order bump e a lista de extras.
+ */
+async function pedidosPorAnalise(analysisIds: string[]): Promise<Map<string, PedidoDaCompra>> {
+  if (analysisIds.length === 0) return new Map()
+  const { data, error } = await raioxSupabase
+    .from('pedidos')
+    .select('analysis_id, status, total_centavos, itens, created_at')
+    .in('analysis_id', analysisIds)
+    .in('status', ['pago', 'reembolsado'])
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  const linhas = (data ?? []) as unknown as Array<{
+    analysis_id: string
+    total_centavos: number
+    itens: unknown
+  }>
+  const mapa = new Map<string, PedidoDaCompra>()
+  for (const linha of linhas) {
+    if (mapa.has(linha.analysis_id)) continue
+    mapa.set(linha.analysis_id, {
+      total_centavos: linha.total_centavos,
+      itens: parseItens(linha.itens),
+    })
+  }
+  return mapa
 }
 
 /** Mapa id → valor, para casar as compras com leads e análises. */
@@ -164,17 +204,18 @@ export async function fetchScanCompras(
   }
 
   const linhas = resultado.linhas
-  const [analises, leads] = await Promise.all([
-    mapaPor<'domain'>('analyses', 'id, domain', [
-      ...new Set(linhas.map((l) => l.analysis_id)),
-    ]),
+  const analysisIds = [...new Set(linhas.map((l) => l.analysis_id))]
+  const [analises, leads, pedidos] = await Promise.all([
+    mapaPor<'domain'>('analyses', 'id, domain', analysisIds),
     mapaPor<'name' | 'email'>('leads', 'id, name, email', [
       ...new Set(linhas.map((l) => l.lead_id).filter((id): id is string => id != null)),
     ]),
+    pedidosPorAnalise(analysisIds),
   ])
 
   const compras: ScanCompra[] = linhas.map((l) => {
     const lead = l.lead_id ? leads.get(l.lead_id) : undefined
+    const totais = totaisDaVenda(l, pedidos.get(l.analysis_id))
     return {
       id: l.id,
       criado_em: l.created_at,
@@ -192,6 +233,8 @@ export async function fetchScanCompras(
       reanalise_analysis_id: l.reanalise_analysis_id,
       receivable_id: l.receivable_id,
       reembolsado_em: l.reembolsado_em ?? null,
+      total_centavos: totais.total_centavos,
+      extras: totais.extras,
     }
   })
 
