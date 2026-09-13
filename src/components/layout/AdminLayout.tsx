@@ -39,6 +39,7 @@ import { MotionConfig } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import QuickSearch from './QuickSearch'
 import NotificationBell from './NotificationBell'
+import Atmosfera from './Atmosfera'
 import { useAuth } from '../../lib/auth'
 import '../../styles/vertix-admin.css'
 
@@ -192,7 +193,7 @@ export default function AdminLayout() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="vx-admin min-h-screen text-ink">
-        <div className="vx-atmosphere" aria-hidden="true" />
+        <Atmosfera />
         <a href="#main-content" className="vx-skip">
           Pular para o conteúdo
         </a>
