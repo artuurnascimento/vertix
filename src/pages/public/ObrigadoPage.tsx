@@ -12,11 +12,14 @@ import {
   useStatusPedido,
 } from "../../components/upsell/checkoutDados";
 import {
+  correcaoDoPedido,
   ehPlanoDeCorrecao,
   montarResumo,
+  temAcompanhamento,
   planoScanUrl,
   situacaoDoPedido,
 } from "../../components/upsell/pedidoResumo";
+import CorrecaoAplicadaPassos from "../../components/upsell/CorrecaoAplicadaPassos";
 import { lerEstadoObrigado } from "../../components/upsell/estadoObrigado";
 
 /**
@@ -101,6 +104,7 @@ export default function ObrigadoPage() {
     ? planoScanUrl(pedido?.plano_code)
     : null;
 
+  const correcao = correcaoDoPedido(resumo.itens);
   const situacao = situacaoDoPedido(pedido?.status);
   const cabecalho = CABECALHO[situacao];
   const pago = situacao === "pago";
@@ -149,9 +153,27 @@ export default function ObrigadoPage() {
       {/* "Em até 5 minutos chega o e-mail com o acesso" só é verdade depois do
           pagamento. Mostrar isso num Pix pendente é prometer entrega de algo
           que ainda não foi cobrado. */}
+      {/* Quem contratou a Correção vê o que acontece agora — antes mesmo de o
+          pedido ser relido, porque o estado da navegação já traz a entrega. */}
+      {pago && correcao && (
+        <Entrada delay={0.1}>
+          <CorrecaoAplicadaPassos
+            escopo={correcao}
+            plataforma={pedido?.plataforma ?? null}
+            loja={null}
+            planoCode={pedido?.plano_code ?? null}
+            linkPlano={linkPlano}
+          />
+        </Entrada>
+      )}
+
       {pago && (
         <Entrada delay={0.12}>
-          <ProximosPassos email={resumo.email} linkPlano={linkPlano} />
+          <ProximosPassos
+            email={resumo.email}
+            linkPlano={linkPlano}
+            acompanhamento={temAcompanhamento(resumo.itens)}
+          />
         </Entrada>
       )}
 

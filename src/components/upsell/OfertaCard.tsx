@@ -1,5 +1,6 @@
 import { useId } from 'react'
-import { CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react'
+import { Check, CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react'
+import { textoDoBump } from '../checkout/conteudoCheckout'
 import type { Oferta } from './upsellFluxo'
 import { formatarCentavos } from './upsellFluxo'
 import { CVV_CONTAINER_ID } from './cardToken'
@@ -49,6 +50,7 @@ export function OfertaCard({
 
   const preco = oferta.precoCentavos
   const temPreco = preco !== null
+  const { paragrafo, beneficios } = textoDoBump(oferta.texto)
   const rotuloAceitar = processando
     ? 'Processando…'
     : temPreco
@@ -75,15 +77,36 @@ export function OfertaCard({
         {oferta.titulo}
       </h2>
 
-      {oferta.texto && (
-        <p className="mt-2.5 whitespace-pre-line text-sm font-light leading-relaxed text-muted">
-          {oferta.texto}
-        </p>
+      {/* Recortado como o texto do order bump: o parágrafo fica parágrafo, as
+          linhas com marcador viram a lista com o check. */}
+      {paragrafo && (
+        <p className="mt-2.5 text-sm font-light leading-relaxed text-muted">{paragrafo}</p>
+      )}
+      {beneficios.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-2">
+          {beneficios.map((b) => (
+            <li key={b} className="flex items-start gap-2.5 text-sm font-light leading-snug text-ink/85">
+              <span aria-hidden className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent/25">
+                <Check strokeWidth={3} className="h-2.5 w-2.5 text-accent" />
+              </span>
+              {b}
+            </li>
+          ))}
+        </ul>
       )}
 
       {temPreco && (
-        <p className="mt-5 text-3xl font-bold tabular-nums text-ink sm:text-4xl">
-          {formatarCentavos(preco)}
+        <p className="mt-5 flex flex-wrap items-baseline gap-x-3">
+          {oferta.precoAncoraCentavos !== null && oferta.precoAncoraCentavos > preco && (
+            <span className="text-base font-light text-muted line-through">
+              <span className="sr-only">de </span>
+              {formatarCentavos(oferta.precoAncoraCentavos)}
+            </span>
+          )}
+          <span className="text-3xl font-bold tabular-nums text-ink sm:text-4xl">
+            <span className="sr-only">por </span>
+            {formatarCentavos(preco)}
+          </span>
         </p>
       )}
 

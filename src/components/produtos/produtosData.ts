@@ -11,7 +11,14 @@ import { catalogoSupabase, ehColunaAusente } from './catalogoSupabase'
 export const PRODUTO_TIPOS = ['principal', 'bump', 'upsell', 'downsell'] as const
 export type ProdutoTipo = (typeof PRODUTO_TIPOS)[number]
 
-export const PRODUTO_ENTREGAS = ['plano_scan', 'manual', 'concorrentes_extra'] as const
+export const PRODUTO_ENTREGAS = [
+  'plano_scan',
+  'manual',
+  'concorrentes_extra',
+  'correcao_aplicada',
+  'correcao_criticos',
+  'acompanhamento_30d',
+] as const
 export type ProdutoEntrega = (typeof PRODUTO_ENTREGAS)[number]
 
 export const PRODUTO_TIPO_LABEL: Record<ProdutoTipo, string> = {
@@ -32,6 +39,17 @@ export const PRODUTO_ENTREGA_LABEL: Record<ProdutoEntrega, string> = {
   plano_scan: 'Plano de Correção (Scan)',
   manual: 'Entrega manual',
   concorrentes_extra: '+3 concorrentes no plano (Scan)',
+  correcao_aplicada: 'Correção Aplicada — plano inteiro (equipe)',
+  correcao_criticos: 'Correção Aplicada — 3 pontos críticos (equipe)',
+  acompanhamento_30d: 'Acompanhamento de 30 dias (automático)',
+}
+
+/** Entregas que a equipe faz à mão e acompanha em `pedido_entregas`. */
+export const ENTREGAS_MANUAIS: readonly ProdutoEntrega[] = ['correcao_aplicada', 'correcao_criticos', 'manual']
+
+/** As duas Correções: o item que faz a página de obrigado explicar "o que acontece agora". */
+export function ehCorrecaoAplicada(entrega: string | null | undefined): entrega is 'correcao_aplicada' | 'correcao_criticos' {
+  return entrega === 'correcao_aplicada' || entrega === 'correcao_criticos'
 }
 
 /**

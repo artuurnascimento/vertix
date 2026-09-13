@@ -23,6 +23,10 @@ export interface ItemPedido {
   nome: string
   precoCentavos: number | null
   tipo: TipoItem
+  /** Como é entregue; null quando o backend não informou. */
+  entrega?: string | null
+  /** Só os itens do banco sabem se já foram pagos; o da sessão acabou de ser. */
+  pago?: boolean | null
 }
 
 export interface PedidoResumo {
@@ -39,6 +43,7 @@ export interface UpsellAceito {
   produtoId: string
   nome: string
   precoCentavos: number | null
+  entrega?: string | null
 }
 
 /**
@@ -63,7 +68,11 @@ export interface StatusPedido {
     nome?: string | null
     preco_centavos?: number | null
     tipo?: string | null
+    pago?: boolean | null
+    entrega?: string | null
   }> | null
+  /** Plataforma da loja (do lead do Scan); null = desconhecida. */
+  plataforma?: string | null
   /** Se o pedido diz que o bump entrou, respeitamos isso em vez de adivinhar. */
   bump_aceito?: boolean | null
   /** Código curto do Plano de Correção, quando o pedido é do Vertix Scan. */
@@ -147,6 +156,8 @@ export function montarResumo({
         precoCentavos:
           typeof preco === 'number' && Number.isFinite(preco) ? preco : null,
         tipo: normalizarTipo(linha.tipo),
+        entrega: linha.entrega ?? null,
+        pago: typeof linha.pago === 'boolean' ? linha.pago : null,
       }
     })
 
@@ -159,6 +170,8 @@ export function montarResumo({
       nome: upsellAceito.nome,
       precoCentavos: upsellAceito.precoCentavos,
       tipo: 'upsell',
+      entrega: upsellAceito.entrega ?? null,
+      pago: true,
     })
   }
 
@@ -264,4 +277,19 @@ const SCAN_BASE = (
  */
 export function planoScanUrl(code: string | null | undefined): string {
   return code ? `${SCAN_BASE}/plano/${encodeURIComponent(code)}` : SCAN_BASE
+}
+
+/** Qual Correção Aplicada (se alguma) já está PAGA neste pedido. */
+export function correcaoDoPedido(
+  itens: readonly ItemPedido[]
+): 'correcao_aplicada' | 'correcao_criticos' | null {
+  const item = itens.find(
+    (i) => i.pago !== false && (i.entrega === 'correcao_aplicada' || i.entrega === 'correcao_criticos')
+  )
+  return (item?.entrega as 'correcao_aplicada' | 'correcao_criticos' | undefined) ?? null
+}
+
+/** O Acompanhamento de 30 dias entrou (bump pago junto com o plano)? */
+export function temAcompanhamento(itens: readonly ItemPedido[]): boolean {
+  return itens.some((i) => i.pago !== false && i.entrega === 'acompanhamento_30d')
 }

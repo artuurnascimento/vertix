@@ -68,7 +68,7 @@ export default function UpsellPage() {
   const carregando = carregandoInfo || carregandoStatus
   const linkPedido = `/c/${slug}/obrigado/${pedidoId}`
   const comCartao = temCartaoSalvo(status)
-  const oferta = comCartao ? resolverOferta(info, etapa) : null
+  const oferta = comCartao ? resolverOferta(info, etapa, status?.plataforma) : null
 
   // O campo seguro só é montado quando existe oferta na tela para recebê-lo.
   const { pronto, erroSdk, gerarToken } = useCampoCvv(
@@ -113,6 +113,7 @@ export default function UpsellPage() {
             produtoId: oferta.produtoId,
             nome: oferta.nomeProduto ?? oferta.titulo,
             precoCentavos: oferta.precoCentavos,
+            entrega: oferta.entrega,
           },
           totalCentavos: resposta.total_centavos ?? null,
         })
@@ -141,7 +142,7 @@ export default function UpsellPage() {
 
   function recusar() {
     if (emVooRef.current) return
-    const proxima = proximaEtapaAoRecusar(etapa, info)
+    const proxima = proximaEtapaAoRecusar(etapa, info, status?.plataforma)
     if (proxima === 'fim') {
       irParaObrigado()
       return

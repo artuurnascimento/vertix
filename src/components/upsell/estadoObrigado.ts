@@ -26,7 +26,7 @@ function ehObjeto(valor: unknown): valor is Record<string, unknown> {
 
 function lerUpsell(valor: unknown): UpsellAceito | null {
   if (!ehObjeto(valor)) return null
-  const { produtoId, nome, precoCentavos } = valor
+  const { produtoId, nome, precoCentavos, entrega } = valor
   if (typeof produtoId !== 'string' || typeof nome !== 'string') return null
   return {
     produtoId,
@@ -35,6 +35,7 @@ function lerUpsell(valor: unknown): UpsellAceito | null {
       typeof precoCentavos === 'number' && Number.isFinite(precoCentavos)
         ? precoCentavos
         : null,
+    entrega: typeof entrega === 'string' ? entrega : null,
   }
 }
 

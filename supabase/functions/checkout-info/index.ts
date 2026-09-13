@@ -70,6 +70,9 @@ interface PedidoRow {
   mp_payment_id: string | null
   mp_card_id: string | null
   plano_code: string | null
+  lead_id?: string | null
+  /** Preenchido pela leitura do lead; não é coluna do pedido. */
+  plataforma?: string | null
 }
 
 /** Mesmo mapeamento da checkout-pagar — um pagamento, uma leitura de status. */
@@ -108,7 +111,13 @@ function respostaPedido(
       tipo: item.tipo,
       preco_centavos: item.preco_centavos,
       pago: item.pago,
+      // A página de obrigado decide o bloco "o que acontece agora" por aqui.
+      entrega: item.entrega ?? null,
     })),
+    // Plataforma da loja (leads.plataforma): a UpsellPage omite as Correções
+    // fora de Shopify/Nuvemshop e a ObrigadoPage escolhe a instrução de
+    // acesso. null = lead sem plataforma conhecida (vê tudo).
+    plataforma: pedido.plataforma ?? null,
     // O front precisa disto para o upsell de um clique: sem card_id não há
     // como gerar o token do cartão salvo. É um id opaco, inútil sem o CVV.
     tem_cartao_salvo: Boolean(pedido.mp_card_id),
@@ -149,13 +158,25 @@ Deno.serve(
       const linhas = await db.select<PedidoRow>(
         `pedidos?id=eq.${pedidoId}` +
           '&select=id,status,total_centavos,subtotal_centavos,desconto_centavos,' +
-          'itens,cupom_id,mp_payment_id,mp_card_id,plano_code,' +
+          'itens,cupom_id,mp_payment_id,mp_card_id,plano_code,lead_id,' +
           // Só para o pós-venda. A projeção da resposta continua sem eles.
           'cliente_nome,cliente_email,cliente_whatsapp,receivable_id&limit=1'
       )
       pedido = linhas[0]
     } catch {
       return jsonResponse({ erro: 'falha_ao_ler_pedido' }, 502)
+    }
+    if (pedido?.lead_id) {
+      // Plataforma da loja, do lead do Scan. Falhar aqui não pode derrubar a
+      // página: sem plataforma, as ofertas aparecem para todo mundo.
+      try {
+        const leads = await db.select<{ plataforma: string | null }>(
+          `leads?id=eq.${pedido.lead_id}&select=plataforma&limit=1`
+        )
+        pedido.plataforma = leads[0]?.plataforma ?? null
+      } catch {
+        pedido.plataforma = null
+      }
     }
     if (!pedido) {
       return jsonResponse({ erro: 'pedido_nao_encontrado' }, 404)

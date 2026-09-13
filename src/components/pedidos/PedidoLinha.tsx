@@ -24,6 +24,8 @@ import type { Pedido } from './pedidosData'
 
 interface PedidoLinhaProps {
   pedido: Pedido
+  /** "2/3" do Acompanhamento de 30 dias; undefined = pedido sem o bump. */
+  acompanhamento?: { enviadas: number; total: number }
   /** Ausente quando a coluna reembolsado_em ainda não existe no ambiente. */
   temColunaReembolso: boolean
   onReembolsar: (pedido: Pedido) => void
@@ -33,6 +35,7 @@ interface PedidoLinhaProps {
 
 export default function PedidoLinha({
   pedido,
+  acompanhamento,
   temColunaReembolso,
   onReembolsar,
   agora,
@@ -98,6 +101,15 @@ export default function PedidoLinha({
           {entrega.alerta && <AlertTriangle aria-hidden className="h-3 w-3" />}
           {entrega.label}
         </span>
+
+        {acompanhamento && (
+          <span
+            className="inline-flex shrink-0 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-sky-200"
+            title="Medições semanais do Acompanhamento de 30 dias já enviadas"
+          >
+            Acompanhamento {acompanhamento.enviadas}/{acompanhamento.total}
+          </span>
+        )}
 
         <span
           className="shrink-0 tabular-nums text-xs font-light text-muted"

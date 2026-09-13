@@ -9,6 +9,8 @@ import {
   resumoDosPedidos,
 } from '../components/pedidos/pedidosResumo'
 import PedidosTable from '../components/pedidos/PedidosTable'
+import FilaCorrecao from '../components/pedidos/FilaCorrecao'
+import { resumirMedicoes, useMedicoes } from '../components/pedidos/entregasData'
 import {
   TODOS,
   categoriasDosPedidos,
@@ -39,6 +41,8 @@ const SKELETON_ROWS = 4
 export default function Pedidos() {
   const queryClient = useQueryClient()
   const { toast, mostrar } = useToast()
+  const medicoes = useMedicoes()
+  const medicoesPorPedido = resumirMedicoes(medicoes.data ?? [])
 
   const [periodo, setPeriodo] = useState<Periodo>('30d')
   const [produto, setProduto] = useState<string>(TODOS)
@@ -140,6 +144,8 @@ export default function Pedidos() {
           </p>
         </div>
       </div>
+
+      <FilaCorrecao />
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <FiltroPeriodo valor={periodo} onChange={setPeriodo} />
@@ -288,6 +294,7 @@ export default function Pedidos() {
                   pedidos={pedidos}
                   temColunaReembolso={!dados.semColunaReembolso}
                   onReembolsar={abrirReembolso}
+                  medicoes={medicoesPorPedido}
                 />
               </div>
             </>

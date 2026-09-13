@@ -136,6 +136,48 @@ function descricaoDoPedido(itens: PedidoItem[]): string {
  * Nunca lança. Toda falha — env ausente, worker fora do ar, resposta != 2xx —
  * é log e segue.
  */
+/**
+ * Item pago DEPOIS da entrega do pedido (upsell/downsell de 1 clique). O
+ * `pedido-pago` é idempotente pelo pedido inteiro, então um item que entra
+ * depois precisa do próprio aviso: `POST /api/vertix/item-pago`. Mesmo
+ * contrato do aviso do pedido — nunca lança, timeout curto, log gritante se
+ * faltar env. Sem isto, alguém paga R$ 1.497 e ninguém fica sabendo.
+ */
+export async function avisarWorkerItemPago(
+  pedidoId: string,
+  produtoId: string,
+  rotulo: string
+): Promise<void> {
+  const workerUrl = Deno.env.get('SCAN_WORKER_URL')
+  const vertixToken = Deno.env.get('VERTIX_SERVICE_TOKEN')
+
+  if (!workerUrl || !vertixToken) {
+    console.error(
+      `[${rotulo}] ENTREGA DO ITEM NÃO AVISADA — pedido ${pedidoId}, produto ${produtoId} ` +
+        'está PAGO e o worker do Scan não foi chamado. Env ausente: ' +
+        `${!workerUrl ? 'SCAN_WORKER_URL ' : ''}${!vertixToken ? 'VERTIX_SERVICE_TOKEN' : ''}`.trim()
+    )
+    return
+  }
+
+  try {
+    const res = await fetch(`${workerUrl.replace(/\/+$/, '')}/api/vertix/item-pago`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${vertixToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ pedido_id: pedidoId, produto_id: produtoId }),
+      signal: AbortSignal.timeout(WORKER_TIMEOUT_MS),
+    })
+    if (!res.ok) {
+      console.error(`[${rotulo}] Worker do Scan recusou o item ${produtoId} do pedido ${pedidoId}:`, res.status)
+    }
+  } catch (erro) {
+    console.error(`[${rotulo}] Worker do Scan indisponível (item ${produtoId}, pedido ${pedidoId}):`, erro)
+  }
+}
+
 export async function avisarWorkerPedidoPago(
   pedidoId: string,
   rotulo: string

@@ -70,7 +70,7 @@ import {
   type PedidoItem,
   type ProdutoRow,
 } from '../_shared/checkout.ts'
-import { criarRecebivelComplementar } from '../_shared/entrega.ts'
+import { avisarWorkerItemPago, criarRecebivelComplementar } from '../_shared/entrega.ts'
 
 interface RequestBody {
   pedido_id?: string
@@ -405,8 +405,7 @@ Deno.serve(
     // ----------------------------------------------------------------------
     // Depois da baixa, e só na aprovação. Não desfaz nada e não altera a
     // resposta: criarRecebivelComplementar() não lança e engole as próprias
-    // falhas (ver _shared/entrega.ts). O worker NÃO é avisado de novo — ele já
-    // foi chamado uma vez pelo pedido, e a entrega do upsell é problema dele.
+    // falhas (ver _shared/entrega.ts).
     await criarRecebivelComplementar(
       db,
       {
@@ -428,6 +427,15 @@ Deno.serve(
       },
       'checkout-upsell'
     )
+
+    // ----------------------------------------------------------------------
+    // 7. Entrega do item — o worker precisa saber que ESTE item foi pago
+    // ----------------------------------------------------------------------
+    // O aviso do pedido (pedido-pago) já rodou e é idempotente pelo pedido
+    // inteiro; um item pago depois só chega ao worker por aqui. É o que abre
+    // a linha em pedido_entregas, manda o e-mail de confirmação e o alerta
+    // para a equipe. Nunca lança.
+    await avisarWorkerItemPago(pedido.id, produtoId, 'checkout-upsell')
 
     let totalFinal = pedido.total_centavos + preco
     try {

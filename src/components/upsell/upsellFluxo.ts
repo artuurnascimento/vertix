@@ -25,6 +25,17 @@ export interface ProdutoInfo {
   id: string
   nome: string
   preco_centavos: number
+  /** Preço "de", riscado na tela. */
+  preco_ancora_centavos?: number | null
+  /** Como o item é entregue (`correcao_aplicada`, `acompanhamento_30d`…). */
+  entrega?: string | null
+}
+
+/** Plataformas em que a Vertix consegue aplicar as correções. */
+export const PLATAFORMAS_DA_CORRECAO: readonly string[] = ['shopify', 'nuvemshop']
+
+export function ehCorrecao(entrega: string | null | undefined): boolean {
+  return entrega === 'correcao_aplicada' || entrega === 'correcao_criticos'
 }
 
 /**
@@ -92,6 +103,9 @@ export interface Oferta {
   nomeProduto: string | null
   /** null quando o backend ainda não expôs o preço da oferta. */
   precoCentavos: number | null
+  /** Preço "de", riscado; null sem âncora. */
+  precoAncoraCentavos: number | null
+  entrega: string | null
 }
 
 const TITULO_PADRAO: Record<'upsell' | 'downsell', string> = {
@@ -148,7 +162,9 @@ export function precoDaOferta(
  */
 export function resolverOferta(
   info: CheckoutInfo | null | undefined,
-  etapa: EtapaOferta
+  etapa: EtapaOferta,
+  /** Plataforma da loja do comprador; null/undefined = desconhecida (vê tudo). */
+  plataforma?: string | null
 ): Oferta | null {
   if (!info || etapa === 'fim') return null
 
@@ -167,6 +183,16 @@ export function resolverOferta(
     null
   const produto = produtoDaEtapa(info, etapa, produtoId)
 
+  // A Correção só existe em Shopify e Nuvemshop: oferecê-la a uma loja
+  // Wix seria vender o que não dá para entregar.
+  if (
+    ehCorrecao(produto?.entrega) &&
+    plataforma &&
+    !PLATAFORMAS_DA_CORRECAO.includes(plataforma.toLowerCase())
+  ) {
+    return null
+  }
+
   return {
     etapa,
     produtoId,
@@ -174,6 +200,11 @@ export function resolverOferta(
     texto,
     nomeProduto: produto?.nome ?? null,
     precoCentavos: precoDaOferta(info, etapa, produto),
+    precoAncoraCentavos:
+      typeof produto?.preco_ancora_centavos === 'number' && produto.preco_ancora_centavos > 0
+        ? produto.preco_ancora_centavos
+        : null,
+    entrega: produto?.entrega ?? null,
   }
 }
 
@@ -184,10 +215,11 @@ export function resolverOferta(
  */
 export function proximaEtapaAoRecusar(
   etapa: EtapaOferta,
-  info: CheckoutInfo | null | undefined
+  info: CheckoutInfo | null | undefined,
+  plataforma?: string | null
 ): EtapaOferta {
   if (etapa !== 'upsell') return 'fim'
-  return resolverOferta(info, 'downsell') ? 'downsell' : 'fim'
+  return resolverOferta(info, 'downsell', plataforma) ? 'downsell' : 'fim'
 }
 
 // ---------------------------------------------------------------------------

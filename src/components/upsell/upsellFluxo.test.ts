@@ -76,6 +76,36 @@ describe('resolverOferta', () => {
   })
 })
 
+describe('resolverOferta — Correção Aplicada por plataforma', () => {
+  const CORRECAO = { id: 'p2', nome: 'Correção Aplicada', preco_centavos: 149700, preco_ancora_centavos: 290000, entrega: 'correcao_aplicada' }
+  const CRITICOS = { id: 'p3', nome: 'Só os 3 críticos', preco_centavos: 69700, preco_ancora_centavos: 149700, entrega: 'correcao_criticos' }
+
+  test('some para loja fora de Shopify/Nuvemshop; aparece para as duas e para plataforma desconhecida', () => {
+    const dados = info({ upsell_produto: CORRECAO, downsell_produto: CRITICOS })
+    expect(resolverOferta(dados, 'upsell', 'wix')).toBeNull()
+    expect(resolverOferta(dados, 'downsell', 'Wix')).toBeNull()
+    expect(resolverOferta(dados, 'upsell', 'shopify')?.produtoId).toBe('p2')
+    expect(resolverOferta(dados, 'upsell', 'Nuvemshop')?.produtoId).toBe('p2')
+    expect(resolverOferta(dados, 'upsell', null)?.produtoId).toBe('p2')
+    expect(resolverOferta(dados, 'upsell')?.produtoId).toBe('p2')
+  })
+
+  test('recusar o upsell numa loja Wix pula o downsell (também é Correção)', () => {
+    const dados = info({ upsell_produto: CORRECAO, downsell_produto: CRITICOS })
+    expect(proximaEtapaAoRecusar('upsell', dados, 'wix')).toBe('fim')
+    expect(proximaEtapaAoRecusar('upsell', dados, 'shopify')).toBe('downsell')
+  })
+
+  test('carrega a âncora e a entrega; produto que não é Correção não sofre gating', () => {
+    const oferta = resolverOferta(info({ upsell_produto: CORRECAO }), 'upsell', 'shopify')
+    expect(oferta?.precoAncoraCentavos).toBe(290000)
+    expect(oferta?.entrega).toBe('correcao_aplicada')
+    const bonus = resolverOferta(info({ upsell_produto: { ...EXTRA, entrega: 'manual' } }), 'upsell', 'wix')
+    expect(bonus?.produtoId).toBe('p2')
+    expect(bonus?.precoAncoraCentavos).toBeNull()
+  })
+})
+
 describe('precoDaOferta', () => {
   test('prefere o preço do produto ao da configuração', () => {
     const comAmbos = info({

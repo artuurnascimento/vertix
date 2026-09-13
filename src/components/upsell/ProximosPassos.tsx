@@ -1,4 +1,4 @@
-import { ExternalLink, Inbox, Mail } from 'lucide-react'
+import { CalendarCheck, ExternalLink, Inbox, Mail } from 'lucide-react'
 
 /**
  * "E agora?" — o que a pessoa precisa saber para não voltar em 10 minutos
@@ -10,11 +10,14 @@ import { ExternalLink, Inbox, Mail } from 'lucide-react'
 export function ProximosPassos({
   email,
   linkPlano,
+  acompanhamento = false,
 }: {
   /** E-mail do comprador, quando conhecido — deixa o texto concreto. */
   email: string | null
   /** Página do Plano de Correção do Scan; null para os demais produtos. */
   linkPlano: string | null
+  /** true quando o Acompanhamento de 30 dias entrou no pedido. */
+  acompanhamento?: boolean
 }) {
   return (
     <section
@@ -57,6 +60,15 @@ export function ProximosPassos({
             que resolvemos no mesmo dia.
           </span>
         </li>
+        {acompanhamento && (
+          <li className="flex items-start gap-3">
+            <CalendarCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <span>
+              <span className="font-medium text-ink">Acompanhamento de 30 dias ativado:</span> a primeira
+              medição da sua loja chega em 7 dias, por e-mail — e depois nos dias 14, 21 e 30.
+            </span>
+          </li>
+        )}
       </ul>
 
       {linkPlano && (

@@ -1,12 +1,15 @@
 import { describe, expect, test } from 'vitest'
 import {
+  correcaoDoPedido,
   ehPlanoDeCorrecao,
   montarResumo,
   planoScanUrl,
   situacaoDoPedido,
   somarTotal,
+  temAcompanhamento,
   temCartaoSalvo,
 } from './pedidoResumo'
+import type { ItemPedido } from './pedidoResumo'
 import type { CheckoutInfo } from './upsellFluxo'
 
 const INFO: CheckoutInfo = {
@@ -197,5 +200,32 @@ describe('situacaoDoPedido', () => {
   test('não se importa com caixa nem espaço em volta', () => {
     expect(situacaoDoPedido('  PAGO  ')).toBe('pago')
     expect(situacaoDoPedido('Aguardando')).toBe('aguardando')
+  })
+})
+
+describe('correcaoDoPedido / temAcompanhamento', () => {
+  const item = (o: Partial<ItemPedido>): ItemPedido => ({ id: 'x', nome: 'Item', precoCentavos: 100, tipo: 'upsell', ...o })
+
+  test('acha a Correção paga e ignora a que não foi cobrada', () => {
+    expect(correcaoDoPedido([item({ entrega: 'correcao_aplicada', pago: true })])).toBe('correcao_aplicada')
+    expect(correcaoDoPedido([item({ entrega: 'correcao_criticos' })])).toBe('correcao_criticos')
+    expect(correcaoDoPedido([item({ entrega: 'correcao_aplicada', pago: false })])).toBeNull()
+    expect(correcaoDoPedido([item({ entrega: 'plano_scan', pago: true })])).toBeNull()
+  })
+
+  test('o Acompanhamento só conta quando pago', () => {
+    expect(temAcompanhamento([item({ tipo: 'bump', entrega: 'acompanhamento_30d', pago: true })])).toBe(true)
+    expect(temAcompanhamento([item({ tipo: 'bump', entrega: 'acompanhamento_30d', pago: false })])).toBe(false)
+    expect(temAcompanhamento([item({ tipo: 'bump', entrega: 'manual' })])).toBe(false)
+  })
+
+  test('o upsell aceito na sessão entra no resumo com a entrega, já como pago', () => {
+    const resumo = montarResumo({
+      info: null,
+      pedido: { itens: [{ id: 'p1', nome: 'Plano', preco_centavos: 19700, tipo: 'principal', pago: true, entrega: 'plano_scan' }] },
+      upsellAceito: { produtoId: 'p2', nome: 'Correção Aplicada', precoCentavos: 149700, entrega: 'correcao_aplicada' },
+      totalDaCobranca: 169400,
+    })
+    expect(correcaoDoPedido(resumo.itens)).toBe('correcao_aplicada')
   })
 })

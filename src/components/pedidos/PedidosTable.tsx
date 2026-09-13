@@ -16,13 +16,18 @@ interface PedidosTableProps {
   onReembolsar: (pedido: Pedido) => void
   /** Só para o teste conseguir fixar "agora" ao julgar o atraso da entrega. */
   agora?: Date
+  /** Medições do Acompanhamento por pedido ("2/3"); vazio = ninguém tem o bump. */
+  medicoes?: Map<string, { enviadas: number; total: number }>
 }
+
+const SEM_MEDICOES = new Map<string, { enviadas: number; total: number }>()
 
 export default function PedidosTable({
   pedidos,
   temColunaReembolso,
   onReembolsar,
   agora,
+  medicoes = SEM_MEDICOES,
 }: PedidosTableProps) {
   if (pedidos.length === 0) {
     return (
@@ -48,6 +53,7 @@ export default function PedidosTable({
         <PedidoLinha
           key={pedido.id}
           pedido={pedido}
+          acompanhamento={medicoes.get(pedido.id)}
           temColunaReembolso={temColunaReembolso}
           onReembolsar={onReembolsar}
           agora={agora}
