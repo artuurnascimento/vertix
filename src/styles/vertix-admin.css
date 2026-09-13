@@ -241,11 +241,42 @@
   padding: 22px;
   transition:
     border-color 0.18s,
-    transform 0.18s;
+    transform 0.18s,
+    box-shadow 0.18s;
+  /* Entram um atrás do outro (--i vem do card) — o olho segue a ordem. */
+  animation: vx-metric-entrada 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
 .vx-metric:hover {
   border-color: #aa8cff80;
   transform: translateY(-2px);
+  box-shadow: 0 18px 40px -20px #7c5cff80;
+}
+.vx-metric-icon,
+.vx-metric strong {
+  transition:
+    background-color 0.18s,
+    border-color 0.18s,
+    transform 0.18s,
+    text-shadow 0.18s;
+}
+.vx-metric:hover .vx-metric-icon {
+  background: #8970ff2e;
+  border-color: #ab91ff40;
+  transform: scale(1.06);
+}
+.vx-metric:hover strong {
+  text-shadow: 0 0 22px #a48fff59;
+}
+@keyframes vx-metric-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .vx-metric-heading {
   display: flex;
@@ -330,8 +361,60 @@
 .vx-barras i {
   display: block;
   width: 100%;
+  height: var(--altura);
   border-radius: 4px 4px 0 0;
   background: linear-gradient(#b49bff, #623cea);
+  transition:
+    opacity 0.18s,
+    filter 0.18s,
+    height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Passar o mouse: a barra sob o cursor acende e as outras se apagam. */
+.vx-barras:hover > span:not(:hover) i {
+  opacity: 0.45;
+}
+.vx-barras > span:hover i {
+  filter: brightness(1.18);
+}
+/* A dica de cada mês, logo acima da barra; nas pontas não vaza do card. */
+.vx-dica {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--altura, 100%) + 8px);
+  transform: translate(-50%, 4px);
+  z-index: 3;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #ffffff1c;
+  background: #161c36f2;
+  color: #f4f5ff;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+.vx-barras > span:hover .vx-dica,
+.vx-dica-visivel {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.vx-barras > span:first-child .vx-dica {
+  left: 0;
+  transform: translate(0, 4px);
+}
+.vx-barras > span:last-child .vx-dica {
+  left: auto;
+  right: 0;
+  transform: translate(0, 4px);
+}
+.vx-barras > span:first-child:hover .vx-dica,
+.vx-barras > span:last-child:hover .vx-dica {
+  transform: translate(0, 0);
 }
 .vx-barras-rotuladas {
   margin-bottom: 14px;
@@ -391,11 +474,38 @@
   transform: skewY(-45deg);
   transform-origin: top left;
 }
+.vx-barras-prisma .vx-dica {
+  bottom: calc(var(--altura) + 18px);
+}
+.vx-linha-caixa {
+  position: relative;
+  margin-top: 12px;
+}
 .vx-linha {
   display: block;
   width: 100%;
-  height: 66px;
-  margin-top: 12px;
+  height: auto;
+  aspect-ratio: 4 / 1;
+  overflow: visible;
+  cursor: crosshair;
+}
+.vx-linha-ponto {
+  fill: #f4f5ff;
+  transition: r 0.15s;
+}
+.vx-linha-ponto-ativo {
+  fill: #fff;
+  stroke: #a48fff;
+  stroke-width: 2;
+}
+.vx-linha-guia {
+  stroke: #a48fff;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+.vx-linha-caixa .vx-dica {
+  transform: translate(-50%, -10px);
 }
 /* Donut + legenda, lado a lado. */
 .vx-donut {
@@ -415,6 +525,15 @@
   fill: none;
   stroke-width: 9;
   stroke-linecap: round;
+  transition:
+    stroke-width 0.18s,
+    opacity 0.18s;
+}
+.vx-donut circle.vx-fatia-ativa {
+  stroke-width: 12;
+}
+.vx-donut circle.vx-fatia-apagada {
+  opacity: 0.35;
 }
 .vx-donut-trilho {
   stroke: #ffffff12;
@@ -463,6 +582,25 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 3px 6px;
+  margin: -3px -6px;
+  border-radius: 8px;
+  cursor: default;
+  transition:
+    background-color 0.18s,
+    color 0.18s,
+    opacity 0.18s;
+}
+.vx-donut-legenda li.vx-fatia-ativa {
+  background: #ffffff0f;
+  color: #fff;
+}
+.vx-donut-legenda li.vx-fatia-apagada {
+  opacity: 0.5;
+}
+.vx-donut-centro strong,
+.vx-donut-centro small {
+  transition: opacity 0.15s;
 }
 .vx-donut-legenda i {
   width: 9px;
@@ -1069,9 +1207,6 @@
   }
   .vx-barras em {
     font-size: 9px;
-  }
-  .vx-linha {
-    height: 44px;
   }
   .vx-variacao {
     font-size: 11px;

@@ -65,7 +65,7 @@ describe('ExecutiveMetrics', () => {
     montar()
     // O Intl separa "R$" do número com espaço fixo; o regex não se importa.
     const card = screen.getByRole('link', { name: /^Receita do mês: R\$.24\.800,00$/ })
-    expect(within(card).getByText('24.800', { exact: false })).toBeInTheDocument()
+    expect(within(card).getByTitle(/24\.800,00/)).toHaveTextContent(/R\$.24\.800/)
     expect(within(card).getByText('12%', { exact: false })).toHaveClass('vx-variacao-verde')
     expect(within(card).getByText('em relação ao mês anterior')).toBeInTheDocument()
     const barras = within(card).getByRole('img')

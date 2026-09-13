@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { BarChart3, DollarSign, Folder, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -17,7 +17,7 @@ import {
   planosMensal,
   variacaoPercentual,
 } from './metricas'
-import { Barras, Donut, Linha, ValorMoeda, Variacao } from './MetricaGraficos'
+import { Barras, Donut, Linha, Numero, ValorMoeda, Variacao } from './MetricaGraficos'
 
 const COMPACTO = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -73,7 +73,7 @@ export default function ExecutiveMetrics() {
       query: receivables,
       valorTexto: formatBRL(ultimo(receita)),
       valor: <ValorMoeda valor={ultimo(receita)} />,
-      valorCompacto: COMPACTO.format(ultimo(receita)),
+      valorCompacto: <Numero valor={ultimo(receita)} formatar={COMPACTO.format} />,
       variacao: <Variacao valor={variacaoDe(receita)} tom="verde" />,
       legenda: variacaoDe(receita) === null ? 'Pagamentos confirmados' : 'em relação ao mês anterior',
       grafico: <Barras serie={receita} formatar={formatBRL} prisma />,
@@ -85,7 +85,7 @@ export default function ExecutiveMetrics() {
       query: proposals,
       valorTexto: formatBRL(ultimo(negociacao)),
       valor: <ValorMoeda valor={ultimo(negociacao)} />,
-      valorCompacto: COMPACTO.format(ultimo(negociacao)),
+      valorCompacto: <Numero valor={ultimo(negociacao)} formatar={COMPACTO.format} />,
       variacao: <Variacao valor={variacaoDe(negociacao)} tom="roxo" />,
       legenda:
         variacaoDe(negociacao) === null ? 'Propostas aguardando aceite' : 'em relação ao mês anterior',
@@ -97,7 +97,7 @@ export default function ExecutiveMetrics() {
       to: '/admin/pedidos',
       query: pedidos,
       valorTexto: inteiro(ultimo(planos)),
-      valor: inteiro(ultimo(planos)),
+      valor: <Numero valor={ultimo(planos)} />,
       variacao: <Variacao valor={variacaoDe(planos)} tom="ciano" />,
       legenda: variacaoDe(planos) === null ? 'Pedidos pagos no checkout' : 'em relação ao mês anterior',
       grafico: <Linha serie={planos} formatar={inteiro} />,
@@ -116,10 +116,11 @@ export default function ExecutiveMetrics() {
 
   return (
     <div className="vx-metrics">
-      {cards.map((c) => (
+      {cards.map((c, i) => (
         <Link
           key={c.label}
           to={c.to}
+          style={{ '--i': i } as CSSProperties}
           className="vx-metric vx-glass"
           aria-label={`${c.label}: ${c.query.isLoading ? 'Carregando' : c.query.isError ? 'Indisponível' : c.valorTexto}`}
         >
