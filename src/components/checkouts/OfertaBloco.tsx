@@ -131,6 +131,7 @@ export default function OfertaBloco({
                 valor={imagem}
                 onChange={onImagem}
                 dicas={DICAS_IMAGEM}
+                larguras={{ desktop: 1400, mobile: 780 }}
                 pasta="bump"
                 placeholderAlt="Comparativo da sua loja com 3 concorrentes"
               />

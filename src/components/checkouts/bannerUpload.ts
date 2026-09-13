@@ -82,11 +82,18 @@ function formatarMb(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`
 }
 
-/** Mensagem do problema, ou `null` quando o arquivo serve. */
-export function validarArquivoBanner(arquivo: ArquivoEscolhido): string | null {
+/** Só o formato — é o que se checa ANTES da otimização (o peso ela resolve). */
+export function validarTipoBanner(arquivo: Pick<ArquivoEscolhido, 'type'>): string | null {
   if (!BANNER_TIPOS.includes(arquivo.type)) {
     return 'Formato não aceito. Envie JPG, PNG, WebP ou AVIF.'
   }
+  return null
+}
+
+/** Mensagem do problema, ou `null` quando o arquivo serve — a guarda final antes do upload. */
+export function validarArquivoBanner(arquivo: ArquivoEscolhido): string | null {
+  const tipo = validarTipoBanner(arquivo)
+  if (tipo !== null) return tipo
   if (arquivo.size > BANNER_MAX_BYTES) {
     return `A imagem tem ${formatarMb(arquivo.size)} e o limite é 1 MB. Exporte em WebP ou reduza a largura antes de enviar.`
   }

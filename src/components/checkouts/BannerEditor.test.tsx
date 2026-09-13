@@ -14,10 +14,19 @@ import { BANNER_VAZIO, type Banner } from './bannerUpload'
  * Só `enviarBanner` é dublado — as validações rodam de verdade.
  */
 const enviarBanner = vi.hoisted(() => vi.fn())
+/**
+ * A otimização usa canvas, que o jsdom não tem: o dublê devolve o que a de
+ * verdade devolveria — um WebP menor e o relatório do que mudou.
+ */
+const otimizarImagem = vi.hoisted(() => vi.fn())
 
 vi.mock('./bannerUpload', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./bannerUpload')>()),
   enviarBanner,
+}))
+vi.mock('./otimizarImagem', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./otimizarImagem')>()),
+  otimizarImagem,
 }))
 
 /** Casca com estado: o editor devolve uma função de atualização. */
@@ -52,7 +61,20 @@ describe('BannerEditor', () => {
     expect(screen.queryByText('Texto alternativo')).not.toBeInTheDocument()
   })
 
-  it('barra imagem acima de 1 MB antes de tocar no storage', async () => {
+  it('imagem pesada não é recusada: é reduzida, convertida e só então sobe', async () => {
+    const pronto = arquivo('gigante.webp', 'image/webp', 180 * 1024)
+    otimizarImagem.mockResolvedValue({
+      arquivo: pronto,
+      relatorio: {
+        deBytes: 8 * 1024 * 1024,
+        paraBytes: 180 * 1024,
+        deLargura: 3200,
+        paraLargura: 1600,
+        deTipo: 'image/png',
+        paraTipo: 'image/webp',
+      },
+    })
+    enviarBanner.mockResolvedValue({ url: 'https://cdn/desktop.webp', largura: 1600, altura: 400 })
     render(<Editor />)
 
     await userEvent.upload(
@@ -60,7 +82,25 @@ describe('BannerEditor', () => {
       arquivo('gigante.png', 'image/png', 8 * 1024 * 1024)
     )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/limite é 1 MB/)
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Otimizada: 8,0 MB → 180 KB · 3200 → 1600 px · WebP'
+    )
+    expect(otimizarImagem).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'gigante.png' }),
+      { larguraMaxima: 1600, maxBytes: 1024 * 1024 }
+    )
+    // O que sobe é o arquivo otimizado, não o original.
+    expect(enviarBanner).toHaveBeenCalledWith('desktop', pronto, '')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('quando nem a largura mínima cabe no limite, avisa em vez de subir', async () => {
+    otimizarImagem.mockRejectedValue(new Error('Não deu para deixar a imagem abaixo de 1,0 MB sem estragá-la.'))
+    render(<Editor />)
+
+    await userEvent.upload(campoDesktop(), arquivo('ruido.png', 'image/png', 9 * 1024 * 1024))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/abaixo de 1,0 MB/)
     expect(enviarBanner).not.toHaveBeenCalled()
   })
 
@@ -83,6 +123,12 @@ describe('BannerEditor', () => {
   })
 
   it('mostra a prévia e abre o campo de alt depois de um envio válido', async () => {
+    const leve = arquivo('banner.webp', 'image/webp', 120_000)
+    // Já servia: a otimização devolve o próprio arquivo e nenhum aviso aparece.
+    otimizarImagem.mockResolvedValue({
+      arquivo: leve,
+      relatorio: { deBytes: 120_000, paraBytes: 120_000, deLargura: 1600, paraLargura: 1600, deTipo: 'image/webp', paraTipo: 'image/webp' },
+    })
     enviarBanner.mockResolvedValue({
       url: 'https://cdn/desktop.webp',
       largura: 1600,
@@ -90,10 +136,7 @@ describe('BannerEditor', () => {
     })
     render(<Editor />)
 
-    await userEvent.upload(
-      campoDesktop(),
-      arquivo('banner.webp', 'image/webp', 120_000)
-    )
+    await userEvent.upload(campoDesktop(), leve)
 
     await waitFor(() =>
       expect(screen.getByAltText(/Prévia do banner desktop/i)).toHaveAttribute(
@@ -103,6 +146,7 @@ describe('BannerEditor', () => {
     )
     expect(screen.getByText('1600 × 400')).toBeInTheDocument()
     expect(screen.getByText('Texto alternativo')).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('remove a arte sem apagar a que está no ar até o formulário ser salvo', async () => {

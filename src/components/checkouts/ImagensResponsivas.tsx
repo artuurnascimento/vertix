@@ -2,13 +2,21 @@ import { useState } from 'react'
 import { inputClass, labelClass } from '../produtos/formUi'
 import BannerCampoImagem from './BannerCampoImagem'
 import {
+  BANNER_MAX_BYTES,
   bannerVazio,
   enviarBanner,
   mensagemDeUpload,
-  validarArquivoBanner,
+  validarTipoBanner,
   type Banner,
   type VarianteBanner,
 } from './bannerUpload'
+import { descreverOtimizacao, otimizarImagem } from './otimizarImagem'
+
+/** Largura em que a página mostra cada arte — acima disso é peso sem ganho. */
+export const LARGURAS_PADRAO: Record<VarianteBanner, number> = {
+  desktop: 1600,
+  mobile: 780,
+}
 
 interface Props {
   valor: Banner
@@ -25,6 +33,8 @@ interface Props {
   dicas: Record<VarianteBanner, string>
   /** Subpasta no bucket (`''` para o banner do topo, `bump` para o order bump). */
   pasta?: string
+  /** Largura máxima por variante: a arte maior é reduzida antes de subir. */
+  larguras?: Record<VarianteBanner, number>
   placeholderAlt: string
 }
 
@@ -40,20 +50,25 @@ export default function ImagensResponsivas({
   onChange,
   dicas,
   pasta = '',
+  larguras = LARGURAS_PADRAO,
   placeholderAlt,
 }: Props) {
   const [enviando, setEnviando] = useState<VarianteBanner | null>(null)
   const [erros, setErros] = useState<Partial<Record<VarianteBanner, string>>>({})
+  const [avisos, setAvisos] = useState<Partial<Record<VarianteBanner, string>>>({})
 
   const definirErro = (variante: VarianteBanner, mensagem?: string) =>
     setErros((atuais) => ({ ...atuais, [variante]: mensagem }))
+  const definirAviso = (variante: VarianteBanner, mensagem?: string) =>
+    setAvisos((atuais) => ({ ...atuais, [variante]: mensagem }))
 
   const enviar = async (variante: VarianteBanner, arquivo: File) => {
     definirErro(variante, undefined)
+    definirAviso(variante, undefined)
 
-    // Barra tipo e tamanho ANTES de gastar o upload: a mensagem chega na hora
-    // e o servidor não precisa recusar um arquivo que já sabíamos ser grande.
-    const problema = validarArquivoBanner(arquivo)
+    // Só o formato barra na hora. Peso e largura não são problema da pessoa:
+    // a otimização reduz, converte para WebP e comprime até caber no limite.
+    const problema = validarTipoBanner(arquivo)
     if (problema !== null) {
       definirErro(variante, problema)
       return
@@ -61,8 +76,13 @@ export default function ImagensResponsivas({
 
     setEnviando(variante)
     try {
-      const imagem = await enviarBanner(variante, arquivo, pasta)
+      const { arquivo: pronto, relatorio } = await otimizarImagem(arquivo, {
+        larguraMaxima: larguras[variante],
+        maxBytes: BANNER_MAX_BYTES,
+      })
+      const imagem = await enviarBanner(variante, pronto, pasta)
       onChange((atual) => ({ ...atual, [variante]: imagem }))
+      definirAviso(variante, descreverOtimizacao(relatorio) ?? undefined)
     } catch (erro) {
       definirErro(
         variante,
@@ -75,6 +95,7 @@ export default function ImagensResponsivas({
 
   const remover = (variante: VarianteBanner) => {
     definirErro(variante, undefined)
+    definirAviso(variante, undefined)
     // Só solta a referência. O arquivo continua no bucket de propósito: o
     // checkout que está no ar ainda aponta para ele até este formulário ser
     // salvo, e fechar o modal sem salvar não pode deixar a página com uma
@@ -95,6 +116,7 @@ export default function ImagensResponsivas({
             dica={dicas[variante]}
             enviando={enviando === variante}
             erro={erros[variante] ?? null}
+            aviso={avisos[variante] ?? null}
             onArquivo={(arquivo) => void enviar(variante, arquivo)}
             onRemover={() => remover(variante)}
           />

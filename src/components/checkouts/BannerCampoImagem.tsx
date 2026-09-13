@@ -14,6 +14,8 @@ interface Props {
   dica: string
   enviando: boolean
   erro: string | null
+  /** O que a otimização fez com o arquivo ("Otimizada: 1,4 MB → 180 KB…"). */
+  aviso?: string | null
   onArquivo: (arquivo: File) => void
   onRemover: () => void
 }
@@ -33,6 +35,7 @@ export default function BannerCampoImagem({
   dica,
   enviando,
   erro,
+  aviso = null,
   onArquivo,
   onRemover,
 }: Props) {
@@ -74,7 +77,7 @@ export default function BannerCampoImagem({
                 aria-hidden
                 className="h-5 w-5 animate-spin text-accent"
               />
-              <span className="text-xs font-light text-muted">Enviando…</span>
+              <span className="text-xs font-light text-muted">Otimizando e enviando…</span>
             </>
           ) : imagem ? (
             <img
@@ -91,7 +94,7 @@ export default function BannerCampoImagem({
                 Enviar imagem {rotulo.toLowerCase()}
               </span>
               <span className="text-[11px] font-light text-muted/70">
-                {dica} · até 1 MB
+                {dica} · qualquer peso: a gente reduz e converte
               </span>
             </>
           )}
@@ -117,6 +120,11 @@ export default function BannerCampoImagem({
       {erro && (
         <p role="alert" className="text-xs text-red-400">
           {erro}
+        </p>
+      )}
+      {aviso && !erro && (
+        <p role="status" className="text-xs font-light text-emerald-300/90">
+          {aviso}
         </p>
       )}
     </div>

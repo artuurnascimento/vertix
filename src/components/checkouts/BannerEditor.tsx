@@ -29,6 +29,7 @@ export default function BannerEditor({ banner, onChange }: Props) {
         valor={banner}
         onChange={onChange}
         dicas={DICAS}
+        larguras={{ desktop: 1600, mobile: 780 }}
         placeholderAlt="Plano de correção da loja em 7 dias"
       />
     </Bloco>
