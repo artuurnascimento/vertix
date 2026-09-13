@@ -7,15 +7,15 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
  * montar ou não, e que os valores escolhidos no estúdio chegam inteiros.
  */
 const { montagens } = vi.hoisted(() => ({ montagens: [] as Record<string, unknown>[] }))
-vi.mock('./GhostFibers', () => ({
+vi.mock('./DarkVeil', () => ({
   default: (props: Record<string, unknown>) => {
     montagens.push(props)
-    return <canvas data-testid="fibras" />
+    return <canvas data-testid="veu" />
   },
 }))
 
 import Atmosfera from './Atmosfera'
-import { suportaWebGl2 } from './webgl'
+import { suportaWebGl } from './webgl'
 
 const getContextOriginal = HTMLCanvasElement.prototype.getContext
 
@@ -25,10 +25,10 @@ afterEach(() => {
 })
 
 describe('Atmosfera', () => {
-  test('sem WebGL 2 fica só a cor de base, sem canvas', () => {
+  test('sem WebGL fica só a cor de base, sem canvas', () => {
     // O jsdom não implementa getContext e avisa no console; o dublê cala isso.
     HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as never
-    expect(suportaWebGl2()).toBe(false)
+    expect(suportaWebGl()).toBe(false)
 
     const { container } = render(<Atmosfera />)
 
@@ -38,25 +38,21 @@ describe('Atmosfera', () => {
     expect(montagens).toHaveLength(0)
   })
 
-  test('com WebGL 2 monta o shader com os parâmetros do estúdio', async () => {
+  test('com WebGL monta o shader com os parâmetros do estúdio', async () => {
     HTMLCanvasElement.prototype.getContext = vi.fn(() => ({})) as never
 
     render(<Atmosfera />)
 
-    await waitFor(() => expect(screen.getByTestId('fibras')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTestId('veu')).toBeInTheDocument())
     expect(montagens).toHaveLength(1)
-    expect(montagens[0]).toMatchObject({
-      lineColor: '#8036ff',
-      glowColor: '#9354ff',
-      layers: 1,
-      scale: 1.83,
-      rotation: 15,
-      layerSpeed: -0.09,
-      twistFrequency: 6.4,
-      dpr: 1,
-      fps: 60,
-      paused: false,
-      lightMode: false,
+    expect(montagens[0]).toEqual({
+      hueShift: -10,
+      noiseIntensity: 0,
+      scanlineIntensity: 0.05,
+      speed: 0.3,
+      scanlineFrequency: 0,
+      warpAmount: 0.1,
+      resolutionScale: 1.25,
     })
   })
 })

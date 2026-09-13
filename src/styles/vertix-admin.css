@@ -24,9 +24,9 @@
 .vx-admin a {
   -webkit-tap-highlight-color: transparent;
 }
-/* Fundo do painel: o canvas do "Ghost Fibers" (Atmosfera.tsx) cobrindo a
+/* Fundo do painel: o canvas do "Dark Veil" (Atmosfera.tsx) cobrindo a
    viewport, fixo e atrás de tudo. A cor de base é a do body, para nada
-   piscar antes do shader carregar — e é o que fica quando não há WebGL 2. */
+   piscar antes do shader carregar — e é o que fica quando não há WebGL. */
 .vx-atmosphere {
   position: fixed;
   inset: 0;
