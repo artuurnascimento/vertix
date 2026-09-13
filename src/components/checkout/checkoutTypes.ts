@@ -112,6 +112,8 @@ export interface CheckoutInfo {
    * ele — o painel só grava um dos dois modos.
    */
   cronometroMinutos: number | null
+  /** Frase ao lado do tempo na faixa; null = padrão da página. */
+  cronometroTexto: string | null
 }
 
 // --------------------------------------------------------------- leitores --
@@ -414,6 +416,7 @@ export function normalizarCheckout(
     cronometroMinutos: lerMinutos(
       bruto.cronometro_minutos ?? configBruta.cronometro_minutos
     ),
+    cronometroTexto: texto(bruto, 'cronometro_texto') ?? texto(configBruta, 'cronometro_texto'),
   }
 }
 

@@ -245,6 +245,9 @@ export function restanteEmLoopMs(
   return ciclo - (decorrido % ciclo)
 }
 
+/** Frase da faixa do cronômetro quando o painel não define outra. */
+export const CRONOMETRO_TEXTO_PADRAO = 'Oferta por tempo limitado'
+
 export interface ContagemFormatada {
   horas: string
   minutos: string

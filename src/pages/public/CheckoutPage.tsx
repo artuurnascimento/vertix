@@ -433,6 +433,7 @@ export default function CheckoutPage() {
           ate={info.cronometroAte}
           minutos={info.cronometroMinutos}
           slug={info.checkout.slug}
+          texto={info.cronometroTexto}
         />
       }
     >

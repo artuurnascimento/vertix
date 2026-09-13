@@ -275,6 +275,10 @@ describe('normalizarCheckout', () => {
 
   test('lê os minutos do cronômetro por visitante, na raiz ou no checkout', () => {
     expect(normalizarCheckout(bruto, 'da-url')?.cronometroMinutos).toBeNull()
+    expect(normalizarCheckout(bruto, 'da-url')?.cronometroTexto).toBeNull()
+    expect(
+      normalizarCheckout({ ...bruto, cronometro_texto: ' Bônus garantido por ' }, 'da-url')?.cronometroTexto
+    ).toBe('Bônus garantido por')
     expect(
       normalizarCheckout({ ...bruto, cronometro_minutos: 15 }, 'da-url')?.cronometroMinutos
     ).toBe(15)

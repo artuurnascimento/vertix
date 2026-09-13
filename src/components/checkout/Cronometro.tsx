@@ -1,5 +1,5 @@
 import { AlarmClock } from 'lucide-react'
-import { formatarContagem } from './checkoutTotal'
+import { CRONOMETRO_TEXTO_PADRAO, formatarContagem } from './checkoutTotal'
 import { useCronometro, type FonteDoCronometro } from './useCronometro'
 
 /** Abaixo disto os dígitos pulsam: é o último minuto. */
@@ -17,7 +17,10 @@ const ULTIMO_MINUTO_MS = 60_000
  * parte da primeira abertura e recomeça ao zerar; é o dono da oferta quem
  * escolhe o modo, e o painel diz o que cada um faz.
  */
-export default function Cronometro(fonte: FonteDoCronometro) {
+export default function Cronometro({
+  texto,
+  ...fonte
+}: FonteDoCronometro & { texto?: string | null }) {
   const restante = useCronometro(fonte)
   if (restante === null) return null
 
@@ -49,7 +52,7 @@ export default function Cronometro(fonte: FonteDoCronometro) {
       </p>
       <AlarmClock aria-hidden className="vx-cronometro-sino h-6 w-6 shrink-0 sm:h-7 sm:w-7" strokeWidth={2} />
       <p className="text-[13px] font-light tracking-wide text-white/90 sm:text-[15px]">
-        Oferta por tempo limitado
+        {texto?.trim() || CRONOMETRO_TEXTO_PADRAO}
       </p>
       {fracao !== null && (
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-[3px] bg-black/20">

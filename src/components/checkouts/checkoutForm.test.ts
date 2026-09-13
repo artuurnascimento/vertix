@@ -272,6 +272,7 @@ describe('padrão do resumo do pedido', () => {
     desconto_pix_percentual: null,
     cronometro_ate: null,
     cronometro_minutos: null,
+    cronometro_texto: null,
     resumo_aberto: false,
     ativo: true,
     created_at: '2026-09-09T12:00:00.000Z',
@@ -354,6 +355,14 @@ describe('padrão do resumo do pedido', () => {
         erroDe({ ...VALIDO, cronometroModo: 'data', cronometroAte: '2027-01-01T10:00', cronometroMinutos: 'abc' }, 'cronometroMinutos')
       ).toBeUndefined()
       expect(erroDe({ ...VALIDO, cronometroModo: 'data', cronometroAte: 'lixo' }, 'cronometroAte')).toBeDefined()
+    })
+
+    it('a frase vai limpa para o banco, vazia vira null, e acima de 80 caracteres é recusada', () => {
+      expect(checkoutFormToPayload({ ...VALIDO, cronometroTexto: '  Acaba em  ' }).cronometro_texto).toBe('Acaba em')
+      expect(checkoutFormToPayload({ ...VALIDO, cronometroTexto: '' }).cronometro_texto).toBeNull()
+      expect(checkoutToFormValues({ ...LINHA, cronometro_texto: 'Só hoje' }).cronometroTexto).toBe('Só hoje')
+      expect(erroDe({ ...VALIDO, cronometroTexto: 'x'.repeat(81) }, 'cronometroTexto')).toBeDefined()
+      expect(erroDe({ ...VALIDO, cronometroTexto: 'x'.repeat(80) }, 'cronometroTexto')).toBeUndefined()
     })
 
     it('linha com minutos abre no modo por visitante; sem eles, no modo de data', () => {

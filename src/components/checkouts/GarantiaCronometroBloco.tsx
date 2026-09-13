@@ -1,7 +1,9 @@
 import { AlertTriangle, Clock } from 'lucide-react'
 import { Bloco, inputClass, labelClass } from '../produtos/formUi'
+import { CRONOMETRO_TEXTO_PADRAO } from '../checkout/checkoutTotal'
 import {
   CRONOMETRO_MINUTOS_MAXIMO,
+  CRONOMETRO_TEXTO_MAXIMO,
   cronometroExpirado,
   type CronometroModo,
 } from './checkoutForm'
@@ -12,13 +14,16 @@ interface Props {
   cronometroAte: string
   cronometroModo: CronometroModo
   cronometroMinutos: string
+  cronometroTexto: string
   erroDias?: string
   erroCronometro?: string
+  erroCronometroTexto?: string
   onGarantiaDias: (valor: string) => void
   onGarantiaTexto: (valor: string) => void
   onCronometroAte: (valor: string) => void
   onCronometroModo: (valor: CronometroModo) => void
   onCronometroMinutos: (valor: string) => void
+  onCronometroTexto: (valor: string) => void
 }
 
 const MODOS: ReadonlyArray<{ valor: CronometroModo; titulo: string; descricao: string }> = [
@@ -46,13 +51,16 @@ export default function GarantiaCronometroBloco({
   cronometroAte,
   cronometroModo,
   cronometroMinutos,
+  cronometroTexto,
   erroDias,
   erroCronometro,
+  erroCronometroTexto,
   onGarantiaDias,
   onGarantiaTexto,
   onCronometroAte,
   onCronometroModo,
   onCronometroMinutos,
+  onCronometroTexto,
 }: Props) {
   const expirado = cronometroExpirado(cronometroAte)
 
@@ -171,6 +179,23 @@ export default function GarantiaCronometroBloco({
             )}
           </label>
         )}
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Frase do cronômetro</span>
+          <input
+            type="text"
+            maxLength={CRONOMETRO_TEXTO_MAXIMO}
+            value={cronometroTexto}
+            onChange={(e) => onCronometroTexto(e.target.value)}
+            placeholder={CRONOMETRO_TEXTO_PADRAO}
+            className={inputClass}
+          />
+          <span className="text-xs font-light text-muted">
+            Aparece ao lado do tempo, na faixa roxa do topo. Vazio = "{CRONOMETRO_TEXTO_PADRAO}".
+          </span>
+          {erroCronometroTexto && (
+            <span className="text-xs text-red-400">{erroCronometroTexto}</span>
+          )}
+        </label>
       </Bloco>
     </>
   )
