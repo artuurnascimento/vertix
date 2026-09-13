@@ -71,15 +71,25 @@
   font-size: 23px;
   font-weight: 600;
 }
-/* Menu do topo: o Tubelight Navbar (src/components/ui/tubelight-navbar.tsx)
-   cuida do visual; aqui só a posição. Os links precisam de `overflow`
-   visível para a lâmpada sair acima da pílula. */
 .vx-topnav {
   display: flex;
+  padding: 5px;
+  border: 1px solid #a6b2e02b;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #161e37b3, #0a1020cc);
 }
 .vx-topnav a {
+  padding: 12px 22px;
   white-space: nowrap;
+  font-size: 14px;
+  border-radius: 999px;
+  color: #c4cae0;
+  transition: background 0.18s;
 }
+.vx-topnav a:hover {
+  background-color: #ffffff09;
+}
+.vx-topnav .is-active,
 .vx-rail .is-active,
 .vx-bottom-nav .active,
 .vx-workspace-tabs .is-active {
@@ -1107,8 +1117,7 @@
     display: none;
   }
   .vx-topnav a {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding: 11px 17px;
   }
   .vx-brand span {
     font-size: 19px;
