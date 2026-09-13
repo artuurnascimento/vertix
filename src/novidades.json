@@ -1,0 +1,15 @@
+[
+  {
+    "data": "2026-09-13",
+    "titulo": "Cronômetro do checkout e otimização de imagens",
+    "itens": [
+      "Cronômetro do checkout virou uma faixa no topo da página, de ponta a ponta, com o tempo em destaque.",
+      "Frase e cores da faixa do cronômetro agora são editáveis no formulário do checkout, com prévia.",
+      "Ao zerar, o cronômetro por visitante fica em 00:00 piscando em vez de recomeçar.",
+      "Imagens do banner e do order bump são reduzidas, convertidas para WebP e comprimidas automaticamente no envio — nada mais de erro de 1 MB.",
+      "Arte do order bump vai de borda a borda do card.",
+      "Cards do painel como no mockup: variação contra o mês anterior, gráficos e donut de projetos, com dicas ao passar o mouse.",
+      "Fundo do painel com as artes das ondas em alta qualidade e barra do topo transparente."
+    ]
+  }
+]

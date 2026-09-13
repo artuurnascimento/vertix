@@ -39,6 +39,7 @@ import { MotionConfig } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import QuickSearch from './QuickSearch'
 import NotificationBell from './NotificationBell'
+import AvisoAtualizacao from './AvisoAtualizacao'
 import { useAuth } from '../../lib/auth'
 import '../../styles/vertix-admin.css'
 
@@ -193,6 +194,7 @@ export default function AdminLayout() {
     <MotionConfig reducedMotion="user">
       <div className="vx-admin min-h-screen text-ink">
         <div className="vx-atmosphere" aria-hidden="true" />
+        <AvisoAtualizacao />
         <a href="#main-content" className="vx-skip">
           Pular para o conteúdo
         </a>
