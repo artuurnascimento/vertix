@@ -30,6 +30,8 @@ interface Props {
   agora: Date
   selecionada: boolean
   onSelecionar: (id: string) => void
+  /** Mouse em cima: acende o ponto desta visita no mapa (null ao sair). */
+  onDestacar?: (id: string | null) => void
 }
 
 const ICONE_DISPOSITIVO = {
@@ -77,6 +79,7 @@ export default function SessaoLinha({
   agora,
   selecionada,
   onSelecionar,
+  onDestacar,
 }: Props) {
   const presenca = presencaDaSessao(sessao, agora)
   const tipo = classificarVisitante(sessao)
@@ -89,7 +92,10 @@ export default function SessaoLinha({
   const flag = bandeira(sessao.pais)
 
   return (
-    <li>
+    <li
+      onPointerEnter={() => onDestacar?.(sessao.id)}
+      onPointerLeave={() => onDestacar?.(null)}
+    >
       <button
         type="button"
         onClick={() => onSelecionar(sessao.id)}

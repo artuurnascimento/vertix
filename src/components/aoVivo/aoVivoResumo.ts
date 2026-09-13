@@ -270,7 +270,9 @@ export function bandeira(codigo: string | null): string {
 }
 
 export function localDaSessao(s: SessaoAoVivo): string {
-  if (s.cidade && s.estado) return `${s.cidade} · ${s.estado}`
+  // "Lisboa · Lisboa" não ajuda ninguém: fora do Brasil a região costuma
+  // repetir a cidade.
+  if (s.cidade && s.estado && s.estado !== s.cidade) return `${s.cidade} · ${s.estado}`
   if (s.cidade) return s.cidade
   return nomeDoPais(s.pais) ?? 'Local não identificado'
 }

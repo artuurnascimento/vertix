@@ -14,6 +14,9 @@ import {
 } from './aoVivoResumo'
 import SessaoDetalhe from './SessaoDetalhe'
 import SessaoLinha from './SessaoLinha'
+import MapaAoVivo from './mapa/MapaAoVivo'
+import LocaisAoVivo from './mapa/LocaisAoVivo'
+import { agruparPorLocal, marcadoresDasSessoes } from './mapa/locais'
 
 /**
  * "Ao vivo" do checkout — quem está na página AGORA, o que cada pessoa está
@@ -71,6 +74,13 @@ export default function AoVivoTab({ checkouts = [] }: Props) {
     () => todas.find((s) => s.id === selecionada) ?? null,
     [todas, selecionada]
   )
+  const marcadores = useMemo(
+    () => marcadoresDasSessoes(todas, pedidos, agora),
+    [todas, pedidos, agora]
+  )
+  const locais = useMemo(() => agruparPorLocal(todas, pedidos, agora), [todas, pedidos, agora])
+  const [idsDestacados, setIdsDestacados] = useState<ReadonlySet<string>>(() => new Set())
+  const destacar = (ids: readonly string[]) => setIdsDestacados(new Set(ids))
 
   if (sessoes.isLoading) {
     return (
@@ -163,91 +173,121 @@ export default function AoVivoTab({ checkouts = [] }: Props) {
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {cards.map((card) => (
-          <div
-            key={card.label}
-            className={`rounded-xl border px-4 py-3 ${
-              card.destaque
-                ? 'border-emerald-400/30 bg-emerald-400/10'
-                : 'border-white/5 bg-surface-1'
-            }`}
-          >
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
-              {card.label}
-            </p>
-            <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
-              {card.valor}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Funil das últimas 24 h: cada barra é a fração de quem chegou. */}
-      <ol
-        aria-label="Funil das últimas 24 horas"
-        className="mt-4 grid gap-2 rounded-xl border border-white/5 bg-surface-1 px-4 py-3 sm:grid-cols-4"
-      >
-        {funil.map((passo, i) => {
-          const fracao = base > 0 ? passo.total / base : 0
-          return (
-            <li key={passo.id} className="min-w-0">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[11px] font-light text-muted">{passo.label}</span>
-                <span className="tabular-nums text-sm font-semibold text-ink">
-                  {passo.total.toLocaleString('pt-BR')}
-                  {i > 0 && base > 0 && (
-                    <span className="ml-1 text-[10px] font-normal text-muted">
-                      {Math.round(fracao * 100)}%
-                    </span>
-                  )}
-                </span>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)] lg:items-start">
+        {/* Coluna da esquerda: números, funil, lugares e a lista de visitas. */}
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            {cards.map((card) => (
+              <div
+                key={card.label}
+                className={`rounded-xl border px-4 py-3 ${
+                  card.destaque
+                    ? 'border-emerald-400/30 bg-emerald-400/10'
+                    : 'border-white/5 bg-surface-1'
+                }`}
+              >
+                <p className="text-[10px] font-medium uppercase tracking-widest text-muted">
+                  {card.label}
+                </p>
+                <p className="mt-1 truncate tabular-nums text-lg font-semibold text-ink">
+                  {card.valor}
+                </p>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/5">
-                <div
-                  className={`h-full rounded-full ${
-                    i === funil.length - 1 ? 'bg-accent' : 'bg-emerald-400/70'
-                  }`}
-                  style={{ width: `${Math.max(fracao * 100, passo.total > 0 ? 3 : 0)}%` }}
-                />
-              </div>
-            </li>
-          )
-        })}
-      </ol>
-
-      {lista.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-white/5 bg-surface-1 px-6 py-14 text-center">
-          <Users className="mx-auto h-8 w-8 text-muted/50" />
-          <p className="mt-3 text-sm font-medium text-ink">
-            {todas.length > 0 && !mostrarBots
-              ? 'Só bots passaram por aqui nas últimas 24 h.'
-              : filtro
-                ? `Ninguém em "${filtro.titulo}" nas últimas 24 h.`
-                : 'Ninguém no checkout nas últimas 24 h.'}
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm font-light text-muted">
-            Quando alguém abrir a página, aparece aqui no mesmo segundo — com a cidade, o
-            aparelho e cada passo que der.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-          <ul
-            aria-label="Visitas"
-            className="flex max-h-[42rem] list-none flex-col gap-2 overflow-y-auto p-0 pr-1"
-          >
-            {lista.map((s) => (
-              <SessaoLinha
-                key={s.id}
-                sessao={s}
-                pedidos={pedidos}
-                agora={agora}
-                selecionada={s.id === selecionada}
-                onSelecionar={setSelecionada}
-              />
             ))}
-          </ul>
+          </div>
+
+          {/* Funil das últimas 24 h: cada barra é a fração de quem chegou. */}
+          <section
+            aria-labelledby="funil-titulo"
+            className="rounded-xl border border-white/5 bg-surface-1 px-4 py-3"
+          >
+            <h3
+              id="funil-titulo"
+              className="text-[10px] font-medium uppercase tracking-widest text-muted"
+            >
+              Comportamento · 24 h
+            </h3>
+            <ol
+              aria-label="Funil das últimas 24 horas"
+              className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3"
+            >
+              {funil.map((passo, i) => {
+                const fracao = base > 0 ? passo.total / base : 0
+                return (
+                  <li key={passo.id} className="min-w-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-[11px] font-light text-muted">
+                        {passo.label}
+                      </span>
+                      <span className="tabular-nums text-sm font-semibold text-ink">
+                        {passo.total.toLocaleString('pt-BR')}
+                        {i > 0 && base > 0 && (
+                          <span className="ml-1 text-[10px] font-normal text-muted">
+                            {Math.round(fracao * 100)}%
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/5">
+                      <div
+                        className={`h-full rounded-full ${
+                          i === funil.length - 1 ? 'bg-accent' : 'bg-emerald-400/70'
+                        }`}
+                        style={{ width: `${Math.max(fracao * 100, passo.total > 0 ? 3 : 0)}%` }}
+                      />
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </section>
+
+          <LocaisAoVivo locais={locais} onDestacar={destacar} />
+
+          {lista.length === 0 ? (
+            <div className="rounded-xl border border-white/5 bg-surface-1 px-6 py-10 text-center">
+              <Users className="mx-auto h-8 w-8 text-muted/50" />
+              <p className="mt-3 text-sm font-medium text-ink">
+                {todas.length > 0 && !mostrarBots
+                  ? 'Só bots passaram por aqui nas últimas 24 h.'
+                  : filtro
+                    ? `Ninguém em "${filtro.titulo}" nas últimas 24 h.`
+                    : 'Ninguém no checkout nas últimas 24 h.'}
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm font-light text-muted">
+                Quando alguém abrir a página, aparece aqui no mesmo segundo — com a cidade,
+                o aparelho e cada passo que der.
+              </p>
+            </div>
+          ) : (
+            <ul
+              aria-label="Visitas"
+              className="flex max-h-[36rem] list-none flex-col gap-2 overflow-y-auto p-0 pr-1"
+              onPointerLeave={() => destacar([])}
+            >
+              {lista.map((s) => (
+                <SessaoLinha
+                  key={s.id}
+                  sessao={s}
+                  pedidos={pedidos}
+                  agora={agora}
+                  selecionada={s.id === selecionada}
+                  onSelecionar={setSelecionada}
+                  onDestacar={(id) => destacar(id ? [id] : [])}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Coluna da direita: o mapa e, embaixo, a visita aberta. */}
+        <div className="flex min-w-0 flex-col gap-4">
+          <MapaAoVivo
+            marcadores={marcadores}
+            selecionadaId={selecionada}
+            idsDestacados={idsDestacados}
+            onSelecionar={setSelecionada}
+          />
 
           {aberta ? (
             <SessaoDetalhe
@@ -259,15 +299,16 @@ export default function AoVivoTab({ checkouts = [] }: Props) {
               nomeDoCheckout={checkouts.find((c) => c.id === aberta.checkout_id)?.titulo ?? null}
             />
           ) : (
-            <div className="flex min-h-[16rem] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 px-6 text-center">
+            <div className="flex min-h-[12rem] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 px-6 text-center">
               <Radio className="h-6 w-6 text-muted/50" />
               <p className="mt-3 text-sm font-light text-muted">
-                Escolha uma visita para ver o passo a passo e onde a pessoa está olhando.
+                Escolha uma visita — na lista ou no mapa — para ver o passo a passo e onde a
+                pessoa está olhando.
               </p>
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
