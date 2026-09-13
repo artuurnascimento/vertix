@@ -101,10 +101,13 @@ export function validarArquivoBanner(arquivo: ArquivoEscolhido): string | null {
 export function caminhoBanner(
   variante: VarianteBanner,
   tipo: string,
-  id: string = crypto.randomUUID()
+  id: string = crypto.randomUUID(),
+  /** Subpasta no bucket: vazia para o banner do topo, `bump` para a arte do order bump. */
+  pasta: string = ''
 ): string {
   const extensao = EXTENSAO_POR_TIPO[tipo] ?? 'img'
-  return `${variante}/${id}.${extensao}`
+  const prefixo = pasta === '' ? '' : `${pasta}/`
+  return `${prefixo}${variante}/${id}.${extensao}`
 }
 
 // --------------------------------------------------------------- leitura --
@@ -195,13 +198,14 @@ export function medirImagem(
  */
 export async function enviarBanner(
   variante: VarianteBanner,
-  arquivo: File
+  arquivo: File,
+  pasta: string = ''
 ): Promise<BannerImagem> {
   const problema = validarArquivoBanner(arquivo)
   if (problema !== null) throw new Error(problema)
 
   const medidas = await medirImagem(arquivo)
-  const caminho = caminhoBanner(variante, arquivo.type)
+  const caminho = caminhoBanner(variante, arquivo.type, crypto.randomUUID(), pasta)
 
   const { error } = await supabase.storage
     .from(BANNER_BUCKET)

@@ -6,6 +6,7 @@ import {
   checkoutSchema,
   checkoutToFormValues,
   cronometroExpirado,
+  cronometroMinutosValido,
   isoParaCampoDataHora,
   limparProva,
   ofertaEhOProprioProduto,
@@ -15,6 +16,7 @@ import {
 import type { CheckoutFormValues } from './checkoutForm'
 import { parseProva } from './checkoutsData'
 import type { Checkout } from './checkoutsData'
+import { BANNER_VAZIO } from './bannerUpload'
 
 const PRINCIPAL = '11111111-1111-4111-8111-111111111111'
 const OUTRO = '22222222-2222-4222-8222-222222222222'
@@ -264,15 +266,94 @@ describe('padrão do resumo do pedido', () => {
     downsell_texto: null,
     prova: null,
     banner: null,
+    bump_imagem: null,
     garantia_dias: null,
     garantia_texto: null,
     desconto_pix_percentual: null,
     cronometro_ate: null,
+    cronometro_minutos: null,
     resumo_aberto: false,
     ativo: true,
     created_at: '2026-09-09T12:00:00.000Z',
     updated_at: '2026-09-09T12:00:00.000Z',
   }
+
+  describe('imagem do order bump', () => {
+    const ARTE = {
+      desktop: { url: 'https://cdn/bump-desktop.webp', largura: 1400, altura: 400 },
+      mobile: { url: 'https://cdn/bump-mobile.webp', largura: 780, altura: 440 },
+      alt: 'Comparativo com 3 concorrentes',
+    }
+
+    it('checkout novo nasce sem imagem no bump, e o payload grava {} limpo', () => {
+      expect(EMPTY_CHECKOUT.bumpImagem).toEqual(BANNER_VAZIO)
+      expect(checkoutFormToPayload(VALIDO).bump_imagem).toEqual(BANNER_VAZIO)
+    })
+
+    it('leva as duas artes e o alt para a coluna bump_imagem', () => {
+      const payload = checkoutFormToPayload({ ...VALIDO, bumpImagem: ARTE })
+      expect(payload.bump_imagem).toEqual(ARTE)
+    })
+
+    it('a coluna volta para o formulário com a mesma forma do banner', () => {
+      expect(checkoutToFormValues({ ...LINHA, bump_imagem: ARTE }).bumpImagem).toEqual(ARTE)
+      expect(checkoutToFormValues(LINHA).bumpImagem).toEqual(BANNER_VAZIO)
+    })
+
+    it('sobrevive ao parse do schema (não é descartada ao salvar)', () => {
+      const parsed = checkoutSchema.safeParse({ ...VALIDO, bumpImagem: ARTE })
+      expect(parsed.success).toBe(true)
+      if (parsed.success) expect(parsed.data.bumpImagem).toEqual(ARTE)
+    })
+  })
+
+  describe('cronômetro por visitante (minutos)', () => {
+    it('no modo de data, os minutos vão como null mesmo que estejam preenchidos', () => {
+      const payload = checkoutFormToPayload({
+        ...VALIDO,
+        cronometroModo: 'data',
+        cronometroAte: '2027-01-01T10:00',
+        cronometroMinutos: '15',
+      })
+      expect(payload.cronometro_ate).toBe(new Date('2027-01-01T10:00').toISOString())
+      expect(payload.cronometro_minutos).toBeNull()
+    })
+
+    it('no modo de minutos, a data vai como null e os minutos como número', () => {
+      const payload = checkoutFormToPayload({
+        ...VALIDO,
+        cronometroModo: 'minutos',
+        cronometroAte: '2027-01-01T10:00',
+        cronometroMinutos: '15',
+      })
+      expect(payload.cronometro_ate).toBeNull()
+      expect(payload.cronometro_minutos).toBe(15)
+    })
+
+    it('minutos vazio no modo de minutos = sem cronômetro nenhum', () => {
+      const payload = checkoutFormToPayload({ ...VALIDO, cronometroModo: 'minutos' })
+      expect(payload.cronometro_ate).toBeNull()
+      expect(payload.cronometro_minutos).toBeNull()
+    })
+
+    it('recusa minutos fora da faixa ou não inteiros', () => {
+      expect(erroDe({ ...VALIDO, cronometroModo: 'minutos', cronometroMinutos: '0' }, 'cronometroMinutos')).toBeDefined()
+      expect(erroDe({ ...VALIDO, cronometroModo: 'minutos', cronometroMinutos: '1441' }, 'cronometroMinutos')).toBeDefined()
+      expect(erroDe({ ...VALIDO, cronometroModo: 'minutos', cronometroMinutos: '7,5' }, 'cronometroMinutos')).toBeDefined()
+      expect(erroDe({ ...VALIDO, cronometroModo: 'minutos', cronometroMinutos: '20' }, 'cronometroMinutos')).toBeUndefined()
+      expect(cronometroMinutosValido('')).toBe(true)
+    })
+
+    it('linha com minutos abre no modo por visitante; sem eles, no modo de data', () => {
+      const comMinutos = checkoutToFormValues({ ...LINHA, cronometro_minutos: 20 })
+      expect(comMinutos.cronometroModo).toBe('minutos')
+      expect(comMinutos.cronometroMinutos).toBe('20')
+
+      const semMinutos = checkoutToFormValues(LINHA)
+      expect(semMinutos.cronometroModo).toBe('data')
+      expect(semMinutos.cronometroMinutos).toBe('')
+    })
+  })
 
   it('checkout novo nasce com o resumo RECOLHIDO', () => {
     expect(EMPTY_CHECKOUT.resumoAberto).toBe(false)

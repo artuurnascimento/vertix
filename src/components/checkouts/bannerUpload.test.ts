@@ -59,6 +59,8 @@ describe('caminhoBanner', () => {
   it('separa por variante e usa a extensão do tipo, não o nome do arquivo', () => {
     expect(caminhoBanner('desktop', 'image/jpeg', 'abc')).toBe('desktop/abc.jpg')
     expect(caminhoBanner('mobile', 'image/webp', 'abc')).toBe('mobile/abc.webp')
+    // A arte do order bump vai para a própria pasta do bucket.
+    expect(caminhoBanner('desktop', 'image/png', 'abc', 'bump')).toBe('bump/desktop/abc.png')
   })
 
   it('não deixa dois envios se sobrescreverem', () => {

@@ -97,6 +97,8 @@ export default function CheckoutFormModal({
    */
   const setBanner = (atualizar: (atual: Banner) => Banner) =>
     setValues((atual) => ({ ...atual, banner: atualizar(atual.banner) }))
+  const setBumpImagem = (atualizar: (atual: Banner) => Banner) =>
+    setValues((atual) => ({ ...atual, bumpImagem: atualizar(atual.bumpImagem) }))
 
   const setTitulo = (titulo: string) => {
     setValues((atual) => ({
@@ -223,6 +225,8 @@ export default function CheckoutFormModal({
           onProdutoId={(v) => setCampo('bumpProdutoId', v)}
           onTitulo={(v) => setCampo('bumpTitulo', v)}
           onTexto={(v) => setCampo('bumpTexto', v)}
+          imagem={values.bumpImagem}
+          onImagem={setBumpImagem}
         />
 
         <OfertaBloco
@@ -280,11 +284,15 @@ export default function CheckoutFormModal({
           garantiaDias={values.garantiaDias}
           garantiaTexto={values.garantiaTexto}
           cronometroAte={values.cronometroAte}
+          cronometroModo={values.cronometroModo}
+          cronometroMinutos={values.cronometroMinutos}
           erroDias={erros.garantiaDias}
-          erroCronometro={erros.cronometroAte}
+          erroCronometro={erros.cronometroAte ?? erros.cronometroMinutos}
           onGarantiaDias={(v) => setCampo('garantiaDias', v)}
           onGarantiaTexto={(v) => setCampo('garantiaTexto', v)}
           onCronometroAte={(v) => setCampo('cronometroAte', v)}
+          onCronometroModo={(v) => setCampo('cronometroModo', v)}
+          onCronometroMinutos={(v) => setCampo('cronometroMinutos', v)}
         />
 
         <CampoAtivo

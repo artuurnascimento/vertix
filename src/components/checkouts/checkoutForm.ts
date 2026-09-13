@@ -19,6 +19,8 @@ export interface CheckoutFormValues {
   bumpProdutoId: string
   bumpTitulo: string
   bumpTexto: string
+  /** Arte do bump (desktop/celular), mesma forma do banner. */
+  bumpImagem: Banner
   upsellProdutoId: string
   upsellTitulo: string
   upsellTexto: string
@@ -36,6 +38,14 @@ export interface CheckoutFormValues {
   descontoPixPercentual: string
   /** Valor de <input type="datetime-local">; '' = sem cronômetro. */
   cronometroAte: string
+  /**
+   * Qual dos dois cronômetros está em uso. Só o do modo escolhido vai para o
+   * banco; o outro é gravado como null, para a página nunca ter que decidir
+   * entre os dois.
+   */
+  cronometroModo: CronometroModo
+  /** Minutos por visitante (modo `minutos`), como texto do input. */
+  cronometroMinutos: string
   /** true = o resumo do pedido nasce aberto na página pública. */
   resumoAberto: boolean
   ativo: boolean
@@ -49,6 +59,7 @@ export const EMPTY_CHECKOUT: CheckoutFormValues = {
   bumpProdutoId: '',
   bumpTitulo: '',
   bumpTexto: '',
+  bumpImagem: BANNER_VAZIO,
   upsellProdutoId: '',
   upsellTitulo: '',
   upsellTexto: '',
@@ -62,6 +73,8 @@ export const EMPTY_CHECKOUT: CheckoutFormValues = {
   garantiaTexto: '',
   descontoPixPercentual: '',
   cronometroAte: '',
+  cronometroModo: 'data',
+  cronometroMinutos: '',
   // Recolhido, igual ao default da coluna: aberto, o bloco ocupa quase uma
   // tela de telefone e empurra o pagamento para baixo da dobra.
   resumoAberto: false,
@@ -134,6 +147,25 @@ export function cronometroExpirado(valor: string, agora = new Date()): boolean {
   return iso !== null && new Date(iso) <= agora
 }
 
+export type CronometroModo = 'data' | 'minutos'
+
+export const CRONOMETRO_MODOS: readonly CronometroModo[] = ['data', 'minutos']
+
+/**
+ * Teto do cronômetro por visitante: 24 h. Acima disso o contador não é
+ * urgência, é decoração — e o banco recusa (`checkouts_cronometro_minutos_faixa`).
+ */
+export const CRONOMETRO_MINUTOS_MAXIMO = 1440
+
+/** Minutos válidos: inteiro de 1 a 1440, ou vazio (sem cronômetro). */
+export function cronometroMinutosValido(valor: string): boolean {
+  const limpo = valor.trim()
+  if (limpo === '') return true
+  if (!/^\d+$/.test(limpo)) return false
+  const n = Number(limpo)
+  return n >= 1 && n <= CRONOMETRO_MINUTOS_MAXIMO
+}
+
 // ---------------------------------------------------------------------------
 // Validação
 // ---------------------------------------------------------------------------
@@ -185,6 +217,9 @@ export const checkoutSchema = z
     bumpProdutoId: idOpcional,
     bumpTitulo: z.string(),
     bumpTexto: z.string(),
+    // Como o `banner`: a URL vem do upload já validado; o schema só garante
+    // que o campo sobreviva ao `parse`.
+    bumpImagem: bannerSchema,
     upsellProdutoId: idOpcional,
     upsellTitulo: z.string(),
     upsellTexto: z.string(),
@@ -224,6 +259,13 @@ export const checkoutSchema = z
       .refine(
         (v) => v.trim() === '' || campoDataHoraParaIso(v) !== null,
         'Data e hora do cronômetro inválidas.'
+      ),
+    cronometroModo: z.enum(['data', 'minutos']),
+    cronometroMinutos: z
+      .string()
+      .refine(
+        cronometroMinutosValido,
+        `Informe os minutos como número inteiro, de 1 a ${CRONOMETRO_MINUTOS_MAXIMO}.`
       ),
     resumoAberto: z.boolean(),
     ativo: z.boolean(),
@@ -280,6 +322,7 @@ export function checkoutFormToPayload(
     bump_produto_id: limpo(values.bumpProdutoId),
     bump_titulo: limpo(values.bumpTitulo),
     bump_texto: limpo(values.bumpTexto),
+    bump_imagem: limparBanner(values.bumpImagem),
     upsell_produto_id: limpo(values.upsellProdutoId),
     upsell_titulo: limpo(values.upsellTitulo),
     upsell_texto: limpo(values.upsellTexto),
@@ -291,7 +334,15 @@ export function checkoutFormToPayload(
     garantia_dias: dias === '' ? null : Number(dias),
     garantia_texto: limpo(values.garantiaTexto),
     desconto_pix_percentual: descontoPix === '' ? null : Number(descontoPix),
-    cronometro_ate: campoDataHoraParaIso(values.cronometroAte),
+    // Só o cronômetro do modo escolhido é gravado; o outro vai como null.
+    cronometro_ate:
+      values.cronometroModo === 'data'
+        ? campoDataHoraParaIso(values.cronometroAte)
+        : null,
+    cronometro_minutos:
+      values.cronometroModo === 'minutos' && values.cronometroMinutos.trim() !== ''
+        ? Number(values.cronometroMinutos.trim())
+        : null,
     resumo_aberto: values.resumoAberto,
     ativo: values.ativo,
   }
@@ -307,6 +358,7 @@ export function checkoutToFormValues(checkout: Checkout): CheckoutFormValues {
     bumpProdutoId: checkout.bump_produto_id ?? '',
     bumpTitulo: checkout.bump_titulo ?? '',
     bumpTexto: checkout.bump_texto ?? '',
+    bumpImagem: parseBanner(checkout.bump_imagem),
     upsellProdutoId: checkout.upsell_produto_id ?? '',
     upsellTitulo: checkout.upsell_titulo ?? '',
     upsellTexto: checkout.upsell_texto ?? '',
@@ -325,6 +377,16 @@ export function checkoutToFormValues(checkout: Checkout): CheckoutFormValues {
         ? ''
         : String(checkout.desconto_pix_percentual),
     cronometroAte: isoParaCampoDataHora(checkout.cronometro_ate),
+    // Linha com minutos gravados abre no modo por visitante; qualquer outra
+    // (inclusive as anteriores à coluna) abre no modo de data, que é o antigo.
+    cronometroModo:
+      typeof checkout.cronometro_minutos === 'number' && checkout.cronometro_minutos > 0
+        ? 'minutos'
+        : 'data',
+    cronometroMinutos:
+      typeof checkout.cronometro_minutos === 'number' && checkout.cronometro_minutos > 0
+        ? String(checkout.cronometro_minutos)
+        : '',
     // `=== true` e não o valor cru: uma linha lida antes da migration da
     // coluna chega sem o campo, e "ausente" tem de virar recolhido — o mesmo
     // default do banco — em vez de `undefined` num checkbox controlado.

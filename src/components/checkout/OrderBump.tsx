@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { Check, Plus } from 'lucide-react'
 import { formatarCentavos } from './checkoutTotal'
 import { textoDoBump } from './conteudoCheckout'
+import ImagemResponsiva from './ImagemResponsiva'
 import type { BumpCheckout } from './checkoutTypes'
 
 interface Props {
@@ -21,6 +22,10 @@ interface Props {
  *
  * O <label> envolve tudo, então o card inteiro é o alvo do clique — no celular
  * isso é a diferença entre marcar e errar o quadradinho.
+ *
+ * A imagem, quando o dono da oferta subiu uma, abre o card acima do título —
+ * uma arte para desktop e outra para celular, como o banner do topo. Sem
+ * imagem, o card é o de sempre.
  */
 export default function OrderBump({ bump, marcado, onChange }: Props) {
   const id = useId()
@@ -43,6 +48,13 @@ export default function OrderBump({ bump, marcado, onChange }: Props) {
         aria-hidden
         className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-accent/20 blur-3xl"
       />
+
+      {bump.imagem !== null && (
+        <ImagemResponsiva
+          imagem={bump.imagem}
+          className="relative mb-4 h-auto w-full rounded-xl object-cover"
+        />
+      )}
 
       <div className="relative grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-5">
         <div className="flex items-start gap-3.5">

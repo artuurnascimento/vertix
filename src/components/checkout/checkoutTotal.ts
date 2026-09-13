@@ -223,6 +223,28 @@ export function restanteMs(
   return restante > 0 ? restante : null
 }
 
+const MS_POR_MINUTO = 60_000
+
+/**
+ * Tempo restante do cronômetro POR VISITANTE, que recomeça ao zerar.
+ *
+ * `inicio` é o instante em que a pessoa abriu a página pela primeira vez
+ * (guardado no navegador dela). A contagem anda em ciclos de `minutos`: no
+ * fim de um ciclo começa outro, então o valor nunca chega a zero nem vira
+ * null — só volta para o topo. Início no futuro (relógio mexido) conta como
+ * "agora".
+ */
+export function restanteEmLoopMs(
+  inicio: number,
+  minutos: number,
+  agora: number = Date.now()
+): number | null {
+  if (!Number.isFinite(minutos) || minutos <= 0) return null
+  const ciclo = Math.round(minutos * MS_POR_MINUTO)
+  const decorrido = Math.max(0, agora - (Number.isFinite(inicio) ? inicio : agora))
+  return ciclo - (decorrido % ciclo)
+}
+
 export interface ContagemFormatada {
   horas: string
   minutos: string

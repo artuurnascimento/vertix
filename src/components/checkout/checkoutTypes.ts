@@ -24,6 +24,8 @@ export interface BumpCheckout {
   descricao: string | null
   precoCentavos: number
   ancoraCentavos: number | null
+  /** Arte do card (desktop/celular), na mesma forma do banner; null = sem imagem. */
+  imagem: BannerCheckout | null
 }
 
 export interface DepoimentoCheckout {
@@ -104,6 +106,12 @@ export interface CheckoutInfo {
   garantia: GarantiaCheckout | null
   /** ISO do instante em que a oferta expira; `null` quando não há cronômetro. */
   cronometroAte: string | null
+  /**
+   * Cronômetro por visitante, em minutos: a contagem começa na primeira
+   * abertura, fica no navegador e recomeça ao zerar. Quando existe, vale
+   * ele — o painel só grava um dos dois modos.
+   */
+  cronometroMinutos: number | null
 }
 
 // --------------------------------------------------------------- leitores --
@@ -251,6 +259,9 @@ function lerBump(bruto: unknown, config: Registro): BumpCheckout | null {
       texto(bruto, 'descricao', 'texto', 'description'),
     precoCentavos: preco,
     ancoraCentavos: ancora !== null && ancora > preco ? ancora : null,
+    // A arte mora no checkout (é copy da oferta, como título e texto), não
+    // no produto. `lerBanner` devolve null para `{}`, que é "sem imagem".
+    imagem: lerBanner(config.bump_imagem ?? config.bumpImagem ?? bruto.imagem),
   }
 }
 
@@ -400,5 +411,14 @@ export function normalizarCheckout(
     prova: lerProva(bruto.prova),
     garantia: lerGarantia(bruto.garantia),
     cronometroAte: instante(bruto.cronometro_ate),
+    cronometroMinutos: lerMinutos(
+      bruto.cronometro_minutos ?? configBruta.cronometro_minutos
+    ),
   }
+}
+
+/** Minutos do cronômetro por visitante: inteiro positivo, ou null. */
+function lerMinutos(valor: unknown): number | null {
+  const numero = typeof valor === 'number' ? valor : typeof valor === 'string' ? Number(valor) : Number.NaN
+  return Number.isFinite(numero) && numero > 0 ? Math.round(numero) : null
 }

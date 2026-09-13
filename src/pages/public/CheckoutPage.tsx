@@ -447,7 +447,11 @@ export default function CheckoutPage() {
         />
 
         <div className="mx-auto mt-6 max-w-md">
-          <Cronometro ate={info.cronometroAte} />
+          <Cronometro
+            ate={info.cronometroAte}
+            minutos={info.cronometroMinutos}
+            slug={info.checkout.slug}
+          />
         </div>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] lg:items-start lg:gap-6">

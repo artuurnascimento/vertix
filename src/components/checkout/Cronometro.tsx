@@ -1,14 +1,15 @@
 import { Timer } from 'lucide-react'
 import { formatarContagem } from './checkoutTotal'
-import { useCronometro } from './useCronometro'
+import { useCronometro, type FonteDoCronometro } from './useCronometro'
 
 /**
- * Contagem regressiva até o instante configurado. Se o prazo já passou, o
- * componente não renderiza NADA: melhor ausência de urgência que urgência
- * falsa. Sem zerar, sem reiniciar.
+ * Contagem regressiva. No modo de data, se o prazo já passou o componente não
+ * renderiza NADA — sem zerar, sem reiniciar. No modo por visitante (minutos),
+ * a contagem parte da primeira abertura e recomeça ao zerar; é o dono da
+ * oferta quem escolhe o modo, e o painel diz o que cada um faz.
  */
-export default function Cronometro({ ate }: { ate: string | null }) {
-  const restante = useCronometro(ate)
+export default function Cronometro(fonte: FonteDoCronometro) {
+  const restante = useCronometro(fonte)
   if (restante === null) return null
 
   const contagem = formatarContagem(restante)

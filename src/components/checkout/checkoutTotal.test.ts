@@ -7,6 +7,7 @@ import {
   formatarContagem,
   normalizarPercentualMetodo,
   resolverTotal,
+  restanteEmLoopMs,
   restanteMs,
 } from './checkoutTotal'
 import { normalizarCheckout } from './checkoutTypes'
@@ -133,6 +134,32 @@ describe('restanteMs', () => {
   })
 })
 
+describe('restanteEmLoopMs — cronômetro por visitante', () => {
+  const inicio = new Date('2026-09-07T12:00:00.000Z').getTime()
+  const MIN = 60_000
+
+  test('conta a partir da primeira abertura', () => {
+    expect(restanteEmLoopMs(inicio, 15, inicio)).toBe(15 * MIN)
+    expect(restanteEmLoopMs(inicio, 15, inicio + 5 * MIN)).toBe(10 * MIN)
+  })
+
+  test('ao zerar, recomeça do topo em vez de virar null', () => {
+    expect(restanteEmLoopMs(inicio, 15, inicio + 15 * MIN)).toBe(15 * MIN)
+    expect(restanteEmLoopMs(inicio, 15, inicio + 16 * MIN)).toBe(14 * MIN)
+    // Três ciclos e meio depois, está na metade do quarto.
+    expect(restanteEmLoopMs(inicio, 10, inicio + 35 * MIN)).toBe(5 * MIN)
+  })
+
+  test('início no futuro (relógio mexido) conta como agora', () => {
+    expect(restanteEmLoopMs(inicio + 60 * MIN, 15, inicio)).toBe(15 * MIN)
+  })
+
+  test('sem minutos válidos não há cronômetro', () => {
+    expect(restanteEmLoopMs(inicio, 0, inicio)).toBeNull()
+    expect(restanteEmLoopMs(inicio, Number.NaN, inicio)).toBeNull()
+  })
+})
+
 describe('formatarContagem', () => {
   test('quebra os milissegundos em horas, minutos e segundos', () => {
     const contagem = formatarContagem((2 * 3600 + 5 * 60 + 9) * 1000)
@@ -206,6 +233,49 @@ describe('normalizarCheckout', () => {
   test('usa o slug da URL quando a resposta não traz um', () => {
     const info = normalizarCheckout({ ...bruto, checkout: {} }, 'da-url')
     expect(info?.checkout.slug).toBe('da-url')
+  })
+
+  test('a imagem do bump vem do checkout, na forma do banner', () => {
+    const info = normalizarCheckout(
+      {
+        ...bruto,
+        checkout: {
+          ...bruto.checkout,
+          bump_imagem: {
+            desktop: { url: 'https://cdn/bump-d.webp', largura: 1400, altura: 400 },
+            mobile: { url: 'https://cdn/bump-m.webp', largura: 780, altura: 440 },
+            alt: 'Comparativo',
+          },
+        },
+      },
+      'da-url'
+    )
+
+    expect(info?.bump?.imagem?.desktop?.url).toBe('https://cdn/bump-d.webp')
+    expect(info?.bump?.imagem?.mobile?.largura).toBe(780)
+    expect(info?.bump?.imagem?.alt).toBe('Comparativo')
+  })
+
+  test('bump sem imagem ({} ou ausente) fica com imagem null', () => {
+    expect(normalizarCheckout(bruto, 'da-url')?.bump?.imagem).toBeNull()
+    const vazio = normalizarCheckout(
+      { ...bruto, checkout: { ...bruto.checkout, bump_imagem: {} } },
+      'da-url'
+    )
+    expect(vazio?.bump?.imagem).toBeNull()
+  })
+
+  test('lê os minutos do cronômetro por visitante, na raiz ou no checkout', () => {
+    expect(normalizarCheckout(bruto, 'da-url')?.cronometroMinutos).toBeNull()
+    expect(
+      normalizarCheckout({ ...bruto, cronometro_minutos: 15 }, 'da-url')?.cronometroMinutos
+    ).toBe(15)
+    expect(
+      normalizarCheckout(
+        { ...bruto, checkout: { ...bruto.checkout, cronometro_minutos: 20 } },
+        'da-url'
+      )?.cronometroMinutos
+    ).toBe(20)
   })
 
   test('o bump usa a copy do checkout, não o nome do produto', () => {

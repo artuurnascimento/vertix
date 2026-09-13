@@ -2,6 +2,8 @@ import { AlertTriangle } from 'lucide-react'
 import { Bloco, inputClass, labelClass } from '../produtos/formUi'
 import { formatCentavos } from '../produtos/precos'
 import type { Produto } from '../produtos/produtosData'
+import ImagensResponsivas from './ImagensResponsivas'
+import type { Banner, VarianteBanner } from './bannerUpload'
 
 interface Props {
   titulo: string
@@ -19,6 +21,19 @@ interface Props {
   onProdutoId: (valor: string) => void
   onTitulo: (valor: string) => void
   onTexto: (valor: string) => void
+  /**
+   * Arte da oferta (desktop e celular). Só o order bump tem: ele é um card
+   * na página, com espaço para imagem; upsell e downsell são telas próprias.
+   * Ausente = o bloco não mostra o editor.
+   */
+  imagem?: Banner
+  onImagem?: (atualizar: (atual: Banner) => Banner) => void
+}
+
+/** Medidas sugeridas para a arte do bump — o card tem ~700px no desktop e uma coluna no celular. */
+const DICAS_IMAGEM: Record<VarianteBanner, string> = {
+  desktop: '1400 × 400',
+  mobile: '780 × 440',
 }
 
 /**
@@ -41,8 +56,11 @@ export default function OfertaBloco({
   onProdutoId,
   onTitulo,
   onTexto,
+  imagem,
+  onImagem,
 }: Props) {
   const escolhido = produtoId !== ''
+  const comImagem = imagem !== undefined && onImagem !== undefined
   return (
     <Bloco titulo={titulo} ajuda={ajuda}>
       <label className="flex flex-col gap-1.5">
@@ -92,6 +110,26 @@ export default function OfertaBloco({
               className={`${inputClass} resize-y`}
             />
           </label>
+
+          {comImagem && (
+            <div className="flex flex-col gap-4 border-t border-white/5 pt-4">
+              <div>
+                <span className={labelClass}>Imagem do bump</span>
+                <p className="mt-1 text-xs font-light leading-relaxed text-muted">
+                  Opcional. Aparece no topo do card, acima do título — uma arte
+                  para desktop e outra para celular. Sem imagem, o card fica
+                  como hoje.
+                </p>
+              </div>
+              <ImagensResponsivas
+                valor={imagem}
+                onChange={onImagem}
+                dicas={DICAS_IMAGEM}
+                pasta="bump"
+                placeholderAlt="Comparativo da sua loja com 3 concorrentes"
+              />
+            </div>
+          )}
         </>
       )}
     </Bloco>
