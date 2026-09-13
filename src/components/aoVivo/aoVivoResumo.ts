@@ -353,6 +353,30 @@ export function funilAoVivo(
   ]
 }
 
+/** Só as visitas de um checkout; sem filtro (null) devolve a lista como está. */
+export function filtrarPorCheckout(
+  sessoes: readonly SessaoAoVivo[],
+  checkoutId: string | null
+): readonly SessaoAoVivo[] {
+  return checkoutId ? sessoes.filter((s) => s.checkout_id === checkoutId) : sessoes
+}
+
+/** Um checkout da lista do painel, no que o "Ao vivo" precisa. */
+export interface CheckoutDoAoVivo {
+  id: string
+  slug: string
+  titulo: string
+}
+
+/** O checkout apontado pelo `?checkout=<slug>` da URL; slug desconhecido = sem filtro. */
+export function checkoutDoParametro(
+  slug: string | null,
+  checkouts: readonly CheckoutDoAoVivo[]
+): CheckoutDoAoVivo | null {
+  if (!slug) return null
+  return checkouts.find((c) => c.slug === slug) ?? null
+}
+
 /** Mais recente primeiro; quem está na página agora vai para o topo. */
 export function ordenarSessoes(
   sessoes: readonly SessaoAoVivo[],

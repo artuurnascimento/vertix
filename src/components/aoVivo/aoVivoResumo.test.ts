@@ -2,7 +2,9 @@ import { describe, expect, test } from 'vitest'
 import { anexarEvento, mesclarSessao } from './aoVivoData'
 import {
   bandeira,
+  checkoutDoParametro,
   classificarVisitante,
+  filtrarPorCheckout,
   comprou,
   descreverEvento,
   duracaoDaSessao,
@@ -266,6 +268,25 @@ describe('tempo', () => {
     expect(
       duracaoDaSessao(sessao({ iniciado_em: iso(600), ultimo_evento_em: iso(400) }), AGORA)
     ).toBe('3 min')
+  })
+})
+
+describe('filtro por checkout', () => {
+  const checkouts = [
+    { id: 'c1', slug: 'plano', titulo: 'Plano' },
+    { id: 'c2', slug: 'mentoria', titulo: 'Mentoria' },
+  ]
+
+  test('filtrarPorCheckout: só as visitas daquele checkout; null é tudo', () => {
+    const lista = [sessao({ id: 'a', checkout_id: 'c1' }), sessao({ id: 'b', checkout_id: 'c2' })]
+    expect(filtrarPorCheckout(lista, 'c2').map((s) => s.id)).toEqual(['b'])
+    expect(filtrarPorCheckout(lista, null)).toBe(lista)
+  })
+
+  test('checkoutDoParametro: slug da URL vira o checkout; desconhecido ou vazio é sem filtro', () => {
+    expect(checkoutDoParametro('mentoria', checkouts)?.id).toBe('c2')
+    expect(checkoutDoParametro('nao-existe', checkouts)).toBeNull()
+    expect(checkoutDoParametro(null, checkouts)).toBeNull()
   })
 })
 

@@ -1,7 +1,7 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useSearchParams } from 'react-router-dom'
 import AoVivoTab from './AoVivoTab'
 import type { EventoAoVivo, SessaoAoVivo } from './aoVivoResumo'
 
@@ -77,6 +77,7 @@ const SESSOES: SessaoAoVivo[] = [
   }),
   sessao({
     id: 'joao',
+    checkout_id: 'c2',
     email: 'joao@exemplo.com',
     etapa: 'concluido',
     dados_em: iso(300),
@@ -121,10 +122,22 @@ vi.mock('./useAoVivo', () => ({
   useAoVivo: () => estado,
 }))
 
-function renderizar() {
+const CHECKOUTS = [
+  { id: 'c1', slug: 'plano-correcao', titulo: 'Plano de Correção' },
+  { id: 'c2', slug: 'mentoria', titulo: 'Mentoria' },
+]
+
+/** Expõe a query string atual para os testes lerem o filtro na URL. */
+function UrlAtual() {
+  const [params] = useSearchParams()
+  return <output data-testid="url">{params.toString()}</output>
+}
+
+function renderizar(caminho = '/admin/checkouts') {
   return render(
-    <MemoryRouter>
-      <AoVivoTab nomesDosCheckouts={new Map([['c1', 'Plano de Correção']])} />
+    <MemoryRouter initialEntries={[caminho]}>
+      <AoVivoTab checkouts={CHECKOUTS} />
+      <UrlAtual />
     </MemoryRouter>
   )
 }
@@ -153,6 +166,31 @@ describe('AoVivoTab', () => {
     expect(within(visitas).getByText(/Curitiba · PR/)).toBeInTheDocument()
     expect(within(visitas).getByText('Comprou · Concluiu a compra')).toBeInTheDocument()
     expect(within(visitas).queryByText('bot')).not.toBeInTheDocument()
+  })
+
+  test('escolher um checkout filtra números, funil e lista, e vai para a URL', async () => {
+    renderizar()
+    await userEvent.selectOptions(screen.getByLabelText('Checkout'), 'mentoria')
+    expect(screen.getByTestId('url')).toHaveTextContent('checkout=mentoria')
+    expect(screen.getByText('Visitas · 24 h').parentElement).toHaveTextContent('1')
+    expect(screen.getByText('Compraram · 24 h').parentElement).toHaveTextContent('1')
+    const visitas = screen.getByRole('list', { name: 'Visitas' })
+    expect(within(visitas).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(visitas).getByText('joao@exemplo.com')).toBeInTheDocument()
+    // Sem bot neste checkout, o controle de bots some.
+    expect(screen.queryByLabelText(/Mostrar bots/)).not.toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByLabelText('Checkout'), 'todos')
+    expect(screen.getByTestId('url')).toHaveTextContent('')
+    expect(within(screen.getByRole('list', { name: 'Visitas' })).getAllByRole('listitem')).toHaveLength(2)
+  })
+
+  test('o link com ?checkout=<slug> já abre filtrado; slug desconhecido é ignorado', () => {
+    renderizar('/admin/checkouts?checkout=plano-correcao')
+    expect(screen.getByLabelText('Checkout')).toHaveValue('plano-correcao')
+    const visitas = screen.getByRole('list', { name: 'Visitas' })
+    expect(within(visitas).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(visitas).getByText('Maria Souza')).toBeInTheDocument()
   })
 
   test('"Mostrar bots" traz a visita do crawler, marcada e com o motivo', async () => {

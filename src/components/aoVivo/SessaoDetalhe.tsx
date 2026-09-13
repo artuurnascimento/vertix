@@ -85,7 +85,7 @@ function MapaDaPagina({ sessao, viva }: { sessao: SessaoAoVivo; viva: boolean })
             ) : (
               <span aria-hidden className="h-1 w-1 rounded-full bg-white/20" />
             )}
-            <span className="flex-1">{secao.label}</span>
+            <span className="flex-1 whitespace-nowrap">{secao.label}</span>
             {acesa && sessao.foco && (secao.id === 'dados' || secao.id === 'pagamento') && (
               <span className="text-[10px] font-medium uppercase tracking-wider text-accent">
                 digitando
@@ -184,7 +184,7 @@ export default function SessaoDetalhe({
         )}
       </header>
 
-      <div className="grid gap-5 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_11rem]">
+      <div className="grid gap-5 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_13rem]">
         <div className="flex flex-col gap-5">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
             <Fato rotulo="E-mail" valor={sessao.email} />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, ShoppingCart } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ehTabelaAusente } from '../components/produtos/catalogoSupabase'
@@ -31,7 +31,12 @@ export default function Checkouts() {
   const queryClient = useQueryClient()
   const { toast, mostrar } = useToast()
 
-  const [aba, setAba] = useState<AbaCheckout>('checkouts')
+  // `?checkout=<slug>` é o filtro do Ao vivo: quem chega por esse link já
+  // cai na aba certa.
+  const [parametros] = useSearchParams()
+  const [aba, setAba] = useState<AbaCheckout>(() =>
+    parametros.has('checkout') ? 'ao-vivo' : 'checkouts'
+  )
   const [formAberto, setFormAberto] = useState(false)
   const [emEdicao, setEmEdicao] = useState<Checkout | null>(null)
   const [paraExcluir, setParaExcluir] = useState<Checkout | null>(null)
@@ -101,8 +106,8 @@ export default function Checkouts() {
   const naAbaAoVivo = aba === 'ao-vivo'
   const carregando = naAbaCupons ? cuponsQuery.isLoading : checkoutsQuery.isLoading
   const comErro = naAbaCupons ? cuponsQuery.isError : checkoutsQuery.isError
-  const nomesDosCheckouts = useMemo(
-    () => new Map(checkouts.map((c) => [c.id, c.titulo])),
+  const checkoutsDoAoVivo = useMemo(
+    () => checkouts.map((c) => ({ id: c.id, slug: c.slug, titulo: c.titulo })),
     [checkouts]
   )
 
@@ -146,7 +151,7 @@ export default function Checkouts() {
 
       {naAbaAoVivo && (
         <div className="mt-6">
-          <AoVivoTab nomesDosCheckouts={nomesDosCheckouts} />
+          <AoVivoTab checkouts={checkoutsDoAoVivo} />
         </div>
       )}
 

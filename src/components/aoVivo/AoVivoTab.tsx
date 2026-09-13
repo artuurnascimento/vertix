@@ -1,12 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Radio, Users } from 'lucide-react'
 import { useAoVivo } from './useAoVivo'
 import {
+  checkoutDoParametro,
   classificarVisitante,
+  filtrarPorCheckout,
   formatCentavos,
   funilAoVivo,
   ordenarSessoes,
   resumoAoVivo,
+  type CheckoutDoAoVivo,
 } from './aoVivoResumo'
 import SessaoDetalhe from './SessaoDetalhe'
 import SessaoLinha from './SessaoLinha'
@@ -17,19 +21,42 @@ import SessaoLinha from './SessaoLinha'
  * topo e o funil contam só gente: bots (crawler, preview de link, navegador
  * automatizado, ou quem nunca tocou na tela) ficam de fora e aparecem só
  * quando você pede.
+ *
+ * Dá para olhar UM checkout só: o seletor no topo filtra números, funil e
+ * lista, e fica na URL (`?checkout=<slug>`) — o link abre direto nele.
  */
 
+/** Valor do seletor quando nenhum checkout está escolhido. */
+const TODOS = 'todos'
+const PARAMETRO_CHECKOUT = 'checkout'
+
 interface Props {
-  /** Título de cada checkout, para dizer em qual página a pessoa está. */
-  nomesDosCheckouts?: ReadonlyMap<string, string>
+  /** Os checkouts do painel: alimentam o seletor e o nome no detalhe. */
+  checkouts?: readonly CheckoutDoAoVivo[]
 }
 
-export default function AoVivoTab({ nomesDosCheckouts }: Props) {
+export default function AoVivoTab({ checkouts = [] }: Props) {
   const { sessoes, eventos, pedidos, agora, selecionada, setSelecionada, conectado } =
     useAoVivo()
   const [mostrarBots, setMostrarBots] = useState(false)
+  const [parametros, setParametros] = useSearchParams()
+  const filtro = checkoutDoParametro(parametros.get(PARAMETRO_CHECKOUT), checkouts)
 
-  const todas = useMemo(() => sessoes.data ?? [], [sessoes.data])
+  const escolherCheckout = (slug: string) => {
+    const proximos = new URLSearchParams(parametros)
+    if (slug === TODOS) proximos.delete(PARAMETRO_CHECKOUT)
+    else proximos.set(PARAMETRO_CHECKOUT, slug)
+    setParametros(proximos, { replace: true })
+  }
+
+  const todas = useMemo(
+    () => filtrarPorCheckout(sessoes.data ?? [], filtro?.id ?? null),
+    [sessoes.data, filtro]
+  )
+  // Trocou o filtro e a visita aberta ficou de fora? Fecha o detalhe.
+  useEffect(() => {
+    if (selecionada && !todas.some((s) => s.id === selecionada)) setSelecionada(null)
+  }, [todas, selecionada, setSelecionada])
   const resumo = useMemo(() => resumoAoVivo(todas, agora, pedidos), [todas, agora, pedidos])
   const funil = useMemo(() => funilAoVivo(todas, pedidos), [todas, pedidos])
   const lista = useMemo(
@@ -91,7 +118,8 @@ export default function AoVivoTab({ nomesDosCheckouts }: Props) {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted">
+        <div className="flex flex-wrap items-center gap-4">
+          <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted">
           <span className="relative flex h-2 w-2">
             {conectado && (
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 motion-safe:animate-ping" />
@@ -102,8 +130,26 @@ export default function AoVivoTab({ nomesDosCheckouts }: Props) {
               }`}
             />
           </span>
-          {conectado ? 'Ao vivo' : 'Reconectando…'}
-        </p>
+            {conectado ? 'Ao vivo' : 'Reconectando…'}
+          </p>
+          {checkouts.length > 0 && (
+            <label className="inline-flex items-center gap-2 text-xs font-light text-muted">
+              Checkout
+              <select
+                value={filtro?.slug ?? TODOS}
+                onChange={(e) => escolherCheckout(e.target.value)}
+                className="rounded-lg border border-white/10 bg-surface-1 px-2.5 py-1.5 text-xs font-medium text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <option value={TODOS}>Todos os checkouts</option>
+                {checkouts.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {c.titulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
         {resumo.bots > 0 && (
           <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-light text-muted">
             <input
@@ -176,7 +222,9 @@ export default function AoVivoTab({ nomesDosCheckouts }: Props) {
           <p className="mt-3 text-sm font-medium text-ink">
             {todas.length > 0 && !mostrarBots
               ? 'Só bots passaram por aqui nas últimas 24 h.'
-              : 'Ninguém no checkout nas últimas 24 h.'}
+              : filtro
+                ? `Ninguém em "${filtro.titulo}" nas últimas 24 h.`
+                : 'Ninguém no checkout nas últimas 24 h.'}
           </p>
           <p className="mx-auto mt-2 max-w-md text-sm font-light text-muted">
             Quando alguém abrir a página, aparece aqui no mesmo segundo — com a cidade, o
@@ -208,7 +256,7 @@ export default function AoVivoTab({ nomesDosCheckouts }: Props) {
               carregandoEventos={eventos.isLoading}
               pedidos={pedidos}
               agora={agora}
-              nomeDoCheckout={nomesDosCheckouts?.get(aberta.checkout_id) ?? null}
+              nomeDoCheckout={checkouts.find((c) => c.id === aberta.checkout_id)?.titulo ?? null}
             />
           ) : (
             <div className="flex min-h-[16rem] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 px-6 text-center">
