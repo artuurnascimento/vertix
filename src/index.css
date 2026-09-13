@@ -791,3 +791,59 @@ body {
     opacity: 0;
   }
 }
+
+/* Cronômetro do checkout: o despertador "toca" a cada 4 s e, no último
+   minuto, os dígitos pulsam. A linha embaixo esvazia em passos de 1 s, com
+   transição para não pular. */
+.vx-cronometro-sino {
+  transform-origin: 50% 90%;
+  animation: vx-cronometro-toque 4s ease-in-out infinite;
+}
+.vx-cronometro-barra {
+  transition: width 1s linear;
+}
+.vx-cronometro-pulso {
+  animation: vx-cronometro-pulso 1s ease-in-out infinite;
+}
+@keyframes vx-cronometro-toque {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  74% {
+    transform: rotate(-12deg);
+  }
+  78% {
+    transform: rotate(10deg);
+  }
+  82% {
+    transform: rotate(-8deg);
+  }
+  86% {
+    transform: rotate(6deg);
+  }
+  90% {
+    transform: rotate(0);
+  }
+}
+@keyframes vx-cronometro-pulso {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vx-cronometro-sino,
+  .vx-cronometro-pulso {
+    animation: none;
+  }
+  .vx-cronometro-barra {
+    transition: none;
+  }
+}
