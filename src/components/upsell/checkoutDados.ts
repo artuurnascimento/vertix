@@ -9,41 +9,36 @@ import type { CheckoutInfo, RespostaUpsell } from './upsellFluxo'
 import type { StatusPedido } from './pedidoResumo'
 
 /**
- * Chamada de RPC por nome solto.
+ * Configuração do checkout pelo slug, na forma CRUA da RPC — é dela que
+ * `resolverOferta` tira `upsell_produto_id`, título, texto e preço.
  *
- * `src/lib/database.types.ts` é gerado a partir do banco e pertence a outro
- * agente; a função do checkout ainda não está lá, então o `supabase.rpc`
- * tipado recusa o nome. Este é o ÚNICO ponto de escape de tipo do módulo — no
- * dia em que os types forem regerados ele some e a chamada abaixo volta a ser
- * conferida pelo compilador.
- */
-interface RespostaRpc {
-  data: unknown
-  error: { message: string } | null
-}
-
-function rpc(nome: string, args: Record<string, unknown>): Promise<RespostaRpc> {
-  const chamar = supabase.rpc as unknown as (
-    nome: string,
-    args: Record<string, unknown>
-  ) => Promise<RespostaRpc>
-  return chamar(nome, args)
-}
-
-/**
- * Configuração do checkout pelo slug. Mesma RPC que a tela de checkout usa —
- * cai no cache do react-query, então quem vem do checkout não paga a ida.
+ * Duas decisões aqui foram defeitos em produção, e por isso estão escritas:
+ *
+ * 1. A chamada é `supabase.rpc(...)`, no cliente. A versão anterior guardava
+ *    `supabase.rpc` numa variável e chamava solta; o método usa `this.rest`,
+ *    o `this` sumia e a função estourava ANTES de qualquer requisição. A
+ *    query caía em erro, e a tela de upsell tem `isError → obrigado`: nenhum
+ *    comprador jamais viu o upsell nem o downsell.
+ *
+ * 2. A chave é PRÓPRIA (`checkout-info-cru`), não a `checkout-info` da tela
+ *    de checkout. Aquela guarda o objeto já normalizado por `checkoutApi`
+ *    (`temUpsell: true`, sem `upsell_produto_id`); reaproveitá-la parecia
+ *    poupar uma ida ao banco, mas entregava a forma errada e, sem o id do
+ *    produto, a oferta não se resolvia — segundo caminho para o mesmo
+ *    obrigado. A ida extra custa uma RPC atrás do "Confirmando seu pedido…".
  */
 export function useCheckoutInfo(slug: string | undefined) {
   return useQuery({
-    queryKey: ['checkout-info', slug],
+    queryKey: ['checkout-info-cru', slug],
     enabled: Boolean(slug),
     retry: false,
     staleTime: 60_000,
     queryFn: async (): Promise<CheckoutInfo> => {
-      const { data, error } = await rpc('get_checkout_info', { p_slug: slug })
+      const { data, error } = await supabase.rpc('get_checkout_info', {
+        p_slug: slug ?? '',
+      })
       if (error) throw new Error(error.message)
-      return data as CheckoutInfo
+      return data as unknown as CheckoutInfo
     },
   })
 }
