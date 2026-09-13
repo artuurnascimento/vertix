@@ -5,7 +5,6 @@ import DonutTipos from '../components/dashboard/DonutTipos'
 import ProjectsWorkspace from '../components/dashboard/ProjectsWorkspace'
 import PrioritiesWorkspace from '../components/dashboard/PrioritiesWorkspace'
 import GreetingHeader from '../components/dashboard/GreetingHeader'
-import NudgesPanel from '../components/dashboard/NudgesPanel'
 import ResumoFinanceiro from '../components/dashboard/ResumoFinanceiro'
 import ClientHealthCard from '../components/clients/ClientHealthCard'
 import FilaHoje from '../components/comercial/FilaHoje'
@@ -70,7 +69,8 @@ function Journey() {
 }
 
 export default function Dashboard() {
-  const [tab, setTab] = useState('Oportunidades')
+  // Prioridades é a aba que executa (fase 3 da jornada): abre nela.
+  const [tab, setTab] = useState('Prioridades')
   return (
     <div className="vx-dashboard">
       <GreetingHeader />
@@ -118,8 +118,8 @@ export default function Dashboard() {
         {tab !== 'Prioridades' && <AcoesPendentes />}
         <ClientHealthCard onlyAtRisk />
       </div>
+      {/* Os nudges moram no ranking de Prioridades (um cartão por cliente, sem repetir). */}
       <div className="vx-secondary-grid">
-        <NudgesPanel />
         <DonutTipos />
       </div>
       <ResumoFinanceiro />

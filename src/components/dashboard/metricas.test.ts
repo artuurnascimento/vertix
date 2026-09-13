@@ -12,6 +12,8 @@ const AGORA = new Date(2026, 8, 12) // 12 de setembro de 2026
 
 const proposta = (o: Partial<DashboardProposal>): DashboardProposal => ({
   id: 'p',
+  titulo: 'Proposta',
+  project_id: 'proj',
   status: 'enviada',
   valor_total: 1000,
   sent_at: '2026-09-01T10:00:00Z',

@@ -9,6 +9,7 @@ const row = (overrides: Partial<DashboardReceivable>): DashboardReceivable => ({
   status: 'pago',
   pago_em: '2026-02-03',
   project_id: 'project-1',
+  client_id: 'client-1',
   ...overrides,
 })
 describe('monthlyReceipts', () => {

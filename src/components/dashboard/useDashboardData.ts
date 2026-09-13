@@ -16,7 +16,7 @@ export type DashboardProject = Pick<
 
 export type DashboardProposal = Pick<
   Tables<'proposals'>,
-  'id' | 'status' | 'valor_total' | 'sent_at' | 'accepted_at' | 'created_at'
+  'id' | 'titulo' | 'status' | 'valor_total' | 'sent_at' | 'accepted_at' | 'created_at' | 'project_id'
 >
 
 export type DashboardReceivable = Pick<
@@ -28,6 +28,7 @@ export type DashboardReceivable = Pick<
   | 'status'
   | 'pago_em'
   | 'project_id'
+  | 'client_id'
 >
 
 /** Pedido do checkout próprio (pay.vertix.studio) — os Planos vendidos. */
@@ -71,7 +72,7 @@ export function useDashboardProposals() {
     queryFn: async (): Promise<DashboardProposal[]> => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, status, valor_total, sent_at, accepted_at, created_at')
+        .select('id, titulo, status, valor_total, sent_at, accepted_at, created_at, project_id')
       if (error) throw new Error(error.message)
       return data
     },
@@ -84,7 +85,7 @@ export function useDashboardReceivables() {
     queryFn: async (): Promise<DashboardReceivable[]> => {
       const { data, error } = await supabase
         .from('receivables')
-        .select('id, descricao, valor, vencimento, status, pago_em, project_id')
+        .select('id, descricao, valor, vencimento, status, pago_em, project_id, client_id')
       if (error) throw new Error(error.message)
       return data
     },
