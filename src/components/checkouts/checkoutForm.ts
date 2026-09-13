@@ -254,23 +254,30 @@ export const checkoutSchema = z
         percentualPixValido,
         `Informe um percentual inteiro de 0 a ${DESCONTO_PIX_MAXIMO}, ou deixe vazio.`
       ),
-    cronometroAte: z
-      .string()
-      .refine(
-        (v) => v.trim() === '' || campoDataHoraParaIso(v) !== null,
-        'Data e hora do cronômetro inválidas.'
-      ),
+    // Data e minutos são validados no superRefine, cada um só no seu modo:
+    // o campo do modo que NÃO está escolhido não vai para o banco, então
+    // uma sobra inválida nele não pode travar o salvamento.
+    cronometroAte: z.string(),
     cronometroModo: z.enum(['data', 'minutos']),
-    cronometroMinutos: z
-      .string()
-      .refine(
-        cronometroMinutosValido,
-        `Informe os minutos como número inteiro, de 1 a ${CRONOMETRO_MINUTOS_MAXIMO}.`
-      ),
+    cronometroMinutos: z.string(),
     resumoAberto: z.boolean(),
     ativo: z.boolean(),
   })
   .superRefine((values, ctx) => {
+    if (values.cronometroModo === 'data' && values.cronometroAte.trim() !== '' && campoDataHoraParaIso(values.cronometroAte) === null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['cronometroAte'],
+        message: 'Data e hora do cronômetro inválidas.',
+      })
+    }
+    if (values.cronometroModo === 'minutos' && !cronometroMinutosValido(values.cronometroMinutos)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['cronometroMinutos'],
+        message: `Informe os minutos como número inteiro, de 1 a ${CRONOMETRO_MINUTOS_MAXIMO}.`,
+      })
+    }
     for (const oferta of ofertasEmConflito(values)) {
       ctx.addIssue({
         code: 'custom',

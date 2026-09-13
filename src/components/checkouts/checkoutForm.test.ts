@@ -344,6 +344,18 @@ describe('padrão do resumo do pedido', () => {
       expect(cronometroMinutosValido('')).toBe(true)
     })
 
+    it('só valida o campo do modo escolhido: o outro pode ter sobra inválida', () => {
+      // O que ficou no campo de data de uma tentativa anterior não pode
+      // travar quem escolheu contar por minutos — nem o contrário.
+      expect(
+        erroDe({ ...VALIDO, cronometroModo: 'minutos', cronometroAte: 'lixo', cronometroMinutos: '15' }, 'cronometroAte')
+      ).toBeUndefined()
+      expect(
+        erroDe({ ...VALIDO, cronometroModo: 'data', cronometroAte: '2027-01-01T10:00', cronometroMinutos: 'abc' }, 'cronometroMinutos')
+      ).toBeUndefined()
+      expect(erroDe({ ...VALIDO, cronometroModo: 'data', cronometroAte: 'lixo' }, 'cronometroAte')).toBeDefined()
+    })
+
     it('linha com minutos abre no modo por visitante; sem eles, no modo de data', () => {
       const comMinutos = checkoutToFormValues({ ...LINHA, cronometro_minutos: 20 })
       expect(comMinutos.cronometroModo).toBe('minutos')
