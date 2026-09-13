@@ -137,6 +137,12 @@ const NAV_GROUPS = [
         end: false,
       },
       {
+        to: '/admin/automacoes',
+        label: 'Automações',
+        icon: Workflow,
+        end: false,
+      },
+      {
         to: '/admin/configuracoes',
         label: 'Configurações',
         icon: Settings,

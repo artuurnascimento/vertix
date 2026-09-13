@@ -21,6 +21,7 @@ const Propostas = lazy(() => import('./pages/Propostas'))
 const Briefings = lazy(() => import('./pages/Briefings'))
 const Financeiro = lazy(() => import('./pages/Financeiro'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
+const Automacoes = lazy(() => import('./pages/Automacoes'))
 const Contratos = lazy(() => import('./pages/Contratos'))
 const Suporte = lazy(() => import('./pages/Suporte'))
 const Configuracoes = lazy(() => import('./pages/Configuracoes'))
@@ -124,6 +125,7 @@ export default function App() {
           <Route path="pedidos" element={<Pedidos />} />
           <Route path="financeiro" element={<Financeiro />} />
           <Route path="relatorios" element={<Relatorios />} />
+          <Route path="automacoes" element={<Automacoes />} />
           <Route path="contratos" element={<Contratos />} />
           <Route path="suporte" element={<Suporte />} />
           <Route path="configuracoes" element={<Configuracoes />} />

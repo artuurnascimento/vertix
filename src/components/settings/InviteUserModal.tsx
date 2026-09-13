@@ -11,7 +11,7 @@ interface InviteUserModalProps {
   onClose: () => void
 }
 
-type Role = 'admin' | 'colaborador'
+type Role = 'admin' | 'comercial' | 'operacao' | 'colaborador'
 
 interface InviteFormValues {
   nome: string
@@ -221,6 +221,8 @@ export default function InviteUserModal({ open, onClose }: InviteUserModalProps)
                     className={`${inputClass} appearance-none`}
                   >
                     <option value="colaborador">Colaborador</option>
+                    <option value="comercial">Comercial</option>
+                    <option value="operacao">Operação</option>
                     <option value="admin">Admin</option>
                   </select>
                 </label>

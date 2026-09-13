@@ -10,6 +10,8 @@ type Profile = Tables<'profiles'>
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
+  comercial: 'Comercial',
+  operacao: 'Operação',
   colaborador: 'Colaborador',
 }
 

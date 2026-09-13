@@ -19,7 +19,7 @@ interface RequestBody {
   role?: string
 }
 
-const VALID_ROLES = ['admin', 'colaborador']
+const VALID_ROLES = ['admin', 'comercial', 'operacao', 'colaborador']
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -69,7 +69,7 @@ Deno.serve(withCors(async (req) => {
     return jsonResponse({ error: 'Nome é obrigatório.' }, 400)
   }
   if (!role || !VALID_ROLES.includes(role)) {
-    return jsonResponse({ error: 'Role deve ser "admin" ou "colaborador".' }, 400)
+    return jsonResponse({ error: 'Role deve ser "admin", "comercial", "operacao" ou "colaborador".' }, 400)
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
