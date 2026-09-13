@@ -252,14 +252,3 @@ export function opcaoPorValor(
 ): OpcaoParcela | null {
   return opcoes.find((o) => o.valor === valor) ?? null
 }
-
-/**
- * Linha permanente abaixo do select quando a opção escolhida tem juros. Sem
- * ela, a tela passa a mostrar dois números diferentes (o total da Vertix e o
- * total com juros do emissor) sem explicar — e isso vira chamado de suporte.
- */
-export function avisoDeJuros(totalCentavos: number): string {
-  return `Parcelas com juros do emissor. A Vertix cobra ${formatarCentavos(
-    Math.max(0, Math.round(totalCentavos))
-  )}.`
-}

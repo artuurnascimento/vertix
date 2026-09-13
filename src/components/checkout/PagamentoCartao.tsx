@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { CreditCard, Lock } from 'lucide-react'
+import { CreditCard } from 'lucide-react'
 import BotaoPagar from './BotaoPagar'
 import FormularioCartao from './FormularioCartao'
 import { documentoValido } from './clienteForm'
@@ -338,7 +338,6 @@ export default function PagamentoCartao({
         erroTitular={erroTitular}
         erroDocumento={erroDocumento}
         parcelamento={parcelamento}
-        totalCentavos={totalCentavos}
         desabilitado={ocupado}
         seletor={seletor}
       />
@@ -362,11 +361,6 @@ export default function PagamentoCartao({
           {erroEnvio}
         </p>
       )}
-
-      <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] font-light text-muted">
-        <Lock aria-hidden className="h-3 w-3" />
-        Não guardamos os dados do seu cartão.
-      </p>
     </form>
   )
 }

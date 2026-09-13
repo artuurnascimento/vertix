@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, Lock } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { MP_PUBLIC_KEY } from './checkoutApi'
 import { formatarCentavos } from './checkoutTotal'
 import type { MetodoPagamento } from './MetodoPagamento'
@@ -233,13 +233,6 @@ export default function PagamentoBrick({
         // Brick — só depois de termos aberto o formulário sozinhos.
         data-metodo-embutido={metodoEmbutido ? 'sim' : undefined}
         className={processando ? 'vtx-processing' : undefined}
-      />
-      {pronto && (
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] font-light text-muted">
-          <Lock aria-hidden className="h-3 w-3" />
-          Não guardamos os dados do seu cartão.
-        </p>
-      )}
-    </div>
+      />    </div>
   )
 }

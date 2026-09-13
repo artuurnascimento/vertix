@@ -9,7 +9,6 @@ import {
   ID_CAMPO_NUMERO,
   ID_CAMPO_VALIDADE,
 } from './campos/mpCampos'
-import { avisoDeJuros } from './campos/parcelamento'
 import type { CampoIframe, EstadoCampo, FalhaCampos } from './campos/useCamposCartao'
 import type { Parcelamento } from './campos/useParcelamento'
 
@@ -70,8 +69,6 @@ interface Props {
   erroDocumento: string | null
 
   parcelamento: Parcelamento
-  /** Total do PEDIDO, sem juros. Só para a linha de aviso. */
-  totalCentavos: number
   /** Cobrança em curso: congela o que dá para congelar. */
   desabilitado: boolean
   /**
@@ -118,7 +115,6 @@ export default function FormularioCartao({
   erroTitular,
   erroDocumento,
   parcelamento,
-  totalCentavos,
   desabilitado,
   seletor,
 }: Props) {
@@ -141,8 +137,6 @@ export default function FormularioCartao({
           ? 'valido'
           : 'neutro',
   }
-
-  const opcaoSelecionada = parcelamento.opcaoSelecionada
 
   if (falha !== null) {
     return (
@@ -276,15 +270,6 @@ export default function FormularioCartao({
               className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
             />
           </div>
-
-          {/* A linha que evita chamado de suporte: a partir daqui a tela tem
-              dois números diferentes, e quem não explica o segundo recebe
-              ligação. */}
-          {opcaoSelecionada?.temJuros && (
-            <p className="mt-1.5 text-xs font-light text-muted">
-              {avisoDeJuros(totalCentavos)}
-            </p>
-          )}
         </div>
       </div>
 

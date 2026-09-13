@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
   amountEmReais,
-  avisoDeJuros,
   escolherPadrao,
   mapearOpcoes,
   opcaoAVista,
@@ -317,13 +316,5 @@ describe('amountEmReais', () => {
   test('nunca produz valor negativo nem fração de centavo', () => {
     expect(amountEmReais(-1)).toBe('0.00')
     expect(amountEmReais(19700.6)).toBe('197.01')
-  })
-})
-
-describe('avisoDeJuros', () => {
-  test('nomeia o valor que a Vertix cobra, não o do emissor', () => {
-    expect(avisoDeJuros(TOTAL)).toBe(
-      `Parcelas com juros do emissor. A Vertix cobra ${formatarCentavos(19700)}.`
-    )
   })
 })

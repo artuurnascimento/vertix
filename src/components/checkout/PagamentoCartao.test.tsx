@@ -193,9 +193,9 @@ describe('PagamentoCartao — envio', () => {
     expect(tokenSalvar).toBe('tok_salvar')
   })
 
-  it('avisa que os juros são do emissor quando a parcela tem juros', async () => {
-    // A partir daqui a tela mostra DOIS números (R$ 197,00 e R$ 240,56). Sem
-    // esta linha, a diferença vira chamado de suporte.
+  it('não explica juros nem promete nada abaixo do botão: só o select de parcelas', async () => {
+    // Os dois avisos ("Parcelas com juros do emissor…" e "Não guardamos os
+    // dados do seu cartão.") saíram a pedido: a tela mostra o select e o botão.
     montarTela({ onSubmit: vi.fn().mockResolvedValue(undefined) })
     await esperarCampos()
     preencherCartao()
@@ -204,14 +204,10 @@ describe('PagamentoCartao — envio', () => {
       () => expect(screen.getByRole('option', { name: /12 parcelas/i })).toBeTruthy(),
       { timeout: 3000 }
     )
-    // À vista não tem o que avisar.
-    expect(screen.queryByText(/juros do emissor/i)).toBeNull()
-
     await userEvent.selectOptions(screen.getByLabelText(/Parcelas/i), '12')
 
-    expect(
-      screen.getByText(/Parcelas com juros do emissor\. A Vertix cobra R\$ 197,00\./i)
-    ).toBeTruthy()
+    expect(screen.queryByText(/juros do emissor/i)).toBeNull()
+    expect(screen.queryByText(/guardamos os dados/i)).toBeNull()
   })
 
   it('duplo clique no mesmo quadro cobra uma vez só', async () => {
