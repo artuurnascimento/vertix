@@ -1,12 +1,16 @@
-import { useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 import {
   BarChart3,
   Boxes,
   Briefcase,
   CalendarDays,
-  ChevronDown,
-  ChevronRight,
   ClipboardList,
   Cog,
   FileSignature,
@@ -19,7 +23,6 @@ import {
   Magnet,
   Megaphone,
   Package,
-  Plus,
   Radar,
   Receipt,
   ScanSearch,
@@ -29,37 +32,66 @@ import {
   Users,
   Workflow,
   Wallet,
+  Menu,
+  X,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { MotionConfig } from 'framer-motion'
 import LogoMark from '../ui/LogoMark'
 import QuickSearch from './QuickSearch'
 import NotificationBell from './NotificationBell'
 import { useAuth } from '../../lib/auth'
+import '../../styles/vertix-admin.css'
 
-/* Menu por categoria: cada grupo tem um título pequeno e seus itens. */
 const NAV_GROUPS = [
   {
     titulo: null,
     icone: null,
-    itens: [{ to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true }],
+    itens: [
+      { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true },
+    ],
   },
   {
     titulo: 'Comercial',
     icone: Briefcase,
     itens: [
       { to: '/admin/clientes', label: 'Clientes', icon: Users, end: false },
-      { to: '/admin/briefings', label: 'Briefings', icon: ClipboardList, end: false },
-      { to: '/admin/propostas', label: 'Propostas', icon: FileText, end: false },
-      { to: '/admin/contratos', label: 'Contratos', icon: FileSignature, end: false },
+      {
+        to: '/admin/briefings',
+        label: 'Briefings',
+        icon: ClipboardList,
+        end: false,
+      },
+      {
+        to: '/admin/propostas',
+        label: 'Propostas',
+        icon: FileText,
+        end: false,
+      },
+      {
+        to: '/admin/contratos',
+        label: 'Contratos',
+        icon: FileSignature,
+        end: false,
+      },
     ],
   },
   {
     titulo: 'Operação',
     icone: Workflow,
     itens: [
-      { to: '/admin/projetos', label: 'Projetos', icon: KanbanSquare, end: false },
+      {
+        to: '/admin/projetos',
+        label: 'Projetos',
+        icon: KanbanSquare,
+        end: false,
+      },
       { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays, end: false },
-      { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
+      {
+        to: '/admin/financeiro',
+        label: 'Financeiro',
+        icon: Wallet,
+        end: false,
+      },
       { to: '/admin/suporte', label: 'Suporte', icon: LifeBuoy, end: false },
     ],
   },
@@ -68,7 +100,12 @@ const NAV_GROUPS = [
     icone: Magnet,
     itens: [
       { to: '/admin/scan', label: 'Vertix Scan', icon: Radar, end: false },
-      { to: '/admin/leads-raiox', label: 'Leads Raio-X', icon: ScanSearch, end: false },
+      {
+        to: '/admin/leads-raiox',
+        label: 'Leads Raio-X',
+        icon: ScanSearch,
+        end: false,
+      },
       { to: '/admin/trafego', label: 'Tráfego', icon: Megaphone, end: false },
       { to: '/admin/bio', label: 'Link de bio', icon: Link2, end: false },
     ],
@@ -79,7 +116,12 @@ const NAV_GROUPS = [
     itens: [
       { to: '/admin/lojas', label: 'Lojas', icon: Store, end: false },
       { to: '/admin/produtos', label: 'Produtos', icon: Boxes, end: false },
-      { to: '/admin/checkouts', label: 'Checkouts', icon: ShoppingCart, end: false },
+      {
+        to: '/admin/checkouts',
+        label: 'Checkouts',
+        icon: ShoppingCart,
+        end: false,
+      },
       { to: '/admin/pedidos', label: 'Pedidos', icon: Receipt, end: false },
     ],
   },
@@ -87,279 +129,243 @@ const NAV_GROUPS = [
     titulo: 'Sistema',
     icone: Cog,
     itens: [
-      { to: '/admin/relatorios', label: 'Relatórios', icon: BarChart3, end: false },
-      { to: '/admin/configuracoes', label: 'Configurações', icon: Settings, end: false },
+      {
+        to: '/admin/relatorios',
+        label: 'Relatórios',
+        icon: BarChart3,
+        end: false,
+      },
+      {
+        to: '/admin/configuracoes',
+        label: 'Configurações',
+        icon: Settings,
+        end: false,
+      },
     ],
   },
 ] as const
 
-const SECTION_TITLES: Record<string, string> = {
-  '/admin/clientes': 'Clientes',
-  '/admin/projetos': 'Projetos',
-  '/admin/agenda': 'Agenda',
-  '/admin/briefings': 'Briefings',
-  '/admin/propostas': 'Propostas',
-  '/admin/contratos': 'Contratos',
-  '/admin/financeiro': 'Financeiro',
-  '/admin/trafego': 'Tráfego',
-  '/admin/lojas': 'Lojas',
-  '/admin/produtos': 'Produtos',
-  '/admin/checkouts': 'Checkouts',
-  '/admin/pedidos': 'Pedidos',
-  '/admin/leads-raiox': 'Leads Raio-X',
-  '/admin/scan': 'Vertix Scan',
-  '/admin/bio': 'Link de bio',
-  '/admin/relatorios': 'Relatórios',
-  '/admin/suporte': 'Suporte',
-  '/admin/configuracoes': 'Configurações',
-}
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Admin',
-  colaborador: 'Colaborador',
-}
-
-const ATALHOS = [
-  { to: '/admin/clientes', label: 'Novo cliente' },
-  { to: '/admin/projetos', label: 'Novo projeto' },
-  { to: '/admin/briefings', label: 'Novo briefing' },
-  { to: '/admin/propostas', label: 'Nova proposta' },
-] as const
-
-/** Grupos fechados pela pessoa, guardados entre sessões. */
-const CHAVE_GRUPOS = 'vertix-admin:grupos-fechados'
-
-function lerGruposFechados(): string[] {
-  try {
-    const bruto = localStorage.getItem(CHAVE_GRUPOS)
-    const lista: unknown = bruto ? JSON.parse(bruto) : []
-    return Array.isArray(lista) ? lista.filter((x) => typeof x === 'string') : []
-  } catch {
-    return []
-  }
-}
+const TOP_NAV = [
+  { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, end: true },
+  { to: '/admin/clientes', label: 'Comercial', icon: Users, end: false },
+  { to: '/admin/projetos', label: 'Operação', icon: KanbanSquare, end: false },
+  { to: '/admin/financeiro', label: 'Financeiro', icon: Wallet, end: false },
+  { to: '/admin/scan', label: 'Captação', icon: Radar, end: false },
+]
 
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
-  const location = useLocation()
+  useEffect(() => {
+    document.body.classList.add('vx-admin-theme')
+    return () => document.body.classList.remove('vx-admin-theme')
+  }, [])
+  const { pathname } = useLocation()
   const navigate = useNavigate()
-  const [fechados, setFechados] = useState<string[]>(lerGruposFechados)
-
-  const alternarGrupo = (titulo: string) => {
-    setFechados((atual) => {
-      const novo = atual.includes(titulo)
-        ? atual.filter((t) => t !== titulo)
-        : [...atual, titulo]
-      try {
-        localStorage.setItem(CHAVE_GRUPOS, JSON.stringify(novo))
-      } catch {
-        // Modo privado restrito: só não guarda a preferência.
-      }
-      return novo
-    })
-  }
-
+  const menu = useRef<HTMLDialogElement>(null)
+  const [signOutError, setSignOutError] = useState(false)
+  const currentGroup = NAV_GROUPS.find((g) =>
+    g.itens.some((i) => (i.end ? pathname === i.to : pathname.startsWith(i.to)))
+  )
   const sectionTitle =
-    Object.entries(SECTION_TITLES).find(([path]) =>
-      location.pathname.startsWith(path)
-    )?.[1] ?? 'Visão geral'
-  const isAdmin = profile?.role === 'admin'
-
+    currentGroup?.itens.find((i) =>
+      i.end ? pathname === i.to : pathname.startsWith(i.to)
+    )?.label ?? 'Visão geral'
+  const isGroupActive = (label: string) =>
+    label === 'Financeiro'
+      ? pathname.startsWith('/admin/financeiro')
+      : label === 'Operação'
+        ? currentGroup?.titulo === 'Operação' &&
+          !pathname.startsWith('/admin/financeiro')
+        : label === 'Visão geral'
+          ? pathname === '/admin'
+          : currentGroup?.titulo === label
   const handleSignOut = async () => {
-    await signOut()
-    navigate('/login', { replace: true })
+    try {
+      await signOut()
+      navigate('/login', { replace: true })
+    } catch {
+      setSignOutError(true)
+    }
   }
-
+  const openMenu = () => menu.current?.showModal()
+  const closeMenu = () => menu.current?.close()
   return (
-    <div className="flex min-h-screen bg-bg font-kanit text-ink">
-      <div aria-hidden className="app-ambient pointer-events-none fixed inset-0" />
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-20 flex w-16 flex-col border-r border-white/5 bg-surface-1 md:w-60">
-        <div className="flex items-center gap-3 px-4 py-6 md:px-6">
-          <LogoMark className="h-8 w-8 shrink-0" />
-          <span className="hidden flex-col leading-none md:flex">
-            <span className="text-lg font-bold uppercase tracking-[0.25em] text-ink">
-              Vertix
-            </span>
-            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-accent">
-              Admin
-            </span>
-          </span>
-        </div>
-
-        <nav
-          aria-label="Navegação principal"
-          className="mt-4 flex flex-1 flex-col gap-1 px-2 md:px-3"
-        >
-          {NAV_GROUPS.map((grupo) => {
-            // O grupo da página aberta nunca fica escondido.
-            const temRotaAtiva = grupo.itens.some(({ to, end }) =>
-              end ? location.pathname === to : location.pathname.startsWith(to)
-            )
-            const aberto =
-              grupo.titulo == null ||
-              temRotaAtiva ||
-              !fechados.includes(grupo.titulo)
-            return (
-            <div key={grupo.titulo ?? 'inicio'} className="flex flex-col gap-1">
-              {grupo.titulo && (
-                <button
-                  type="button"
-                  onClick={() => alternarGrupo(grupo.titulo)}
-                  aria-expanded={aberto}
-                  aria-label={
-                    aberto ? `Recolher ${grupo.titulo}` : `Abrir ${grupo.titulo}`
-                  }
-                  className="group relative mt-3 hidden w-full items-center gap-3 rounded-xl border border-accent/25 bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent transition-all duration-200 hover:border-accent/50 hover:bg-accent/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent md:flex"
-                >
-                  {grupo.icone && (
-                    <grupo.icone className="h-5 w-5 shrink-0" />
-                  )}
-                  {grupo.titulo}
-                  <ChevronDown
-                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                      aberto ? '' : '-rotate-90'
-                    }`}
-                  />
-                </button>
-              )}
-              {grupo.titulo && <span aria-hidden="true" className="mt-3 h-px bg-white/5 md:hidden" />}
-          {grupo.itens.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              title={label}
-              className={({ isActive }) =>
-                [
-                  'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                  // Grupo recolhido some só na barra larga; na estreita (só
-                  // ícones) não há título para reabrir, então tudo continua.
-                  aberto ? '' : 'md:hidden',
-                  isActive
-                    ? 'bg-gradient-to-r from-accent to-accent-2 text-white shadow-[0_4px_24px_rgba(108,91,242,0.4)]'
-                    : 'text-muted hover:bg-white/5 hover:text-ink',
-                ].join(' ')
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon
-                    className={[
-                      'h-5 w-5 shrink-0 transition-colors duration-200',
-                      isActive
-                        ? 'text-white'
-                        : 'text-muted group-hover:text-ink',
-                    ].join(' ')}
-                  />
-                  <span className="hidden md:inline">{label}</span>
-                  {isActive && (
-                    <ChevronRight className="ml-auto hidden h-4 w-4 text-white/70 md:block" />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
+    <MotionConfig reducedMotion="user">
+      <div className="vx-admin min-h-screen text-ink">
+        <div className="vx-atmosphere" aria-hidden="true" />
+        <a href="#main-content" className="vx-skip">
+          Pular para o conteúdo
+        </a>
+        <header className="vx-header">
+          <Link
+            to="/admin"
+            className="vx-brand"
+            aria-label="Vertix — visão geral"
+          >
+            <LogoMark className="h-8 w-7" />
+            <span>VERTIX</span>
+          </Link>
+          <nav className="vx-topnav" aria-label="Áreas do sistema">
+            {TOP_NAV.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={isGroupActive(item.label) ? 'is-active' : ''}
+                aria-current={isGroupActive(item.label) ? 'true' : undefined}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="vx-header-tools">
+            <div className="vx-search">
+              <QuickSearch />
             </div>
-            )
-          })}
-        </nav>
-
-        {/* Atalhos rápidos */}
-        <div className="hidden px-3 pb-4 md:block">
-          <div className="rounded-xl border border-white/5 bg-surface-2/60 p-3">
-            <p className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted/70">
-              Atalhos rápidos
-            </p>
-            <div className="flex flex-col gap-0.5">
-              {ATALHOS.map(({ to, label }) => (
-                <Link
-                  key={label}
-                  to={to}
-                  className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-muted transition-colors duration-200 hover:bg-accent/10 hover:text-ink"
-                >
-                  <Plus className="h-3.5 w-3.5 text-accent/70 transition-transform duration-200 group-hover:scale-110" />
-                  {label}
-                  <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Usuário */}
-        <div className="hidden border-t border-white/5 px-4 py-4 md:flex md:items-center md:gap-3">
-          <span className="relative shrink-0">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-accent ring-2 ring-accent/30">
-              {(profile?.nome ?? '?').charAt(0).toUpperCase()}
-            </span>
-            <span
-              aria-hidden
-              className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-1 bg-emerald-400"
-            />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium leading-tight text-ink">
-              {profile?.nome}
-            </p>
-            <p className="text-[11px] font-light text-muted">
-              {ROLE_LABELS[profile?.role ?? ''] ?? profile?.role}
-            </p>
-          </div>
-        </div>
-      </aside>
-
-      {/* Conteúdo */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-clip pl-16 md:pl-60">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-bg/80 px-6 py-4 backdrop-blur md:px-10">
-          <h2 className="shrink-0 text-base font-semibold text-ink">
-            {sectionTitle}
-          </h2>
-
-          <div className="hidden flex-1 justify-center px-6 md:flex">
-            <QuickSearch />
-          </div>
-
-          <div className="flex items-center gap-3">
             <NotificationBell />
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight text-ink">
-                {profile?.nome}
-              </p>
-            </div>
-            <span
-              className={[
-                'rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest',
-                isAdmin
-                  ? 'border-accent/25 bg-accent/10 text-accent'
-                  : 'border-white/10 bg-white/5 text-muted',
-              ].join(' ')}
-            >
-              {ROLE_LABELS[profile?.role ?? ''] ?? profile?.role}
-            </span>
             <button
               type="button"
-              onClick={handleSignOut}
-              title="Sair"
-              aria-label="Sair"
-              className="rounded-lg p-2 text-muted transition-colors duration-200 hover:bg-white/5 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              className="vx-avatar"
+              onClick={openMenu}
+              aria-label="Abrir conta e menu"
             >
-              <LogOut className="h-4 w-4" />
+              {(profile?.nome ?? '?')
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((n) => n[0])
+                .join('')}
             </button>
           </div>
         </header>
-
-        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10 md:px-10 md:py-14">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        <aside className="vx-rail" aria-label="Atalhos">
+          {TOP_NAV.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              title={label}
+              aria-label={label}
+              className={isGroupActive(label) ? 'is-active' : ''}
+            >
+              <Icon size={22} />
+            </Link>
+          ))}
+          <Link to="/admin/agenda" title="Agenda" aria-label="Agenda">
+            <CalendarDays size={22} />
+          </Link>
+          <button
+            type="button"
+            onClick={openMenu}
+            aria-label="Todos os módulos"
+            title="Todos os módulos"
           >
-            <Outlet />
-          </motion.div>
+            <Menu size={22} />
+          </button>
+          <Link
+            to="/admin/configuracoes"
+            className="vx-rail-settings"
+            title="Configurações"
+            aria-label="Configurações"
+          >
+            <Settings size={22} />
+          </Link>
+        </aside>
+        <main id="main-content" className="vx-main" tabIndex={-1}>
+          {pathname !== '/admin' && (
+            <div className="vx-section-nav">
+              <span>{sectionTitle}</span>
+              <nav aria-label="Módulos desta área">
+                {currentGroup?.itens.map((i) => (
+                  <NavLink key={i.to} to={i.to} end={i.end}>
+                    {i.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          )}
+          <Outlet />
         </main>
+        <nav className="vx-bottom-nav" aria-label="Navegação mobile">
+          <NavLink to="/admin" end>
+            <LayoutDashboard />
+            <span>Início</span>
+          </NavLink>
+          <Link
+            to="/admin/clientes"
+            className={currentGroup?.titulo === 'Comercial' ? 'active' : ''}
+          >
+            <Users />
+            <span>Comercial</span>
+          </Link>
+          <Link
+            to="/admin/projetos"
+            className={pathname.startsWith('/admin/projetos') ? 'active' : ''}
+          >
+            <KanbanSquare />
+            <span>Projetos</span>
+          </Link>
+          <button type="button" onClick={openMenu}>
+            <Menu />
+            <span>Mais</span>
+          </button>
+        </nav>
+        <dialog
+          ref={menu}
+          aria-label="Todos os módulos"
+          className="vx-menu"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeMenu()
+          }}
+        >
+          <div className="vx-menu-heading">
+            <div>
+              <h2>Seu workspace</h2>
+              <p>
+                {profile?.nome} ·{' '}
+                {profile?.role === 'admin' ? 'Admin' : 'Colaborador'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={closeMenu}
+              className="vx-icon-button"
+              aria-label="Fechar menu"
+            >
+              <X />
+            </button>
+          </div>
+          <QuickSearch />
+          <nav
+            aria-label="Todos os módulos"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('a')) closeMenu()
+            }}
+          >
+            {NAV_GROUPS.map((g) => (
+              <section key={g.titulo ?? 'inicio'}>
+                <h3>{g.titulo ?? 'Workspace'}</h3>
+                <div>
+                  {g.itens.map(({ to, label, icon: Icon, end }) => (
+                    <NavLink key={to} to={to} end={end}>
+                      <Icon size={19} />
+                      {label}
+                    </NavLink>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </nav>
+          <button
+            type="button"
+            className="vx-quiet-button"
+            onClick={handleSignOut}
+          >
+            <LogOut size={18} /> Sair da conta
+          </button>
+          {signOutError && (
+            <p role="alert">Não foi possível sair. Tente novamente.</p>
+          )}
+        </dialog>
       </div>
-    </div>
+    </MotionConfig>
   )
 }

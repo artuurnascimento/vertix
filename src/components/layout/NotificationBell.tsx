@@ -204,7 +204,7 @@ export default function NotificationBell() {
             exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.95, y: -8 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             style={{ transformOrigin: 'top right' }}
-            className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-white/10 bg-surface-1 shadow-2xl shadow-black/60 sm:w-96"
+            className="vx-notifications absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-white/10 bg-surface-1 shadow-2xl shadow-black/60 sm:w-96"
           >
             <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
               <h3 className="text-sm font-semibold text-ink">Notificações</h3>

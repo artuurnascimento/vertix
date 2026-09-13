@@ -39,7 +39,8 @@ test.describe('Autenticação', () => {
 
   test('botão Sair volta para a tela de login', async ({ page }) => {
     await loginAsAdmin(page)
-    await page.getByRole('button', { name: 'Sair' }).click()
+    await page.getByRole('button', { name: 'Abrir conta e menu' }).click()
+    await page.getByRole('button', { name: 'Sair da conta' }).click()
     await expect(page).toHaveURL('/')
     await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible()
   })

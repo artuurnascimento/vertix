@@ -35,7 +35,7 @@ export default function KanbanColumn({
       }}
       aria-label={`Coluna ${meta.label}`}
       className={[
-        'flex h-full w-[300px] shrink-0 flex-col rounded-2xl border transition-colors duration-150',
+        'flex h-full w-[min(300px,calc(100vw-48px))] shrink-0 flex-col rounded-2xl border transition-colors duration-150',
         isOver
           ? 'border-accent/30 bg-accent/5 ring-1 ring-accent/30'
           : 'border-white/5 bg-surface-1',

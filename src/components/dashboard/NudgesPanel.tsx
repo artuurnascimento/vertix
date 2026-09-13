@@ -20,7 +20,11 @@ const SEVERIDADE_DOT: Record<string, string> = {
 export default function NudgesPanel() {
   const queryClient = useQueryClient()
 
-  const { data: nudges, isLoading } = useQuery({
+  const {
+    data: nudges,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['nudges'],
     queryFn: async (): Promise<Nudge[]> => {
       const { data, error } = await supabase
@@ -51,7 +55,9 @@ export default function NudgesPanel() {
     <section className="flex h-full flex-col rounded-2xl border border-white/5 bg-surface-1 p-5">
       <div className="flex items-center gap-2">
         <BellRing className="h-4 w-4 text-accent" />
-        <h2 className="text-sm font-semibold text-ink">Precisa de um empurrão</h2>
+        <h2 className="text-sm font-semibold text-ink">
+          Precisa de um empurrão
+        </h2>
         {nudges && nudges.length > 0 && (
           <span className="ml-auto rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium tabular-nums text-accent">
             {nudges.length}
@@ -62,9 +68,16 @@ export default function NudgesPanel() {
       {isLoading ? (
         <div className="mt-4 space-y-2">
           {Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-2" />
+            <div
+              key={i}
+              className="h-12 animate-pulse rounded-lg bg-surface-2"
+            />
           ))}
         </div>
+      ) : isError ? (
+        <p role="alert" className="mt-4 text-sm text-red-400">
+          Não foi possível carregar os alertas.
+        </p>
       ) : !nudges || nudges.length === 0 ? (
         <div className="mt-6 flex flex-1 flex-col items-center justify-center text-center">
           <Check className="h-7 w-7 text-emerald-400/70" />
@@ -78,7 +91,9 @@ export default function NudgesPanel() {
             const dot = SEVERIDADE_DOT[n.severidade] ?? 'bg-white/40'
             const conteudo = (
               <div className="flex items-start gap-2.5">
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dot}`} />
+                <span
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dot}`}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-ink">
                     {n.titulo}

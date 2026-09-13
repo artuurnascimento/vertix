@@ -51,7 +51,8 @@ function motivo(row: HealthRow): string | null {
     return `${row.projetos_parados} projeto(s) parado(s)`
   if (row.ultimo_nps !== null && row.ultimo_nps <= 6)
     return `NPS ${row.ultimo_nps}`
-  if (row.tickets_abertos > 0) return `${row.tickets_abertos} chamado(s) aberto(s)`
+  if (row.tickets_abertos > 0)
+    return `${row.tickets_abertos} chamado(s) aberto(s)`
   return null
 }
 
@@ -66,7 +67,7 @@ export default function ClientHealthCard({
   onlyAtRisk = false,
   limit = 6,
 }: ClientHealthCardProps) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['client-health'],
     queryFn: async (): Promise<HealthRow[]> => {
       const { data, error } = await supabase
@@ -92,9 +93,16 @@ export default function ClientHealthCard({
       {isLoading ? (
         <div className="mt-4 space-y-2">
           {Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-2" />
+            <div
+              key={i}
+              className="h-12 animate-pulse rounded-lg bg-surface-2"
+            />
           ))}
         </div>
+      ) : isError ? (
+        <p role="alert" className="mt-4 text-sm text-red-400">
+          Não foi possível carregar a saúde da carteira.
+        </p>
       ) : linhas.length === 0 ? (
         <p className="mt-6 flex-1 text-center text-sm font-light text-muted">
           {onlyAtRisk
@@ -115,7 +123,9 @@ export default function ClientHealthCard({
                   <div
                     className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-full border ${meta.ring}`}
                   >
-                    <span className={`text-sm font-bold tabular-nums ${meta.text}`}>
+                    <span
+                      className={`text-sm font-bold tabular-nums ${meta.text}`}
+                    >
                       {row.score}
                     </span>
                   </div>

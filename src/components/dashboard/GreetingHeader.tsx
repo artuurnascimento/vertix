@@ -1,41 +1,51 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../lib/auth'
 
-const MORNING_END_HOUR = 12
-const AFTERNOON_END_HOUR = 18
-
-/** Saudação por hora local — "Bom dia," / "Boa tarde," / "Boa noite,". */
-function greetingForHour(hour: number): string {
-  if (hour < MORNING_END_HOUR) return 'Bom dia'
-  if (hour < AFTERNOON_END_HOUR) return 'Boa tarde'
-  return 'Boa noite'
-}
-
-/** Primeiro nome a partir do nome completo do profile. */
-function firstNameOf(fullName: string | null | undefined): string | null {
-  if (!fullName) return null
-  const trimmed = fullName.trim()
-  if (trimmed === '') return null
-  return trimmed.split(/\s+/)[0]
-}
-
-/**
- * Topo do dashboard — eyebrow com saudação viva + nome, h1 fixo "Visão geral"
- * (contrato E2E: texto e nível do heading não podem mudar).
- */
 export default function GreetingHeader() {
   const { profile } = useAuth()
-  const greeting = greetingForHour(new Date().getHours())
-  const firstName = firstNameOf(profile?.nome)
-
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(timer)
+  }, [])
+  const greeting =
+    now.getHours() < 12
+      ? 'Bom dia'
+      : now.getHours() < 18
+        ? 'Boa tarde'
+        : 'Boa noite'
+  const name = profile?.nome?.trim().split(/\s+/)[0]
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-muted/70">
-        {greeting}
-        {firstName ? `, ${firstName}` : ','}
-      </p>
-      <h1 className="hero-heading font-kanit text-2xl font-bold leading-tight sm:text-3xl">
-        Visão geral
-      </h1>
+    <div className="vx-greeting">
+      <div>
+        <h1 className="sr-only">Visão geral</h1>
+        <p className="vx-greeting-title">
+          {greeting}
+          {name && (
+            <>
+              , <span>{name}</span>
+            </>
+          )}
+        </p>
+        <p className="vx-greeting-subtitle">
+          Sua operação conectada, do primeiro contato à entrega.
+        </p>
+      </div>
+      <div className="vx-clock">
+        <time dateTime={now.toISOString()}>
+          {now.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </time>
+        <span>
+          {now.toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          })}
+        </span>
+      </div>
     </div>
   )
 }
