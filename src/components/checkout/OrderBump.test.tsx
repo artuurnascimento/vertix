@@ -47,6 +47,35 @@ describe('OrderBump', () => {
     expect(source).toHaveAttribute('srcset', 'https://cdn/bump-d.webp')
   })
 
+  test('com imagem, a arte substitui o texto: fica a caixa, o rótulo e o preço', () => {
+    render(
+      <OrderBump
+        bump={{
+          ...BUMP,
+          imagem: {
+            desktop: { url: 'https://cdn/bump-d.webp', largura: 1400, altura: 500 },
+            mobile: { url: 'https://cdn/bump-m.webp', largura: 780, altura: 600 },
+            alt: '',
+          },
+        }}
+        marcado={false}
+        onChange={vi.fn()}
+      />
+    )
+
+    // Nada de título visível nem lista de benefícios: a copy está na arte.
+    expect(screen.queryByRole('list')).toBeNull()
+    expect(screen.queryByText('Mais contexto de mercado')).toBeNull()
+    expect(screen.getByText('Adicione ao pedido')).toBeInTheDocument()
+    expect(screen.getByText('R$ 97,00')).toBeInTheDocument()
+    expect(screen.getByText('R$ 197,00')).toBeInTheDocument()
+
+    // Mas quem não vê a arte ainda sabe o que está marcando.
+    const caixa = screen.getByRole('checkbox')
+    expect(caixa).toHaveAccessibleDescription(/Quer ver mais 3 concorrentes\?/)
+    expect(caixa).toHaveAccessibleDescription(/Mais contexto de mercado/)
+  })
+
   test('só uma arte serve nos dois tamanhos, sem <source>', () => {
     const { container } = render(
       <OrderBump

@@ -30,10 +30,14 @@ interface Props {
   onImagem?: (atualizar: (atual: Banner) => Banner) => void
 }
 
-/** Medidas sugeridas para a arte do bump — o card tem ~700px no desktop e uma coluna no celular. */
+/**
+ * Medidas sugeridas para a arte do bump. Como a arte substitui o texto, ela
+ * precisa de altura para a copy: o card tem ~700px no desktop e uma coluna
+ * no celular.
+ */
 const DICAS_IMAGEM: Record<VarianteBanner, string> = {
-  desktop: '1400 × 400',
-  mobile: '780 × 440',
+  desktop: '1400 × 500',
+  mobile: '780 × 600',
 }
 
 /**
@@ -116,9 +120,11 @@ export default function OfertaBloco({
               <div>
                 <span className={labelClass}>Imagem do bump</span>
                 <p className="mt-1 text-xs font-light leading-relaxed text-muted">
-                  Opcional. Aparece no topo do card, acima do título — uma arte
-                  para desktop e outra para celular. Sem imagem, o card fica
-                  como hoje.
+                  Opcional. Com imagem, a arte SUBSTITUI o título e o texto no
+                  card: a página mostra a arte, a caixa de marcar e o preço —
+                  então a copy precisa estar desenhada nela. Uma arte para
+                  desktop e outra para celular. O título e o texto acima
+                  continuam servindo de descrição para leitores de tela.
                 </p>
               </div>
               <ImagensResponsivas
