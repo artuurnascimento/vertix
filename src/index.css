@@ -805,6 +805,15 @@ body {
 .vx-cronometro-pulso {
   animation: vx-cronometro-pulso 1s ease-in-out infinite;
 }
+/* Esgotado: o 00:00 pisca de verdade, para ninguém achar que a página travou. */
+.vx-cronometro-pisca {
+  animation: vx-cronometro-pisca 1s steps(1, end) infinite;
+}
+@keyframes vx-cronometro-pisca {
+  50% {
+    opacity: 0.25;
+  }
+}
 @keyframes vx-cronometro-toque {
   0%,
   70%,
@@ -840,7 +849,8 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .vx-cronometro-sino,
-  .vx-cronometro-pulso {
+  .vx-cronometro-pulso,
+  .vx-cronometro-pisca {
     animation: none;
   }
   .vx-cronometro-barra {

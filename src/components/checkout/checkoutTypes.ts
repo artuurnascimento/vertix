@@ -108,7 +108,7 @@ export interface CheckoutInfo {
   cronometroAte: string | null
   /**
    * Cronômetro por visitante, em minutos: a contagem começa na primeira
-   * abertura, fica no navegador e recomeça ao zerar. Quando existe, vale
+   * abertura, fica no navegador e trava em 00:00 ao zerar. Quando existe, vale
    * ele — o painel só grava um dos dois modos.
    */
   cronometroMinutos: number | null

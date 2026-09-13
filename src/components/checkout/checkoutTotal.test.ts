@@ -7,7 +7,7 @@ import {
   formatarContagem,
   normalizarPercentualMetodo,
   resolverTotal,
-  restanteEmLoopMs,
+  restanteDoVisitanteMs,
   restanteMs,
 } from './checkoutTotal'
 import { normalizarCheckout } from './checkoutTypes'
@@ -134,29 +134,28 @@ describe('restanteMs', () => {
   })
 })
 
-describe('restanteEmLoopMs — cronômetro por visitante', () => {
+describe('restanteDoVisitanteMs — cronômetro por visitante', () => {
   const inicio = new Date('2026-09-07T12:00:00.000Z').getTime()
   const MIN = 60_000
 
   test('conta a partir da primeira abertura', () => {
-    expect(restanteEmLoopMs(inicio, 15, inicio)).toBe(15 * MIN)
-    expect(restanteEmLoopMs(inicio, 15, inicio + 5 * MIN)).toBe(10 * MIN)
+    expect(restanteDoVisitanteMs(inicio, 15, inicio)).toBe(15 * MIN)
+    expect(restanteDoVisitanteMs(inicio, 15, inicio + 5 * MIN)).toBe(10 * MIN)
   })
 
-  test('ao zerar, recomeça do topo em vez de virar null', () => {
-    expect(restanteEmLoopMs(inicio, 15, inicio + 15 * MIN)).toBe(15 * MIN)
-    expect(restanteEmLoopMs(inicio, 15, inicio + 16 * MIN)).toBe(14 * MIN)
-    // Três ciclos e meio depois, está na metade do quarto.
-    expect(restanteEmLoopMs(inicio, 10, inicio + 35 * MIN)).toBe(5 * MIN)
+  test('ao zerar, fica em zero — não recomeça nem vira null', () => {
+    expect(restanteDoVisitanteMs(inicio, 15, inicio + 15 * MIN)).toBe(0)
+    expect(restanteDoVisitanteMs(inicio, 15, inicio + 16 * MIN)).toBe(0)
+    expect(restanteDoVisitanteMs(inicio, 10, inicio + 35 * MIN)).toBe(0)
   })
 
   test('início no futuro (relógio mexido) conta como agora', () => {
-    expect(restanteEmLoopMs(inicio + 60 * MIN, 15, inicio)).toBe(15 * MIN)
+    expect(restanteDoVisitanteMs(inicio + 60 * MIN, 15, inicio)).toBe(15 * MIN)
   })
 
   test('sem minutos válidos não há cronômetro', () => {
-    expect(restanteEmLoopMs(inicio, 0, inicio)).toBeNull()
-    expect(restanteEmLoopMs(inicio, Number.NaN, inicio)).toBeNull()
+    expect(restanteDoVisitanteMs(inicio, 0, inicio)).toBeNull()
+    expect(restanteDoVisitanteMs(inicio, Number.NaN, inicio)).toBeNull()
   })
 })
 

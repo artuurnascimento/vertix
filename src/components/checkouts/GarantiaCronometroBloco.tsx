@@ -35,7 +35,7 @@ const MODOS: ReadonlyArray<{ valor: CronometroModo; titulo: string; descricao: s
   {
     valor: 'minutos',
     titulo: 'Minutos por visitante',
-    descricao: 'Cada pessoa vê a contagem a partir da primeira abertura; ao zerar, recomeça.',
+    descricao: 'Cada pessoa vê a contagem a partir da primeira abertura; ao zerar, fica em 00:00.',
   },
 ]
 
@@ -95,7 +95,7 @@ export default function GarantiaCronometroBloco({
 
       <Bloco
         titulo="Cronômetro"
-        ajuda="Dois jeitos de contar. Data e hora de fim: prazo real, igual para todo mundo — passou, o contador some. Minutos por visitante: cada pessoa vê N minutos a partir da primeira abertura e a contagem recomeça ao zerar."
+        ajuda="Dois jeitos de contar. Data e hora de fim: prazo real, igual para todo mundo — passou, o contador some. Minutos por visitante: cada pessoa vê N minutos a partir da primeira abertura e, ao zerar, a faixa fica em 00:00 piscando."
       >
         <div
           role="radiogroup"
@@ -171,7 +171,7 @@ export default function GarantiaCronometroBloco({
             <span className="inline-flex items-center gap-1.5 text-xs font-light text-muted">
               <Clock aria-hidden className="h-3.5 w-3.5" />
               A contagem começa na primeira abertura da página e fica guardada no
-              navegador da pessoa — recarregar não zera. Ao chegar a zero, recomeça.
+              navegador da pessoa — recarregar não zera. Ao chegar a zero, fica em 00:00 piscando.
               Deixe vazio para vender sem cronômetro.
             </span>
             {erroCronometro && (

@@ -10,11 +10,12 @@ const ULTIMO_MINUTO_MS = 60_000
  * ponta: o tempo grande, o despertador que "toca" de vez em quando e a
  * frase. Embaixo, uma linha fina mostra o tempo se esgotando (só no modo
  * por visitante, que tem um total conhecido); no último minuto os dígitos
- * pulsam. Tudo respeita `prefers-reduced-motion` (ver index.css).
+ * pulsam e, esgotado, o 00:00 fica piscando. Tudo respeita
+ * `prefers-reduced-motion` (ver index.css).
  *
  * No modo de data, se o prazo já passou o componente não renderiza NADA —
  * sem zerar, sem reiniciar. No modo por visitante (minutos), a contagem
- * parte da primeira abertura e recomeça ao zerar; é o dono da oferta quem
+ * parte da primeira abertura e trava em 00:00; é o dono da oferta quem
  * escolhe o modo, e o painel diz o que cada um faz.
  */
 export default function Cronometro({
@@ -28,11 +29,13 @@ export default function Cronometro({
   const total = fonte.minutos ? fonte.minutos * 60_000 : null
   const fracao = total ? Math.min(Math.max(restante / total, 0), 1) : null
   const urgente = restante <= ULTIMO_MINUTO_MS
+  const esgotado = restante === 0
 
   return (
     <div
       data-testid="cronometro"
       data-urgente={urgente || undefined}
+      data-esgotado={esgotado || undefined}
       className="vx-cronometro relative isolate flex items-center justify-center gap-5 overflow-hidden bg-gradient-to-r from-accent-2 via-accent to-[#8f7aff] px-4 py-3 text-white shadow-[0_10px_34px_-14px_rgba(108,91,242,0.85)] sm:gap-8 sm:py-3.5"
     >
       {/* Brilho diagonal parado: dá volume à faixa sem chamar atenção. */}
@@ -45,7 +48,7 @@ export default function Cronometro({
       <p
         aria-label={`Tempo restante: ${contagem.descricao}`}
         className={`text-2xl font-semibold leading-none tabular-nums tracking-[0.08em] sm:text-[28px] ${
-          urgente ? 'vx-cronometro-pulso' : ''
+          esgotado ? 'vx-cronometro-pisca' : urgente ? 'vx-cronometro-pulso' : ''
         }`}
       >
         <span aria-hidden>{contagem.compacta}</span>

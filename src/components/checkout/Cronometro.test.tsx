@@ -40,6 +40,15 @@ describe('Cronometro', () => {
     expect(faixa.querySelector('.vx-cronometro-barra')).toBeNull()
   })
 
+  test('esgotado, mostra 00:00 piscando em vez de sumir ou recomeçar', () => {
+    relogio.restante = 0
+    render(<Cronometro ate={null} minutos={15} slug="plano" />)
+    const faixa = screen.getByTestId('cronometro')
+    expect(faixa).toHaveTextContent('00:00')
+    expect(faixa).toHaveAttribute('data-esgotado', 'true')
+    expect(screen.getByLabelText('Tempo restante: 0 minutos, 0 segundos')).toHaveClass('vx-cronometro-pisca')
+  })
+
   test('a frase vem do painel; vazia, cai no padrão', () => {
     relogio.restante = 30_000
     const { rerender } = render(<Cronometro ate={null} minutos={15} slug="plano" texto="Preço de lançamento acaba em" />)
