@@ -79,6 +79,9 @@ export interface Checkout {
   cronometro_minutos: number | null
   /** Frase ao lado do cronômetro na página; null = "Oferta por tempo limitado". */
   cronometro_texto: string | null
+  /** Cores da faixa do cronômetro (#rrggbb); null = roxo da Vertix / branco. */
+  cronometro_cor_fundo: string | null
+  cronometro_cor_texto: string | null
   /**
    * Como o bloco "Seu pedido" nasce na página pública: `false` (padrão do
    * banco) recolhido, `true` aberto. Depois de carregada a página, quem manda
@@ -96,7 +99,7 @@ export type CheckoutPayload = Omit<
 > & { prova: Prova; banner: Banner; bump_imagem: Banner }
 
 const COLUNAS =
-  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, bump_imagem, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, banner, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, cronometro_minutos, cronometro_texto, resumo_aberto, ativo, created_at, updated_at'
+  'id, produto_id, slug, titulo, subtitulo, bump_produto_id, bump_titulo, bump_texto, bump_imagem, upsell_produto_id, upsell_titulo, upsell_texto, downsell_produto_id, downsell_titulo, downsell_texto, prova, banner, garantia_dias, garantia_texto, desconto_pix_percentual, cronometro_ate, cronometro_minutos, cronometro_texto, cronometro_cor_fundo, cronometro_cor_texto, resumo_aberto, ativo, created_at, updated_at'
 
 function ehRegistro(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor)

@@ -287,15 +287,20 @@ export default function CheckoutFormModal({
           cronometroModo={values.cronometroModo}
           cronometroMinutos={values.cronometroMinutos}
           cronometroTexto={values.cronometroTexto}
+          cronometroCorFundo={values.cronometroCorFundo}
+          cronometroCorTexto={values.cronometroCorTexto}
           erroDias={erros.garantiaDias}
           erroCronometro={erros.cronometroAte ?? erros.cronometroMinutos}
           erroCronometroTexto={erros.cronometroTexto}
+          erroCronometroCores={erros.cronometroCorFundo ?? erros.cronometroCorTexto}
           onGarantiaDias={(v) => setCampo('garantiaDias', v)}
           onGarantiaTexto={(v) => setCampo('garantiaTexto', v)}
           onCronometroAte={(v) => setCampo('cronometroAte', v)}
           onCronometroModo={(v) => setCampo('cronometroModo', v)}
           onCronometroMinutos={(v) => setCampo('cronometroMinutos', v)}
           onCronometroTexto={(v) => setCampo('cronometroTexto', v)}
+          onCronometroCorFundo={(v) => setCampo('cronometroCorFundo', v)}
+          onCronometroCorTexto={(v) => setCampo('cronometroCorTexto', v)}
         />
 
         <CampoAtivo

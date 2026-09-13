@@ -57,6 +57,22 @@ describe('Cronometro', () => {
     expect(screen.getByTestId('cronometro')).toHaveTextContent('Oferta por tempo limitado')
   })
 
+  test('cores do painel substituem o roxo e o branco; sem elas, fica o padrão', () => {
+    relogio.restante = 30_000
+    const { rerender } = render(
+      <Cronometro ate={null} minutos={15} slug="plano" corFundo="#111111" corTexto="#ffd400" />
+    )
+    const faixa = screen.getByTestId('cronometro')
+    expect(faixa.style.background).toBe('rgb(17, 17, 17)')
+    expect(faixa.style.color).toBe('rgb(255, 212, 0)')
+    expect(faixa.className).not.toContain('from-accent-2')
+
+    rerender(<Cronometro ate={null} minutos={15} slug="plano" corFundo={null} corTexto={null} />)
+    expect(faixa.className).toContain('from-accent-2')
+    expect(faixa.className).toContain('text-white')
+    expect(faixa.style.background).toBe('')
+  })
+
   test('sem contagem, não renderiza nada', () => {
     relogio.restante = null
     const { container } = render(<Cronometro ate={null} minutos={null} slug="plano" />)

@@ -1,9 +1,14 @@
 import { AlertTriangle, Clock } from 'lucide-react'
 import { Bloco, inputClass, labelClass } from '../produtos/formUi'
-import { CRONOMETRO_TEXTO_PADRAO } from '../checkout/checkoutTotal'
+import {
+  CRONOMETRO_COR_FUNDO_PADRAO,
+  CRONOMETRO_COR_TEXTO_PADRAO,
+  CRONOMETRO_TEXTO_PADRAO,
+} from '../checkout/checkoutTotal'
 import {
   CRONOMETRO_MINUTOS_MAXIMO,
   CRONOMETRO_TEXTO_MAXIMO,
+  corHexValida,
   cronometroExpirado,
   type CronometroModo,
 } from './checkoutForm'
@@ -15,15 +20,20 @@ interface Props {
   cronometroModo: CronometroModo
   cronometroMinutos: string
   cronometroTexto: string
+  cronometroCorFundo: string
+  cronometroCorTexto: string
   erroDias?: string
   erroCronometro?: string
   erroCronometroTexto?: string
+  erroCronometroCores?: string
   onGarantiaDias: (valor: string) => void
   onGarantiaTexto: (valor: string) => void
   onCronometroAte: (valor: string) => void
   onCronometroModo: (valor: CronometroModo) => void
   onCronometroMinutos: (valor: string) => void
   onCronometroTexto: (valor: string) => void
+  onCronometroCorFundo: (valor: string) => void
+  onCronometroCorTexto: (valor: string) => void
 }
 
 const MODOS: ReadonlyArray<{ valor: CronometroModo; titulo: string; descricao: string }> = [
@@ -52,15 +62,20 @@ export default function GarantiaCronometroBloco({
   cronometroModo,
   cronometroMinutos,
   cronometroTexto,
+  cronometroCorFundo,
+  cronometroCorTexto,
   erroDias,
   erroCronometro,
   erroCronometroTexto,
+  erroCronometroCores,
   onGarantiaDias,
   onGarantiaTexto,
   onCronometroAte,
   onCronometroModo,
   onCronometroMinutos,
   onCronometroTexto,
+  onCronometroCorFundo,
+  onCronometroCorTexto,
 }: Props) {
   const expirado = cronometroExpirado(cronometroAte)
 
@@ -196,7 +211,91 @@ export default function GarantiaCronometroBloco({
             <span className="text-xs text-red-400">{erroCronometroTexto}</span>
           )}
         </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CampoCor
+            rotulo="Cor do fundo da faixa"
+            valor={cronometroCorFundo}
+            padrao={CRONOMETRO_COR_FUNDO_PADRAO}
+            nomeDoPadrao="roxo Vertix"
+            onChange={onCronometroCorFundo}
+          />
+          <CampoCor
+            rotulo="Cor do texto da faixa"
+            valor={cronometroCorTexto}
+            padrao={CRONOMETRO_COR_TEXTO_PADRAO}
+            nomeDoPadrao="branco"
+            onChange={onCronometroCorTexto}
+          />
+        </div>
+        <div
+          aria-hidden
+          className="flex items-center justify-center gap-4 rounded-lg px-4 py-2.5 text-sm"
+          style={{
+            background: corHexValida(cronometroCorFundo) && cronometroCorFundo.trim() ? cronometroCorFundo : CRONOMETRO_COR_FUNDO_PADRAO,
+            color: corHexValida(cronometroCorTexto) && cronometroCorTexto.trim() ? cronometroCorTexto : CRONOMETRO_COR_TEXTO_PADRAO,
+          }}
+        >
+          <span className="text-lg font-semibold tabular-nums tracking-[0.08em]">14:52</span>
+          <Clock aria-hidden className="h-4 w-4" />
+          <span className="font-light">{cronometroTexto.trim() || CRONOMETRO_TEXTO_PADRAO}</span>
+        </div>
+        {erroCronometroCores && (
+          <span className="text-xs text-red-400">{erroCronometroCores}</span>
+        )}
       </Bloco>
     </>
+  )
+}
+
+/**
+ * Seletor de cor com o hex ao lado (dá para colar "#1a1a1a") e um atalho
+ * para voltar ao padrão. O seletor nativo só entende hex de 6 dígitos, por
+ * isso ele mostra o padrão enquanto o campo está vazio ou incompleto.
+ */
+function CampoCor({
+  rotulo,
+  valor,
+  padrao,
+  nomeDoPadrao,
+  onChange,
+}: {
+  rotulo: string
+  valor: string
+  padrao: string
+  nomeDoPadrao: string
+  onChange: (valor: string) => void
+}) {
+  const valida = corHexValida(valor) && valor.trim() !== ''
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className={labelClass}>{rotulo}</span>
+      <span className="flex items-center gap-2">
+        <input
+          type="color"
+          aria-label={`${rotulo} (seletor)`}
+          value={valida ? valor.trim().toLowerCase() : padrao}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-white/5 bg-surface-2 p-1"
+        />
+        <input
+          type="text"
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={`${padrao} (${nomeDoPadrao})`}
+          maxLength={7}
+          spellCheck={false}
+          className={`${inputClass} font-mono uppercase`}
+        />
+        {valor.trim() !== '' && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="shrink-0 text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
+          >
+            Padrão
+          </button>
+        )}
+      </span>
+    </label>
   )
 }

@@ -46,6 +46,8 @@ const INFO: CheckoutInfo = {
   cronometroAte: null,
   cronometroMinutos: null,
   cronometroTexto: null,
+  cronometroCorFundo: null,
+  cronometroCorTexto: null,
 }
 
 const BANNER = {

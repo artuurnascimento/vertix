@@ -114,6 +114,9 @@ export interface CheckoutInfo {
   cronometroMinutos: number | null
   /** Frase ao lado do tempo na faixa; null = padrão da página. */
   cronometroTexto: string | null
+  /** Cores da faixa (#rrggbb); null = roxo da Vertix / branco. */
+  cronometroCorFundo: string | null
+  cronometroCorTexto: string | null
 }
 
 // --------------------------------------------------------------- leitores --
@@ -417,7 +420,16 @@ export function normalizarCheckout(
       bruto.cronometro_minutos ?? configBruta.cronometro_minutos
     ),
     cronometroTexto: texto(bruto, 'cronometro_texto') ?? texto(configBruta, 'cronometro_texto'),
+    cronometroCorFundo: lerCorHex(bruto.cronometro_cor_fundo ?? configBruta.cronometro_cor_fundo),
+    cronometroCorTexto: lerCorHex(bruto.cronometro_cor_texto ?? configBruta.cronometro_cor_texto),
   }
+}
+
+/** Cor "#rrggbb" vinda do banco; qualquer outra coisa vira null (padrão). */
+function lerCorHex(valor: unknown): string | null {
+  return typeof valor === 'string' && /^#[0-9a-fA-F]{6}$/.test(valor.trim())
+    ? valor.trim().toLowerCase()
+    : null
 }
 
 /** Minutos do cronômetro por visitante: inteiro positivo, ou null. */

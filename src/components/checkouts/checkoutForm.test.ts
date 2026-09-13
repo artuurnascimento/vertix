@@ -273,6 +273,8 @@ describe('padrão do resumo do pedido', () => {
     cronometro_ate: null,
     cronometro_minutos: null,
     cronometro_texto: null,
+    cronometro_cor_fundo: null,
+    cronometro_cor_texto: null,
     resumo_aberto: false,
     ativo: true,
     created_at: '2026-09-09T12:00:00.000Z',
@@ -363,6 +365,16 @@ describe('padrão do resumo do pedido', () => {
       expect(checkoutToFormValues({ ...LINHA, cronometro_texto: 'Só hoje' }).cronometroTexto).toBe('Só hoje')
       expect(erroDe({ ...VALIDO, cronometroTexto: 'x'.repeat(81) }, 'cronometroTexto')).toBeDefined()
       expect(erroDe({ ...VALIDO, cronometroTexto: 'x'.repeat(80) }, 'cronometroTexto')).toBeUndefined()
+    })
+
+    it('cores: hex válido vai em minúsculas, vazio vira null, outra coisa é recusada', () => {
+      const payload = checkoutFormToPayload({ ...VALIDO, cronometroCorFundo: ' #1A1A1A ', cronometroCorTexto: '' })
+      expect(payload.cronometro_cor_fundo).toBe('#1a1a1a')
+      expect(payload.cronometro_cor_texto).toBeNull()
+      expect(erroDe({ ...VALIDO, cronometroCorFundo: 'preto' }, 'cronometroCorFundo')).toBeDefined()
+      expect(erroDe({ ...VALIDO, cronometroCorTexto: '#fff' }, 'cronometroCorTexto')).toBeDefined()
+      expect(erroDe({ ...VALIDO, cronometroCorTexto: '#FFD400' }, 'cronometroCorTexto')).toBeUndefined()
+      expect(checkoutToFormValues({ ...LINHA, cronometro_cor_texto: '#ffd400' }).cronometroCorTexto).toBe('#ffd400')
     })
 
     it('linha com minutos abre no modo por visitante; sem eles, no modo de data', () => {

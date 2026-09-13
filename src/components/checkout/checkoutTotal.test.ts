@@ -278,6 +278,13 @@ describe('normalizarCheckout', () => {
     expect(
       normalizarCheckout({ ...bruto, cronometro_texto: ' Bônus garantido por ' }, 'da-url')?.cronometroTexto
     ).toBe('Bônus garantido por')
+    const comCores = normalizarCheckout(
+      { ...bruto, cronometro_cor_fundo: '#1A1A1A', cronometro_cor_texto: 'amarelo' },
+      'da-url'
+    )
+    expect(comCores?.cronometroCorFundo).toBe('#1a1a1a')
+    // Cor que não é hex vira null — a página usa o padrão em vez de quebrar.
+    expect(comCores?.cronometroCorTexto).toBeNull()
     expect(
       normalizarCheckout({ ...bruto, cronometro_minutos: 15 }, 'da-url')?.cronometroMinutos
     ).toBe(15)

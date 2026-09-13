@@ -48,6 +48,9 @@ export interface CheckoutFormValues {
   cronometroMinutos: string
   /** Frase da faixa do cronômetro; vazio = padrão da página. */
   cronometroTexto: string
+  /** Cores da faixa, "#rrggbb"; vazio = padrão. */
+  cronometroCorFundo: string
+  cronometroCorTexto: string
   /** true = o resumo do pedido nasce aberto na página pública. */
   resumoAberto: boolean
   ativo: boolean
@@ -78,6 +81,8 @@ export const EMPTY_CHECKOUT: CheckoutFormValues = {
   cronometroModo: 'data',
   cronometroMinutos: '',
   cronometroTexto: '',
+  cronometroCorFundo: '',
+  cronometroCorTexto: '',
   // Recolhido, igual ao default da coluna: aberto, o bloco ocupa quase uma
   // tela de telefone e empurra o pagamento para baixo da dobra.
   resumoAberto: false,
@@ -162,6 +167,12 @@ export const CRONOMETRO_MINUTOS_MAXIMO = 1440
 
 /** Teto da frase do cronômetro — a faixa é uma linha só (`checkouts_cronometro_texto_tamanho`). */
 export const CRONOMETRO_TEXTO_MAXIMO = 80
+
+/** Cor hex de 6 dígitos com `#`, ou vazio (padrão) — o que o banco aceita. */
+export function corHexValida(valor: string): boolean {
+  const limpo = valor.trim()
+  return limpo === '' || /^#[0-9a-fA-F]{6}$/.test(limpo)
+}
 
 /** Minutos válidos: inteiro de 1 a 1440, ou vazio (sem cronômetro). */
 export function cronometroMinutosValido(valor: string): boolean {
@@ -272,6 +283,8 @@ export const checkoutSchema = z
         (v) => v.trim().length <= CRONOMETRO_TEXTO_MAXIMO,
         `A frase do cronômetro tem no máximo ${CRONOMETRO_TEXTO_MAXIMO} caracteres.`
       ),
+    cronometroCorFundo: z.string().refine(corHexValida, 'Cor no formato #rrggbb.'),
+    cronometroCorTexto: z.string().refine(corHexValida, 'Cor no formato #rrggbb.'),
     resumoAberto: z.boolean(),
     ativo: z.boolean(),
   })
@@ -359,6 +372,8 @@ export function checkoutFormToPayload(
         ? campoDataHoraParaIso(values.cronometroAte)
         : null,
     cronometro_texto: limpo(values.cronometroTexto),
+    cronometro_cor_fundo: limpo(values.cronometroCorFundo)?.toLowerCase() ?? null,
+    cronometro_cor_texto: limpo(values.cronometroCorTexto)?.toLowerCase() ?? null,
     cronometro_minutos:
       values.cronometroModo === 'minutos' && values.cronometroMinutos.trim() !== ''
         ? Number(values.cronometroMinutos.trim())
@@ -404,6 +419,8 @@ export function checkoutToFormValues(checkout: Checkout): CheckoutFormValues {
         ? 'minutos'
         : 'data',
     cronometroTexto: checkout.cronometro_texto ?? '',
+    cronometroCorFundo: checkout.cronometro_cor_fundo ?? '',
+    cronometroCorTexto: checkout.cronometro_cor_texto ?? '',
     cronometroMinutos:
       typeof checkout.cronometro_minutos === 'number' && checkout.cronometro_minutos > 0
         ? String(checkout.cronometro_minutos)

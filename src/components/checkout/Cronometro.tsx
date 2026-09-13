@@ -20,8 +20,16 @@ const ULTIMO_MINUTO_MS = 60_000
  */
 export default function Cronometro({
   texto,
+  corFundo,
+  corTexto,
   ...fonte
-}: FonteDoCronometro & { texto?: string | null }) {
+}: FonteDoCronometro & {
+  texto?: string | null
+  /** "#rrggbb"; sem ela, o gradiente roxo da Vertix. */
+  corFundo?: string | null
+  /** "#rrggbb"; sem ela, branco. */
+  corTexto?: string | null
+}) {
   const restante = useCronometro(fonte)
   if (restante === null) return null
 
@@ -36,7 +44,15 @@ export default function Cronometro({
       data-testid="cronometro"
       data-urgente={urgente || undefined}
       data-esgotado={esgotado || undefined}
-      className="vx-cronometro relative isolate flex items-center justify-center gap-5 overflow-hidden bg-gradient-to-r from-accent-2 via-accent to-[#8f7aff] px-4 py-3 text-white shadow-[0_10px_34px_-14px_rgba(108,91,242,0.85)] sm:gap-8 sm:py-3.5"
+      className={`vx-cronometro relative isolate flex items-center justify-center gap-5 overflow-hidden px-4 py-3 sm:gap-8 sm:py-3.5 ${
+        corFundo
+          ? 'shadow-[0_10px_34px_-14px_rgba(0,0,0,0.6)]'
+          : 'bg-gradient-to-r from-accent-2 via-accent to-[#8f7aff] shadow-[0_10px_34px_-14px_rgba(108,91,242,0.85)]'
+      } ${corTexto ? '' : 'text-white'}`}
+      style={{
+        ...(corFundo ? { background: corFundo } : {}),
+        ...(corTexto ? { color: corTexto } : {}),
+      }}
     >
       {/* Brilho diagonal parado: dá volume à faixa sem chamar atenção. */}
       <span
@@ -54,13 +70,14 @@ export default function Cronometro({
         <span aria-hidden>{contagem.compacta}</span>
       </p>
       <AlarmClock aria-hidden className="vx-cronometro-sino h-6 w-6 shrink-0 sm:h-7 sm:w-7" strokeWidth={2} />
-      <p className="text-[13px] font-light tracking-wide text-white/90 sm:text-[15px]">
+      <p className="text-[13px] font-light tracking-wide opacity-90 sm:text-[15px]">
         {texto?.trim() || CRONOMETRO_TEXTO_PADRAO}
       </p>
       {fracao !== null && (
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-[3px] bg-black/20">
+          {/* currentColor: a linha acompanha a cor do texto, seja ela qual for. */}
           <span
-            className="vx-cronometro-barra block h-full bg-white/85"
+            className="vx-cronometro-barra block h-full bg-current opacity-85"
             style={{ width: `${fracao * 100}%` }}
           />
         </span>

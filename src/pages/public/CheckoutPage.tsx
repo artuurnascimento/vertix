@@ -434,6 +434,8 @@ export default function CheckoutPage() {
           minutos={info.cronometroMinutos}
           slug={info.checkout.slug}
           texto={info.cronometroTexto}
+          corFundo={info.cronometroCorFundo}
+          corTexto={info.cronometroCorTexto}
         />
       }
     >

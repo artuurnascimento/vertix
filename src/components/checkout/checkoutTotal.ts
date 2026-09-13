@@ -245,6 +245,9 @@ export function restanteDoVisitanteMs(
 
 /** Frase da faixa do cronômetro quando o painel não define outra. */
 export const CRONOMETRO_TEXTO_PADRAO = 'Oferta por tempo limitado'
+/** Cores padrão da faixa: o roxo da Vertix (accent) e texto branco. */
+export const CRONOMETRO_COR_FUNDO_PADRAO = '#6c5bf2'
+export const CRONOMETRO_COR_TEXTO_PADRAO = '#ffffff'
 
 export interface ContagemFormatada {
   horas: string
