@@ -34,8 +34,11 @@ export default function OrderBump({ bump, marcado, onChange }: Props) {
   const descricaoId = `${id}-descricao`
   const { paragrafo, beneficios } = textoDoBump(bump.descricao)
 
+  // Com arte, o card não tem respiro: a imagem vai de borda a borda (a moldura
+  // é o próprio card) e só a linha da caixa e do preço fica com margem.
   const classeCard = [
-    'group relative block cursor-pointer overflow-hidden rounded-2xl border-2 p-4 transition-colors duration-150 sm:p-5',
+    'group relative block cursor-pointer overflow-hidden rounded-2xl border-2 transition-colors duration-150',
+    bump.imagem === null ? 'p-4 sm:p-5' : '',
     marcado
       ? 'border-accent bg-accent/[0.12]'
       : 'border-accent/60 bg-accent/[0.05] hover:border-accent hover:bg-accent/[0.09]',
@@ -87,11 +90,11 @@ export default function OrderBump({ bump, marcado, onChange }: Props) {
         />
         <ImagemResponsiva
           imagem={bump.imagem}
-          className="relative block h-auto w-full rounded-xl object-cover"
+          className="relative block h-auto w-full object-cover"
         />
         {/* O que a arte não carrega: a caixa e o preço. O rótulo "Adicione ao
             pedido" fica ao lado da caixa para ela nunca ser um quadrado solto. */}
-        <div className="relative mt-3 flex items-center justify-between gap-3">
+        <div className="relative flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
           <span className="flex items-center gap-3">
             {caixa(descricaoId)}
             <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent">
