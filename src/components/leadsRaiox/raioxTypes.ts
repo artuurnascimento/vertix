@@ -60,6 +60,8 @@ export interface Lead {
   report_code: string | null
   /** Primeira abertura do relatório pelo cliente; null = ainda não leu. */
   relatorio_aberto_em: string | null
+  /** Cliente do painel em que este lead virou (converter_lead_em_cliente). */
+  client_id?: string | null
   created_at: string
 }
 

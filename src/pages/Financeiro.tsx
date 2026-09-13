@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AReceberTab from '../components/finance/AReceberTab'
 import DespesasTab from '../components/finance/DespesasTab'
 import AssinaturasTab from '../components/finance/AssinaturasTab'
@@ -16,6 +17,8 @@ type TabKey = (typeof TABS)[number]['key']
 const TOAST_TIMEOUT_MS = 4000
 
 export default function Financeiro() {
+  const [params] = useSearchParams()
+  const abrir = params.get('abrir')
   const [tab, setTab] = useState<TabKey>('a-receber')
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
@@ -66,7 +69,7 @@ export default function Financeiro() {
       </div>
 
       <div className="mt-8">
-        {tab === 'a-receber' && <AReceberTab onLinkError={showToast} />}
+        {tab === 'a-receber' && <AReceberTab onLinkError={showToast} destacarId={abrir} />}
         {tab === 'despesas' && <DespesasTab />}
         {tab === 'assinaturas' && <AssinaturasTab />}
       </div>

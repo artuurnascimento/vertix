@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ExternalLink, MessageCircle, Users, Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import ConfirmacaoModal from '../ui/ConfirmacaoModal'
 import Toast, { useToast } from '../ui/Toast'
 import { formatRelativeTime } from '../../lib/format'
-import { deleteLead, reportUrl, updateLeadStatus, whatsappLinkForLead } from './raioxData'
+import { converterLeadEmCliente, deleteLead, reportUrl, updateLeadStatus, whatsappLinkForLead } from './raioxData'
 import type { LeadComAnalise, LeadStatus } from './raioxTypes'
 import LeadStatusPicker from './LeadStatusPicker'
 import ScoreBadge from './ScoreBadge'
@@ -31,6 +32,24 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
       updateLeadStatus(id, status),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['raiox-leads'] }),
+  })
+
+  // "Cliente" não é um status: é uma conversão. Cria (ou liga) o cadastro
+  // e abre o projeto; o status do lead muda dentro da mesma transação.
+  const converterMutation = useMutation({
+    mutationFn: (id: string) => converterLeadEmCliente(id),
+    onSuccess: (r) => {
+      for (const chave of ['raiox-leads', 'clients', 'projects', 'dashboard']) {
+        queryClient.invalidateQueries({ queryKey: [chave] })
+      }
+      mostrar({
+        texto: r.clienteCriado
+          ? 'Cliente criado a partir do lead, com o projeto aberto.'
+          : 'Lead ligado a um cliente que já existia; projeto aberto.',
+      })
+    },
+    onError: (e) =>
+      mostrar({ texto: e instanceof Error ? e.message : 'Não foi possível converter.', tipo: 'erro' }),
   })
 
   const excluirMutation = useMutation({
@@ -93,8 +112,8 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
         {visiveis.map((lead) => {
           const waLink = whatsappLinkForLead(lead)
           const salvando =
-            statusMutation.isPending &&
-            statusMutation.variables?.id === lead.id
+            (statusMutation.isPending && statusMutation.variables?.id === lead.id) ||
+            (converterMutation.isPending && converterMutation.variables === lead.id)
 
           return (
             <motion.li
@@ -125,11 +144,22 @@ export default function LeadsTab({ leads, statusFilter, search }: LeadsTabProps)
                   value={lead.status}
                   disabled={salvando}
                   onChange={(status) =>
-                    statusMutation.mutate({ id: lead.id, status })
+                    status === 'cliente'
+                      ? converterMutation.mutate(lead.id)
+                      : statusMutation.mutate({ id: lead.id, status })
                   }
                 />
 
                 <div className="flex items-center gap-2">
+                  {lead.client_id && (
+                    <Link
+                      to={`/admin/clientes/${lead.client_id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition-colors duration-150 hover:bg-accent/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                    >
+                      <Users className="h-3.5 w-3.5" aria-hidden />
+                      Ver cliente
+                    </Link>
+                  )}
                   {lead.analyses && reportUrl(lead.analyses.id, lead.report_token, lead.report_code) && (
                     <a
                       href={

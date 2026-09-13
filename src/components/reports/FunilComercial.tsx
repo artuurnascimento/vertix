@@ -3,106 +3,95 @@ import { motion } from 'framer-motion'
 import { Filter } from 'lucide-react'
 import DashboardCard from '../dashboard/DashboardCard'
 import { CardEmptyState, CardErrorState, CardSkeleton } from '../dashboard/CardStates'
-import { useReportProjects, useReportProposals } from './useReportsData'
-
-interface FunilEtapa {
-  label: string
-  count: number
-  /** % de conversão em relação à etapa anterior — null na primeira etapa. */
-  conversao: number | null
-}
+import { useFunilPessoas, useReportAnalyses, useReportProposals } from './useReportsData'
+import { etapasDoFunil, funilDePropostas, type EtapaDoFunil } from './funil'
 
 const BAR_STAGGER_S = 0.06
 const MIN_BAR_PERCENT = 4
 
-/** Funil: projetos criados → propostas enviadas → propostas aceitas. */
+/**
+ * Funil da jornada inteira, por PESSOA: análise → lead → relatório aberto →
+ * compra do plano → reunião → implementação → recorrência. E, embaixo, o
+ * recorte das propostas por projeto único (enviada → aceita).
+ */
 export default function FunilComercial() {
-  const { data: projects, isLoading: loadingProjects, isError: errorProjects } =
-    useReportProjects()
-  const { data: proposals, isLoading: loadingProposals, isError: errorProposals } =
-    useReportProposals()
+  const pessoas = useFunilPessoas()
+  const analises = useReportAnalyses()
+  const propostas = useReportProposals()
 
-  const isLoading = loadingProjects || loadingProposals
-  const isError = errorProjects || errorProposals
+  const isLoading = pessoas.isLoading || analises.isLoading || propostas.isLoading
+  const isError = pessoas.isError || analises.isError || propostas.isError
 
-  const etapas = useMemo((): FunilEtapa[] => {
-    const totalProjetos = projects?.length ?? 0
-    const enviadas = (proposals ?? []).filter((p) => p.sent_at !== null).length
-    const aceitas = (proposals ?? []).filter((p) => p.status === 'aceita').length
-
+  const etapas = useMemo((): EtapaDoFunil[] => {
+    const daJornada = etapasDoFunil(pessoas.data ?? [])
+    const totalAnalises = analises.data ?? 0
+    const leads = daJornada[0]?.count ?? 0
     return [
-      { label: 'Projetos criados', count: totalProjetos, conversao: null },
-      {
-        label: 'Propostas enviadas',
-        count: enviadas,
-        conversao: totalProjetos > 0 ? (enviadas / totalProjetos) * 100 : null,
-      },
-      {
-        label: 'Propostas aceitas',
-        count: aceitas,
-        conversao: enviadas > 0 ? (aceitas / enviadas) * 100 : null,
-      },
+      { chave: 'analises', label: 'Análises iniciadas', count: totalAnalises, conversao: null },
+      ...daJornada.map((e, i) =>
+        i === 0 ? { ...e, conversao: totalAnalises > 0 ? (leads / totalAnalises) * 100 : null } : e
+      ),
     ]
-  }, [projects, proposals])
+  }, [pessoas.data, analises.data])
 
+  const recorte = useMemo(() => funilDePropostas(propostas.data ?? []), [propostas.data])
   const maxCount = Math.max(...etapas.map((e) => e.count), 1)
   const total = etapas[0]?.count ?? 0
 
   return (
-    <DashboardCard
-      title="Funil comercial"
-      subtitle="Da criação do projeto até a proposta aceita"
-    >
-      {isLoading && <CardSkeleton rows={3} rowClassName="h-8" />}
+    <DashboardCard title="Funil da jornada" subtitle="Pessoas únicas, da análise à recorrência">
+      {isLoading && <CardSkeleton rows={6} rowClassName="h-8" />}
 
       {isError && <CardErrorState />}
 
       {!isLoading && !isError && total === 0 && (
         <CardEmptyState
           icon={Filter}
-          title="Sem projetos ainda"
-          description="O funil comercial aparece assim que houver projetos e propostas cadastrados."
+          title="Sem análises ainda"
+          description="O funil aparece assim que a primeira loja for analisada no Scan."
         />
       )}
 
       {!isLoading && !isError && total > 0 && (
-        <ol className="flex flex-col gap-4">
-          {etapas.map((etapa, index) => {
-            const percent =
-              etapa.count === 0
-                ? 0
-                : Math.max((etapa.count / maxCount) * 100, MIN_BAR_PERCENT)
-            return (
-              <li key={etapa.label}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm text-ink/90">{etapa.label}</span>
-                  <span className="flex items-baseline gap-2">
-                    {etapa.conversao !== null && (
-                      <span className="text-xs font-light tabular-nums text-muted">
-                        {etapa.conversao.toFixed(0)}%
+        <>
+          <ol className="flex flex-col gap-4">
+            {etapas.map((etapa, index) => {
+              const percent =
+                etapa.count === 0 ? 0 : Math.max((etapa.count / maxCount) * 100, MIN_BAR_PERCENT)
+              return (
+                <li key={etapa.chave}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm text-ink/90">{etapa.label}</span>
+                    <span className="flex items-baseline gap-2">
+                      {etapa.conversao !== null && (
+                        <span className="text-xs font-light tabular-nums text-muted">
+                          {etapa.conversao.toFixed(0)}%
+                        </span>
+                      )}
+                      <span className="font-kanit text-sm font-semibold tabular-nums text-ink">
+                        {etapa.count}
                       </span>
-                    )}
-                    <span className="font-kanit text-sm font-semibold tabular-nums text-ink">
-                      {etapa.count}
                     </span>
+                  </div>
+                  <span className="mt-1.5 block h-2.5 overflow-hidden rounded-full bg-white/5">
+                    <motion.span
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percent}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut', delay: index * BAR_STAGGER_S }}
+                      className="block h-full rounded-full bg-gradient-to-r from-accent to-accent-2 opacity-80 shadow-[0_0_8px_rgba(108,91,242,0.45)]"
+                    />
                   </span>
-                </div>
-                <span className="mt-1.5 block h-2.5 overflow-hidden rounded-full bg-white/5">
-                  <motion.span
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percent}%` }}
-                    transition={{
-                      duration: 0.6,
-                      ease: 'easeOut',
-                      delay: index * BAR_STAGGER_S,
-                    }}
-                    className="block h-full rounded-full bg-gradient-to-r from-accent to-accent-2 opacity-80 shadow-[0_0_8px_rgba(108,91,242,0.45)]"
-                  />
-                </span>
-              </li>
-            )
-          })}
-        </ol>
+                </li>
+              )
+            })}
+          </ol>
+          <p className="mt-5 border-t border-white/5 pt-3 text-xs font-light text-muted">
+            Propostas, por projeto único: {recorte.enviadas} enviada{recorte.enviadas === 1 ? '' : 's'} em{' '}
+            {recorte.projetos} projeto{recorte.projetos === 1 ? '' : 's'} ·{' '}
+            {recorte.aceitas} aceita{recorte.aceitas === 1 ? '' : 's'}
+            {recorte.enviadas > 0 && ` (${Math.round((recorte.aceitas / recorte.enviadas) * 100)}%)`}
+          </p>
+        </>
       )}
     </DashboardCard>
   )

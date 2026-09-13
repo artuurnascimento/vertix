@@ -69,6 +69,28 @@ export async function updateLeadStatus(
   if (error) throw new Error(error.message)
 }
 
+export interface ConversaoDeLead {
+  clientId: string
+  projectId: string | null
+  clienteCriado: boolean
+}
+
+/**
+ * Lead vira cliente de verdade (RPC `converter_lead_em_cliente`): reaproveita
+ * ou cria o cadastro, abre um projeto em "lead" e grava a chave em lead,
+ * compras e pedidos — tudo numa transação. Trocar só o status deixava a
+ * história do lead do lado de fora do painel.
+ */
+export async function converterLeadEmCliente(id: string): Promise<ConversaoDeLead> {
+  const { data, error } = await raioxSupabase.rpc('converter_lead_em_cliente', { p_lead_id: id })
+  if (error) throw new Error(error.message)
+  const linha = (Array.isArray(data) ? data[0] : data) as
+    | { client_id: string; project_id: string | null; cliente_criado: boolean }
+    | undefined
+  if (!linha) throw new Error('A conversão não devolveu o cliente.')
+  return { clientId: linha.client_id, projectId: linha.project_id, clienteCriado: linha.cliente_criado }
+}
+
 /** Exclui o lead e a análise dele (RPC restrita à equipe). */
 export async function deleteLead(id: string): Promise<void> {
   const { error } = await raioxSupabase.rpc('raiox_excluir_lead', { p_lead_id: id })

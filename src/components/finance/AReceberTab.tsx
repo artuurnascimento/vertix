@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { HandCoins, MessageCircle, Plus, Search, Undo2, Wallet } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -60,9 +60,15 @@ function matchesFilter(row: ReceivableRow, filter: FilterKey): boolean {
 
 interface AReceberTabProps {
   onLinkError: (message: string) => void
+  /** Recebível a destacar e rolar até (link direto do dashboard, `?abrir=`). */
+  destacarId?: string | null
 }
 
-export default function AReceberTab({ onLinkError }: AReceberTabProps) {
+export default function AReceberTab({ onLinkError, destacarId = null }: AReceberTabProps) {
+  useEffect(() => {
+    if (!destacarId) return
+    document.getElementById(`recebivel-${destacarId}`)?.scrollIntoView({ block: 'center' })
+  }, [destacarId])
   const [filter, setFilter] = useState<FilterKey>('todos')
   const [search, setSearch] = useState('')
   const [formOpen, setFormOpen] = useState(false)
@@ -258,13 +264,17 @@ export default function AReceberTab({ onLinkError }: AReceberTabProps) {
                 return (
                   <motion.tr
                     key={row.id}
+                    id={`recebivel-${row.id}`}
+                    data-destacado={row.id === destacarId || undefined}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
                       duration: 0.25,
                       delay: Math.min(index, MAX_STAGGER_ROWS) * ROW_STAGGER_S,
                     }}
-                    className="group border-b border-white/5 transition-colors duration-150 last:border-b-0 hover:bg-white/[0.03]"
+                    className={`group border-b border-white/5 transition-colors duration-150 last:border-b-0 hover:bg-white/[0.03] ${
+                      row.id === destacarId ? 'bg-accent/10 ring-1 ring-inset ring-accent/40' : ''
+                    }`}
                   >
                     <td className="px-6 py-4">
                       <p className="font-medium text-ink">{row.descricao}</p>

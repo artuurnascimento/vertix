@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -70,6 +71,9 @@ export default function Propostas() {
   const [toDelete, setToDelete] = useState<ProposalWithProject | null>(null)
   const [feedback, setFeedback] = useState<CopyFeedback | null>(null)
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // `?abrir=<id>`: o dashboard manda direto para UMA proposta, não para a
+  // lista. Abre a visualização quando a lista chega e limpa o parâmetro.
+  const [params, setParams] = useSearchParams()
 
   useEffect(() => {
     return () => {
@@ -105,6 +109,18 @@ export default function Propostas() {
       return data
     },
   })
+
+  useEffect(() => {
+    const abrir = params.get('abrir')
+    if (!abrir || !proposals) return
+    const alvo = proposals.find((p) => p.id === abrir)
+    if (alvo) setViewing(alvo)
+    setParams((atual) => {
+      const proximo = new URLSearchParams(atual)
+      proximo.delete('abrir')
+      return proximo
+    }, { replace: true })
+  }, [params, proposals, setParams])
 
   const sendMutation = useMutation({
     mutationFn: async (proposal: ProposalWithProject) => {

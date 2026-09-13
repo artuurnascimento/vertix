@@ -5,6 +5,8 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { PessoaNoFunil } from './funil'
 import { supabase } from '../../lib/supabase'
 import type { Tables } from '../../lib/database.types'
 
@@ -15,7 +17,7 @@ export type ReportProject = Pick<
 
 export type ReportProposal = Pick<
   Tables<'proposals'>,
-  'id' | 'status' | 'sent_at' | 'accepted_at'
+  'id' | 'project_id' | 'status' | 'sent_at' | 'accepted_at'
 >
 
 export type ReportReceivable = Pick<
@@ -52,9 +54,38 @@ export function useReportProposals() {
     queryFn: async (): Promise<ReportProposal[]> => {
       const { data, error } = await supabase
         .from('proposals')
-        .select('id, status, sent_at, accepted_at')
+        .select('id, project_id, status, sent_at, accepted_at')
       if (error) throw new Error(error.message)
       return data
+    },
+  })
+}
+
+/** A view `funil_pessoas` (migração jornada_fase0): uma linha por pessoa. */
+export function useFunilPessoas() {
+  return useQuery({
+    queryKey: ['reports', 'funil-pessoas'],
+    queryFn: async (): Promise<PessoaNoFunil[]> => {
+      // A view não está em database.types.ts; a forma é a do módulo funil.ts.
+      const { data, error } = await (supabase as unknown as SupabaseClient)
+        .from('funil_pessoas')
+        .select('*')
+      if (error) throw new Error(error.message)
+      return (data ?? []) as PessoaNoFunil[]
+    },
+  })
+}
+
+/** Quantas análises já rodaram — o topo do funil, antes de haver pessoa. */
+export function useReportAnalyses() {
+  return useQuery({
+    queryKey: ['reports', 'analyses-total'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await (supabase as unknown as SupabaseClient)
+        .from('analyses')
+        .select('id', { count: 'exact', head: true })
+      if (error) throw new Error(error.message)
+      return count ?? 0
     },
   })
 }

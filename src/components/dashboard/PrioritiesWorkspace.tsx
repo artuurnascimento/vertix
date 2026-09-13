@@ -34,8 +34,8 @@ export default function PrioritiesWorkspace() {
         ],
         nextAction:
           'Revisar a cobrança e acompanhar a confirmação do pagamento.',
-        actionLabel: 'Ver financeiro',
-        to: '/admin/financeiro',
+        actionLabel: 'Abrir cobrança',
+        to: `/admin/financeiro?abrir=${r.id}`,
       })),
     ...(proposals.data ?? [])
       .filter((p) => p.status === 'enviada')
@@ -66,8 +66,8 @@ export default function PrioritiesWorkspace() {
           },
         ],
         nextAction: 'Revisar a proposta e acompanhar o retorno do cliente.',
-        actionLabel: 'Ver propostas',
-        to: '/admin/propostas',
+        actionLabel: 'Abrir proposta',
+        to: `/admin/propostas?abrir=${p.id}`,
       })),
     ...(briefings.data ?? [])
       .filter((b) => b.status === 'enviado')
@@ -92,8 +92,8 @@ export default function PrioritiesWorkspace() {
         ],
         nextAction:
           'Acompanhar o preenchimento para liberar a revisão do escopo.',
-        actionLabel: 'Ver briefings',
-        to: '/admin/briefings',
+        actionLabel: 'Abrir projeto',
+        to: `/admin/projetos/${b.project_id}`,
       })),
   ]
   return (
