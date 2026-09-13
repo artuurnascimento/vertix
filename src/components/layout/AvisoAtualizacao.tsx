@@ -51,7 +51,7 @@ export default function AvisoAtualizacao() {
               aria-expanded={aberta}
               className="flex w-full items-center justify-between gap-2 text-left text-xs font-semibold uppercase tracking-wider text-white/90"
             >
-              <span>{nova.titulo}</span>
+              <span>O que mudou desde a sua versão</span>
               <span aria-hidden className="text-white/70">
                 {aberta ? 'ocultar' : `ver o que mudou (${nova.itens.length})`}
               </span>
