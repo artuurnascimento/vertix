@@ -167,10 +167,6 @@ export default function AdminLayout() {
   const currentGroup = NAV_GROUPS.find((g) =>
     g.itens.some((i) => (i.end ? pathname === i.to : pathname.startsWith(i.to)))
   )
-  const sectionTitle =
-    currentGroup?.itens.find((i) =>
-      i.end ? pathname === i.to : pathname.startsWith(i.to)
-    )?.label ?? 'Visão geral'
   const isGroupActive = (label: string) =>
     label === 'Financeiro'
       ? pathname.startsWith('/admin/financeiro')
@@ -274,7 +270,8 @@ export default function AdminLayout() {
         <main id="main-content" className="vx-main" tabIndex={-1}>
           {pathname !== '/admin' && (
             <div className="vx-section-nav">
-              <span>{sectionTitle}</span>
+              {/* Só as abas da área: o nome da página é o título dela logo
+                  abaixo — repetir aqui era o mesmo nome duas vezes. */}
               <nav aria-label="Módulos desta área">
                 {currentGroup?.itens.map((i) => (
                   <NavLink key={i.to} to={i.to} end={i.end}>

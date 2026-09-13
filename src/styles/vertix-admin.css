@@ -172,8 +172,16 @@
   margin-bottom: 28px;
   color: #abb3cd;
 }
-.vx-section-nav > span {
-  font-size: 13px;
+/* Título das páginas do painel: caixa alta, só o contorno (traço de 2px),
+   sem preenchimento — o nome aparece uma vez, grande, como marca d'água
+   firme; a descrição embaixo continua em texto normal. */
+.vx-admin h1.hero-heading {
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px #f4f4f0;
+  paint-order: stroke fill;
 }
 .vx-section-nav nav {
   display: flex;
