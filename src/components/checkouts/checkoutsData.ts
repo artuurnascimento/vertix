@@ -72,8 +72,8 @@ export interface Checkout {
   /** Instante absoluto do fim do cronômetro (ISO) ou null. */
   cronometro_ate: string | null
   /**
-   * Cronômetro por visitante, em minutos: cada pessoa vê N minutos a partir
-   * da primeira abertura e, ao zerar, fica em 00:00. null = não usa este
+   * Cronômetro por visitante, em minutos: cada abertura da página começa com
+   * N minutos e, ao zerar, fica em 00:00 até sair. null = não usa este
    * modo. O formulário garante que só um dos dois cronômetros fica gravado.
    */
   cronometro_minutos: number | null

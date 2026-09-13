@@ -138,7 +138,7 @@ describe('restanteDoVisitanteMs — cronômetro por visitante', () => {
   const inicio = new Date('2026-09-07T12:00:00.000Z').getTime()
   const MIN = 60_000
 
-  test('conta a partir da primeira abertura', () => {
+  test('conta a partir do início da abertura', () => {
     expect(restanteDoVisitanteMs(inicio, 15, inicio)).toBe(15 * MIN)
     expect(restanteDoVisitanteMs(inicio, 15, inicio + 5 * MIN)).toBe(10 * MIN)
   })

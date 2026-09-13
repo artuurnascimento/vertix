@@ -45,15 +45,16 @@ const MODOS: ReadonlyArray<{ valor: CronometroModo; titulo: string; descricao: s
   {
     valor: 'minutos',
     titulo: 'Minutos por visitante',
-    descricao: 'Cada pessoa vê a contagem a partir da primeira abertura; ao zerar, fica em 00:00.',
+    descricao: 'Cada abertura da página começa do tempo cheio; ao zerar, fica em 00:00 até a pessoa sair.',
   },
 ]
 
 /**
  * Garantia e cronômetro. O cronômetro tem dois modos, e o painel diz com
  * todas as letras o que cada um faz: o de DATA é um prazo real, guardado como
- * instante absoluto (passou, sumiu); o de MINUTOS é por visitante, guardado no
- * navegador de cada um e reiniciado ao zerar. Só o modo escolhido é gravado.
+ * instante absoluto (passou, sumiu); o de MINUTOS é por visitante e recomeça do
+ * tempo cheio a cada abertura da página — nada fica guardado no navegador.
+ * Só o modo escolhido é gravado.
  */
 export default function GarantiaCronometroBloco({
   garantiaDias,
@@ -110,7 +111,7 @@ export default function GarantiaCronometroBloco({
 
       <Bloco
         titulo="Cronômetro"
-        ajuda="Dois jeitos de contar. Data e hora de fim: prazo real, igual para todo mundo — passou, o contador some. Minutos por visitante: cada pessoa vê N minutos a partir da primeira abertura e, ao zerar, a faixa fica em 00:00 piscando."
+        ajuda="Dois jeitos de contar. Data e hora de fim: prazo real, igual para todo mundo — passou, o contador some. Minutos por visitante: cada abertura da página começa com N minutos e, ao zerar, a faixa fica em 00:00 piscando até a pessoa sair — voltar depois recomeça do tempo cheio."
       >
         <div
           role="radiogroup"
@@ -185,8 +186,8 @@ export default function GarantiaCronometroBloco({
             />
             <span className="inline-flex items-center gap-1.5 text-xs font-light text-muted">
               <Clock aria-hidden className="h-3.5 w-3.5" />
-              A contagem começa na primeira abertura da página e fica guardada no
-              navegador da pessoa — recarregar não zera. Ao chegar a zero, fica em 00:00 piscando.
+              A contagem recomeça do tempo cheio a cada abertura da página — nada fica
+              guardado no navegador. Ao chegar a zero, fica em 00:00 piscando até a pessoa sair.
               Deixe vazio para vender sem cronômetro.
             </span>
             {erroCronometro && (

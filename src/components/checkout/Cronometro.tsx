@@ -15,8 +15,9 @@ const ULTIMO_MINUTO_MS = 60_000
  *
  * No modo de data, se o prazo já passou o componente não renderiza NADA —
  * sem zerar, sem reiniciar. No modo por visitante (minutos), a contagem
- * parte da primeira abertura e trava em 00:00; é o dono da oferta quem
- * escolhe o modo, e o painel diz o que cada um faz.
+ * parte do tempo cheio a cada abertura da página e trava em 00:00 até a
+ * pessoa sair; é o dono da oferta quem escolhe o modo, e o painel diz o que
+ * cada um faz.
  */
 export default function Cronometro({
   texto,

@@ -2,8 +2,10 @@ import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { inicioDoVisitante } from './useCronometro'
 
 /**
- * O cronômetro por visitante só faz sentido se recarregar a página não zerar
- * a contagem — e se duas ofertas no mesmo navegador não dividirem o relógio.
+ * O cronômetro por visitante parte do tempo cheio a cada abertura: nada fica
+ * guardado no navegador, então quem viu o 00:00 e voltou encontra os minutos
+ * inteiros de novo. A versão anterior gravava a primeira abertura no
+ * localStorage — a chave que ela deixou tem que ser apagada, não lida.
  *
  * O jsdom deste projeto não expõe `localStorage` (a origem do ambiente é
  * opaca), então o teste instala um armazenamento em memória com a mesma
@@ -33,22 +35,18 @@ describe('inicioDoVisitante', () => {
   })
   afterEach(() => window.localStorage.clear())
 
-  test('primeira abertura grava o instante; as seguintes devolvem o mesmo', () => {
+  test('cada abertura começa agora — voltar depois de zerar dá o tempo cheio de novo', () => {
     const agora = 1_800_000_000_000
     expect(inicioDoVisitante('plano-correcao', agora)).toBe(agora)
-    expect(inicioDoVisitante('plano-correcao', agora + 5 * 60_000)).toBe(agora)
+    expect(inicioDoVisitante('plano-correcao', agora + 20 * 60_000)).toBe(agora + 20 * 60_000)
+    expect(window.localStorage.length).toBe(0)
   })
 
-  test('cada checkout tem o próprio início', () => {
+  test('a chave que a versão antiga deixou é apagada, não lida', () => {
     const agora = 1_800_000_000_000
-    inicioDoVisitante('oferta-a', agora)
-    expect(inicioDoVisitante('oferta-b', agora + 60_000)).toBe(agora + 60_000)
-  })
-
-  test('valor guardado no futuro (relógio mexido) é substituído por agora', () => {
-    const agora = 1_800_000_000_000
-    window.localStorage.setItem('checkout-cronometro:oferta', String(agora + 999_999))
+    window.localStorage.setItem('checkout-cronometro:oferta', String(agora - 30 * 60_000))
     expect(inicioDoVisitante('oferta', agora)).toBe(agora)
+    expect(window.localStorage.getItem('checkout-cronometro:oferta')).toBeNull()
   })
 
   test('sem armazenamento, a contagem começa agora e não quebra a página', () => {

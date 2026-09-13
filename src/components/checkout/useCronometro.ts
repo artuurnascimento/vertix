@@ -10,23 +10,22 @@ export interface FonteDoCronometro {
   slug: string
 }
 
-const PREFIXO_CHAVE = 'checkout-cronometro:'
+/** Chave que a versão anterior deixava no navegador; só é apagada. */
+const PREFIXO_CHAVE_ANTIGA = 'checkout-cronometro:'
 
 /**
- * Instante em que ESTE navegador abriu a oferta pela primeira vez. Fica no
- * localStorage para recarregar a página não zerar a contagem — e para o
- * 00:00 continuar 00:00 depois de um F5. Sem armazenamento (modo
- * privado, bloqueio), a contagem começa agora a cada abertura; é o
- * melhor que dá sem guardar nada.
+ * Instante em que a contagem começa: sempre AGORA. Cada abertura do checkout
+ * parte do tempo cheio — nada fica guardado no navegador, então quem viu o
+ * 00:00 e voltou depois encontra os minutos inteiros de novo. A versão
+ * anterior gravava a primeira abertura no localStorage e, uma vez zerado,
+ * o cronômetro nunca mais saía do zero; a chave que ela deixou é apagada
+ * aqui para não sobrar lixo.
  */
 export function inicioDoVisitante(slug: string, agora: number = Date.now()): number {
-  const chave = `${PREFIXO_CHAVE}${slug}`
   try {
-    const guardado = Number(window.localStorage.getItem(chave))
-    if (Number.isFinite(guardado) && guardado > 0 && guardado <= agora) return guardado
-    window.localStorage.setItem(chave, String(agora))
+    window.localStorage.removeItem(`${PREFIXO_CHAVE_ANTIGA}${slug}`)
   } catch {
-    // sem armazenamento: segue com "agora"
+    // sem armazenamento não há o que apagar
   }
   return agora
 }
@@ -47,9 +46,10 @@ function calcular(fonte: FonteDoCronometro, inicio: number | null): number | nul
  *   inválida ou quando ele já passou — e para o intervalo nesse momento. O
  *   relógio é o do servidor materializado num instante ISO absoluto: nada
  *   aqui "recomeça" quando alguém recarrega a página.
- * - `minutos`: por visitante. A contagem parte da primeira abertura neste
- *   navegador e, ao zerar, fica em zero (a faixa mostra 00:00 piscando);
- *   nunca devolve `null`, e o intervalo para quando não há mais o que contar.
+ * - `minutos`: por visitante. A contagem parte do tempo cheio a cada
+ *   abertura da página e, ao zerar, fica em zero (a faixa mostra 00:00
+ *   piscando) até a pessoa sair; nunca devolve `null`, e o intervalo para
+ *   quando não há mais o que contar.
  */
 export function useCronometro(fonte: FonteDoCronometro): number | null {
   const { ate, minutos, slug } = fonte
