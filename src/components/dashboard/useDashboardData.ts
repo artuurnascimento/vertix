@@ -57,6 +57,8 @@ export function useDashboardProjects() {
       const { data, error } = await supabase
         .from('projects')
         .select('id, status, tipo_servico, created_at, updated_at')
+        // Oportunidade perdida não é projeto ativo nem "em andamento".
+        .is('perdido_em', null)
       if (error) throw new Error(error.message)
       return data
     },

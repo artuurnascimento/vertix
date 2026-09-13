@@ -20,6 +20,8 @@ export default function Projetos() {
       const { data, error } = await supabase
         .from('projects')
         .select('*, clients(id, nome, empresa)')
+        // Oportunidade perdida sai do Kanban (fica no histórico do cliente).
+        .is('perdido_em', null)
         .order('updated_at', { ascending: false })
       if (error) throw new Error(error.message)
       return data

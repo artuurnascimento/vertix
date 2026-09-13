@@ -26,6 +26,7 @@ import NoteComposer from '../components/projects/NoteComposer'
 import TasksCard from '../components/projects/TasksCard'
 import FilesCard from '../components/projects/FilesCard'
 import HoursCard from '../components/projects/HoursCard'
+import ComercialCard from '../components/comercial/ComercialCard'
 import ContractSection from '../components/projects/ContractSection'
 import ProposalsSection from '../components/proposals/ProposalsSection'
 import PortalLinkButton from '../components/portal/PortalLinkButton'
@@ -403,6 +404,11 @@ export default function ProjectDetail() {
           </div>
         )}
       </section>
+
+      {/* Comercial: responsável, próxima ação, valor, perda */}
+      <div className="mt-10">
+        <ComercialCard projeto={project} />
+      </div>
 
       {/* Propostas */}
       <ProposalsSection projectId={project.id} />

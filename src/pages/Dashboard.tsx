@@ -8,6 +8,7 @@ import GreetingHeader from '../components/dashboard/GreetingHeader'
 import NudgesPanel from '../components/dashboard/NudgesPanel'
 import ResumoFinanceiro from '../components/dashboard/ResumoFinanceiro'
 import ClientHealthCard from '../components/clients/ClientHealthCard'
+import FilaHoje from '../components/comercial/FilaHoje'
 import ExecutiveMetrics from '../components/dashboard/ExecutiveMetrics'
 import OpportunitiesPanel from '../components/dashboard/OpportunitiesPanel'
 import { useDashboardProjects } from '../components/dashboard/useDashboardData'
@@ -75,6 +76,7 @@ export default function Dashboard() {
       <GreetingHeader />
       <ExecutiveMetrics />
       <Journey />
+      <FilaHoje />
       <div className="vx-workspace">
         <div className="vx-workspace-main">
           <svg
