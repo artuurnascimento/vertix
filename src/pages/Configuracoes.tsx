@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth'
 import CompanySettingsCard from '../components/settings/CompanySettingsCard'
 import BillingSettingsCard from '../components/settings/BillingSettingsCard'
 import TeamSettingsCard from '../components/settings/TeamSettingsCard'
+import EsforcoPorRegraCard from '../components/settings/EsforcoPorRegraCard'
 import {
   EMPRESA_KEYS,
   settingsToMap,
@@ -38,7 +39,7 @@ export default function Configuracoes() {
           Configurações
         </h1>
         <p className="mt-2 text-sm font-light text-muted">
-          Dados da empresa, faturamento e equipe do painel.
+          Dados da empresa, faturamento, esforço por regra do Scan e equipe do painel.
         </p>
       </div>
 
@@ -64,6 +65,7 @@ export default function Configuracoes() {
         <div className="mt-8 flex flex-col gap-6">
           <CompanySettingsCard values={empresaValues} isAdmin={isAdmin} />
           <BillingSettingsCard value={valorHora} isAdmin={isAdmin} />
+          <EsforcoPorRegraCard isAdmin={isAdmin} />
           <TeamSettingsCard isAdmin={isAdmin} />
         </div>
       )}

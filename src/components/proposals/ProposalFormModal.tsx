@@ -28,6 +28,7 @@ import {
   sumInstallments,
 } from './proposalData'
 import type { Proposal } from './proposalData'
+import DiagnosticoBloco from './DiagnosticoBloco'
 
 /** staleTime alto — templates mudam raramente, evita refetch a cada abertura. */
 const TEMPLATES_STALE_TIME_MS = 5 * 60 * 1000
@@ -487,6 +488,19 @@ export default function ProposalFormModal({
                     </button>
                   )}
                 </div>
+              )}
+
+              {/* Diagnóstico do Scan (só na criação; some quando o projeto não tem análise) */}
+              {!isEdit && projectId && (
+                <DiagnosticoBloco
+                  key={projectId}
+                  projectId={projectId}
+                  temItensPreenchidos={hasFilledItems(itens)}
+                  onAplicar={(novosItens, tituloSugerido) => {
+                    if (titulo.trim() === '') setTitulo(tituloSugerido)
+                    setItens(novosItens)
+                  }}
+                />
               )}
 
               {/* Itens */}
