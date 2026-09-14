@@ -123,13 +123,64 @@ async function lerCorpoDoErro(erro: unknown): Promise<Registro | null> {
   }
 }
 
-export async function buscarCheckout(slug: string): Promise<CheckoutInfo> {
-  const { data, error } = await supabase.rpc('get_checkout_info', {
-    p_slug: slug,
-  })
-  if (error) throw new Error(error.message)
+/**
+ * O que o index.html deixa pronto antes de o JS chegar: um GET a
+ * /api/checkout-info disparado assim que o HTML é lido, para a oferta não
+ * esperar o bundle baixar e executar. É consumido UMA vez, e só se o slug
+ * bater.
+ */
+interface PrefetchDoCheckout {
+  slug: string
+  resposta: Promise<Response>
+}
 
-  const info = normalizarCheckout(data, slug)
+declare global {
+  interface Window {
+    __vxCheckoutInfo?: PrefetchDoCheckout
+  }
+}
+
+export function consumirPrefetchDoCheckout(slug: string): Promise<Response> | null {
+  if (typeof window === 'undefined') return null
+  const pre = window.__vxCheckoutInfo
+  if (!pre || pre.slug !== slug) return null
+  window.__vxCheckoutInfo = undefined
+  return pre.resposta
+}
+
+/**
+ * A oferta crua, pelo caminho mais curto que estiver de pé:
+ *   1. o prefetch do index.html (já em voo desde antes do JS);
+ *   2. /api/checkout-info — a mesma RPC servida pela CDN da Vercel ao lado do
+ *      comprador, em cache por 30 s;
+ *   3. a RPC direta no Supabase, como sempre foi.
+ * Qualquer falha nos dois primeiros cai em silêncio para o seguinte.
+ */
+async function lerInfoBruta(slug: string): Promise<unknown> {
+  const pre = consumirPrefetchDoCheckout(slug)
+  if (pre) {
+    try {
+      const resposta = await pre
+      if (resposta.ok) return await resposta.json()
+    } catch {
+      // segue para o próximo caminho
+    }
+  }
+  try {
+    const resposta = await fetch(`/api/checkout-info?slug=${encodeURIComponent(slug)}`, {
+      credentials: 'omit',
+    })
+    if (resposta.ok) return await resposta.json()
+  } catch {
+    // preview local sem funções da Vercel, rede instável: cai na RPC
+  }
+  const { data, error } = await supabase.rpc('get_checkout_info', { p_slug: slug })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function buscarCheckout(slug: string): Promise<CheckoutInfo> {
+  const info = normalizarCheckout(await lerInfoBruta(slug), slug)
   if (info === null) throw new Error('checkout_indisponivel')
   return info
 }

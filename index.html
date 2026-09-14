@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Checkout (/c/:slug): a oferta começa a ser buscada AQUI, antes de o JS
+         baixar e executar — é o que tira segundos do "Carregando checkout…"
+         no celular. checkoutApi.ts consome window.__vxCheckoutInfo. O hash
+         deste script está na CSP do vercel.json (cspInline.test.ts confere):
+         mudou o script, muda o hash. -->
+    <script>(function(){var m=/^\/c\/([a-z0-9-]+)/.exec(location.pathname);if(m&&window.fetch){window.__vxCheckoutInfo={slug:m[1],resposta:fetch("/api/checkout-info?slug="+m[1],{credentials:"omit"})}}})()</script>
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

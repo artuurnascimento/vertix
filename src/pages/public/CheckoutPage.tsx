@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -48,6 +48,27 @@ import SelosGrid from '../../components/checkout/SelosGrid'
 import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
 
 /**
+ * Cada tecla digitada em "Seus dados" muda o estado da página, e sem isto a
+ * página inteira era reconstruída a cada letra — resumo, bump, cupom,
+ * pagamento (com os iframes do Mercado Pago dentro), garantia, avaliações.
+ * No iPhone isso aparecia como campo que "não acompanha" a digitação. Com os
+ * filhos memoizados e os handlers estáveis (useCallback abaixo), uma tecla
+ * só re-renderiza o formulário de dados e a seção de pagamento, que precisa
+ * do e-mail e do documento na hora de gerar o token.
+ */
+const BannerTopoMemo = memo(BannerTopo)
+const CabecalhoMemo = memo(CabecalhoCheckout)
+const CronometroMemo = memo(Cronometro)
+const ResumoPedidoMemo = memo(ResumoPedido)
+const OrderBumpMemo = memo(OrderBump)
+const CupomFieldMemo = memo(CupomField)
+const DadosClienteMemo = memo(DadosCliente)
+const SecaoPagamentoMemo = memo(SecaoPagamento)
+const GarantiaCardMemo = memo(GarantiaCard)
+const DepoimentosMemo = memo(Depoimentos)
+const SelosGridMemo = memo(SelosGrid)
+
+/**
  * Checkout público `/c/:slug`.
  *
  * A mecânica de pagamento é a mesma da página de cobrança que já roda em
@@ -79,6 +100,8 @@ import type { MetodoPagamento } from '../../components/checkout/MetodoPagamento'
  */
 
 const SECAO_PAGAMENTO_ID = 'pagamento'
+/** Referência fixa: `[]` novo a cada render derrubaria a memoização dos selos. */
+const SEM_SELOS: string[] = []
 
 /**
  * `'pix'` saiu daqui de propósito: o Pix passou a abrir POR CIMA do checkout,
@@ -291,14 +314,58 @@ export default function CheckoutPage() {
     }
   }, [slug, bumpMarcado, metodo, cupom])
 
-  const alterarCampo = (campo: CampoCliente, valor: string) => {
+  const alterarCampo = useCallback((campo: CampoCliente, valor: string) => {
     setCliente((atual) => ({ ...atual, [campo]: valor }))
     // Erro some assim que a pessoa mexe no campo — corrigir e continuar vendo
     // "inválido" em vermelho é o tipo de atrito que faz abandonar carrinho.
     setErros((atuais) =>
       atuais[campo] === undefined ? atuais : { ...atuais, [campo]: undefined }
     )
-  }
+  }, [])
+
+  const alterarBump = useCallback(
+    (marcado: boolean) => {
+      setBumpMarcado(marcado)
+      rastreio.rastrear('bump', { marcado })
+    },
+    [rastreio]
+  )
+
+  const aplicarCupom = useCallback(
+    (codigo: string, resposta: RespostaCupom) =>
+      setCupom({
+        codigo,
+        resposta,
+        bumpNaValidacao: bumpMarcado,
+        metodoNaValidacao: metodo,
+      }),
+    [bumpMarcado, metodo]
+  )
+  const registrarTentativaDeCupom = useCallback(
+    (codigo: string, valido: boolean) =>
+      rastreio.rastrear('cupom', { acao: 'aplicou', codigo, valido }),
+    [rastreio]
+  )
+  const codigoDoCupom = cupom?.codigo ?? null
+  const removerCupom = useCallback(() => {
+    rastreio.rastrear('cupom', { acao: 'removeu', codigo: codigoDoCupom })
+    setCupom(null)
+  }, [rastreio, codigoDoCupom])
+
+  const escolherMetodo = useCallback(
+    (novo: MetodoPagamento) => {
+      setMetodo(novo)
+      rastreio.rastrear('metodo', { metodo: novo })
+    },
+    [rastreio]
+  )
+  const registrarErroDeCarregamento = useCallback(
+    (mensagem: string | null) => {
+      setErroPagamento(mensagem)
+      if (mensagem) rastreio.rastrear('erro', { erro: 'pagamento_sdk', mensagem })
+    },
+    [rastreio]
+  )
 
   const destinoPos = (id: string): string =>
     info?.checkout.temUpsell
@@ -412,6 +479,20 @@ export default function CheckoutPage() {
     }
   }
 
+  /**
+   * `enviarPagamento` fecha sobre o estado de cada render (cliente, cupom,
+   * total...), então sua identidade muda a cada tecla. A seção de pagamento
+   * recebe este wrapper, que não muda nunca e sempre chama a versão mais
+   * recente — é o que deixa a memoização dela valer.
+   */
+  const enviarPagamentoRef = useRef(enviarPagamento)
+  enviarPagamentoRef.current = enviarPagamento
+  const enviarPagamentoEstavel = useCallback(
+    (formData: unknown, cardTokenSalvar: string | null) =>
+      enviarPagamentoRef.current(formData, cardTokenSalvar),
+    []
+  )
+
   // ------------------------------------------------------------- estados --
   if (isLoading) {
     return (
@@ -460,16 +541,17 @@ export default function CheckoutPage() {
    * ninguém ouve o depoimento duas vezes. Sem depoimento cadastrado, nada
    * disso existe: nem moldura, nem espaço.
    */
+  const selos = prova?.selos ?? SEM_SELOS
   const avaliacoes =
     prova && prova.depoimentos.length > 0 ? (
-      <Depoimentos depoimentos={prova.depoimentos} />
+      <DepoimentosMemo depoimentos={prova.depoimentos} />
     ) : null
 
   return (
     <CheckoutShell
       cabecalho={false}
       topo={
-        <Cronometro
+        <CronometroMemo
           ate={info.cronometroAte}
           minutos={info.cronometroMinutos}
           slug={info.checkout.slug}
@@ -489,11 +571,11 @@ export default function CheckoutPage() {
       >
         {info.banner && (
           <div className="mb-7 sm:mb-9">
-            <BannerTopo banner={info.banner} />
+            <BannerTopoMemo banner={info.banner} />
           </div>
         )}
 
-        <CabecalhoCheckout
+        <CabecalhoMemo
           titulo={checkout.titulo}
           subtitulo={checkout.subtitulo}
         />
@@ -518,7 +600,7 @@ export default function CheckoutPage() {
               centro da tela vira "onde a pessoa está olhando" no painel. */}
           <div className="flex flex-col gap-5 lg:order-2">
             <div data-secao="resumo">
-              <ResumoPedido
+              <ResumoPedidoMemo
                 produto={produto}
                 bump={bump}
                 bumpMarcado={bumpMarcado}
@@ -539,47 +621,25 @@ export default function CheckoutPage() {
           <div className="flex flex-col gap-5 lg:order-1">
             {bump && (
               <div data-secao="bump">
-                <OrderBump
-                  bump={bump}
-                  marcado={bumpMarcado}
-                  onChange={(marcado) => {
-                    setBumpMarcado(marcado)
-                    rastreio.rastrear('bump', { marcado })
-                  }}
-                />
+                <OrderBumpMemo bump={bump} marcado={bumpMarcado} onChange={alterarBump} />
               </div>
             )}
 
             <div data-secao="cupom">
-              <CupomField
+              <CupomFieldMemo
                 slug={checkout.slug}
-                aplicado={cupom?.codigo ?? null}
+                aplicado={codigoDoCupom}
                 bumpMarcado={bumpMarcado}
                 metodo={metodo}
                 descontoCentavos={total.descontoCentavos}
-                onAplicar={(codigo, resposta) =>
-                  setCupom({
-                    codigo,
-                    resposta,
-                    bumpNaValidacao: bumpMarcado,
-                    metodoNaValidacao: metodo,
-                  })
-                }
-                onTentativa={(codigo, valido) =>
-                  rastreio.rastrear('cupom', { acao: 'aplicou', codigo, valido })
-                }
-                onRemover={() => {
-                  rastreio.rastrear('cupom', {
-                    acao: 'removeu',
-                    codigo: cupom?.codigo ?? null,
-                  })
-                  setCupom(null)
-                }}
+                onAplicar={aplicarCupom}
+                onTentativa={registrarTentativaDeCupom}
+                onRemover={removerCupom}
               />
             </div>
 
             <div ref={formRef} data-secao="dados">
-              <DadosCliente
+              <DadosClienteMemo
                 cliente={cliente}
                 erros={erros}
                 exigeDocumento={exigeDocumento}
@@ -589,31 +649,23 @@ export default function CheckoutPage() {
             </div>
 
             <div data-secao="pagamento">
-              <SecaoPagamento
+              <SecaoPagamentoMemo
                 id={SECAO_PAGAMENTO_ID}
                 totalCentavos={total.totalCentavos}
                 metodo={metodo}
-                onMetodo={(novo) => {
-                  setMetodo(novo)
-                  rastreio.rastrear('metodo', { metodo: novo })
-                }}
+                onMetodo={escolherMetodo}
                 descontoPixPercentual={descontoPixPercentual}
                 emailInicial={cliente.email}
                 documento={cliente.documento}
                 processando={processando}
                 erro={erroPagamento}
-                onSubmit={enviarPagamento}
-                onErroCarregamento={(mensagem) => {
-                  setErroPagamento(mensagem)
-                  if (mensagem) {
-                    rastreio.rastrear('erro', { erro: 'pagamento_sdk', mensagem })
-                  }
-                }}
+                onSubmit={enviarPagamentoEstavel}
+                onErroCarregamento={registrarErroDeCarregamento}
               />
             </div>
 
             <div data-secao="garantia">
-              <GarantiaCard garantia={garantia} />
+              <GarantiaCardMemo garantia={garantia} />
             </div>
             {avaliacoes && (
               <div className="lg:hidden" data-secao="avaliacoes-celular">
@@ -621,7 +673,7 @@ export default function CheckoutPage() {
               </div>
             )}
             <div data-secao="selos">
-              <SelosGrid selos={prova?.selos ?? []} />
+              <SelosGridMemo selos={selos} />
             </div>
           </div>
         </div>

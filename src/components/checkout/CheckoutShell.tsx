@@ -42,14 +42,17 @@ export default function CheckoutShell({
           className="app-ambient pointer-events-none fixed inset-0"
         />
         {/* Atmosfera dos dois cantos de cima: difusa e de baixa opacidade — é
-            profundidade, não protagonismo. */}
+            profundidade, não protagonismo. Gradiente radial, e não `filter:
+            blur(130px)` como antes: o blur de 130 px em duas camadas fixas
+            era rasterizado de novo pelo Safari do iPhone a cada mudança de
+            viewport (teclado abrindo, rolagem), e o formulário travava. */}
         <div
           aria-hidden
-          className="pointer-events-none fixed -right-40 -top-56 h-[32rem] w-[32rem] rounded-full bg-accent/[0.13] blur-[130px]"
+          className="pointer-events-none fixed -right-72 -top-80 h-[56rem] w-[56rem] bg-[radial-gradient(circle_closest-side,rgba(108,91,242,0.14),rgba(108,91,242,0.05)_45%,transparent_72%)]"
         />
         <div
           aria-hidden
-          className="pointer-events-none fixed -left-48 -top-64 h-[28rem] w-[28rem] rounded-full bg-accent-2/[0.10] blur-[130px]"
+          className="pointer-events-none fixed -left-80 -top-96 h-[52rem] w-[52rem] bg-[radial-gradient(circle_closest-side,rgba(85,70,224,0.11),rgba(85,70,224,0.04)_45%,transparent_72%)]"
         />
 
         <span

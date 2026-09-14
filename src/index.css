@@ -172,7 +172,8 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 700 !important;
-  animation: vtx-btn-gradient 6s ease-in-out infinite;
+  /* Sem animar background-position (repinta a cada frame; ver botaoPagar.css). */
+  background-position: 30% 50% !important;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -205,16 +206,6 @@ body {
 
 #payment-brick.vtx-processing button[type='submit']::before {
   width: 100%;
-}
-
-@keyframes vtx-btn-gradient {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
 }
 
 @keyframes vtx-btn-shine {

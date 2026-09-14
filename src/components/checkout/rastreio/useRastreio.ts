@@ -229,16 +229,25 @@ export function useRastreioCheckout(
     )
     elementos.forEach((el) => observador.observe(el))
     // Entre um limiar e outro o centro da tela também anda: a rolagem
-    // refaz as distâncias (a visibilidade fica por conta do observer).
+    // refaz as distâncias (a visibilidade fica por conta do observer). No
+    // máximo uma medição por quadro: o iPhone dispara dezenas de eventos de
+    // scroll por segundo, e medir retângulos em cada um é trabalho jogado
+    // fora enquanto a pessoa tenta digitar.
+    let quadro = 0
     const aoRolar = () => {
-      elementos.forEach((el) => medir(el))
-      agendar()
+      if (quadro) return
+      quadro = window.requestAnimationFrame(() => {
+        quadro = 0
+        elementos.forEach((el) => medir(el))
+        agendar()
+      })
     }
     window.addEventListener('scroll', aoRolar, { passive: true })
 
     return () => {
       observador.disconnect()
       window.removeEventListener('scroll', aoRolar)
+      if (quadro) window.cancelAnimationFrame(quadro)
       window.clearTimeout(temporizador)
     }
   }, [pronto, rastreador])

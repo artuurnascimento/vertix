@@ -50,7 +50,11 @@
   line-height: 1.2;
   text-transform: uppercase;
   cursor: pointer;
-  animation: vtx-pagar-gradiente 6s ease-in-out infinite;
+  /* Sem animar background-position: isso repinta o botão inteiro a cada
+     frame na thread principal (60 vezes por segundo, para sempre) e no
+     iPhone rouba tempo de quem está digitando. O brilho que varre
+     (transform, no compositor) fica. */
+  background-position: 30% 50%;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -139,16 +143,6 @@
     center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E")
     center / contain no-repeat;
-}
-
-@keyframes vtx-pagar-gradiente {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
 }
 
 @keyframes vtx-pagar-brilho {
