@@ -222,6 +222,35 @@ async function registrarDesfecho(
   })
 }
 
+interface PedidoPago {
+  id: string
+  mp_payment_id: string
+  total_centavos: number
+  lead_id: string | null
+  created_at: string
+}
+
+/**
+ * O pedido pago do checkout que cobrou esta compra: mesma análise, status
+ * 'pago' e com o id do pagamento. Preferência para o pedido do MESMO lead;
+ * entre vários, o mais recente. Nenhum pedido = venda antiga, paga pelo
+ * link de pagamento (a busca por recebível continua valendo para ela).
+ */
+async function pedidoPagoDaCompra(db: Db, compraId: string): Promise<PedidoPago | null> {
+  const compras = await db.select<{ analysis_id: string | null; lead_id: string | null }>(
+    `raiox_compras?id=eq.${compraId}&select=analysis_id,lead_id&limit=1`
+  )
+  const compra = compras[0]
+  if (!compra?.analysis_id) return null
+  const pedidos = await db.select<PedidoPago>(
+    `pedidos?analysis_id=eq.${compra.analysis_id}&status=eq.pago&mp_payment_id=not.is.null` +
+      '&select=id,mp_payment_id,total_centavos,lead_id,created_at&order=created_at.desc&limit=5'
+  )
+  const validos = pedidos.filter((p) => typeof p.mp_payment_id === 'string' && p.mp_payment_id.trim() !== '')
+  if (validos.length === 0) return null
+  return validos.find((p) => compra.lead_id && p.lead_id === compra.lead_id) ?? validos[0]
+}
+
 Deno.serve(
   withCors(comLog('scan-reembolsar', async (req) => {
     if (req.method !== 'POST') {
@@ -393,6 +422,32 @@ Deno.serve(
     // _shared/reembolso.ts. Aqui só se traduz o desfecho em HTTP.
 
     let mpPaymentId = reserva.gateway_payment_id ?? null
+
+    // Venda pelo CHECKOUT NOVO (/c/plano-correcao): o pagamento no MP tem
+    // external_reference = id do PEDIDO, e o id do pagamento já está em
+    // pedidos.mp_payment_id — a busca por recebível abaixo nunca o acharia
+    // (referência e valor diferentes: a compra guarda o preço do plano, o
+    // pedido o total cobrado). Foi o caso de 13/09/2026: "nenhum pagamento
+    // aprovado desta venda" com a venda aprovada no painel do MP.
+    if (!mpPaymentId) {
+      const pedido = await pedidoPagoDaCompra(db, compraId)
+      if (pedido) {
+        mpPaymentId = pedido.mp_payment_id
+        try {
+          await db.rpc('scan_compra_reembolso_pagamento', {
+            p_receivable_id: receivableId,
+            p_gateway_payment_id: mpPaymentId,
+          })
+        } catch {
+          // gravar é conveniência para a próxima vez; o estorno segue
+        }
+        log.info(
+          'pagamento_pelo_pedido',
+          `Compra ${compraId}: pagamento ${mpPaymentId} veio do pedido ${pedido.id} (R$ ${(pedido.total_centavos / 100).toFixed(2)}).`,
+          { compra_id: compraId, pedido_id: pedido.id }
+        )
+      }
+    }
 
     if (!mpPaymentId) {
       const busca = await buscarPagamentoPorReferencia(
