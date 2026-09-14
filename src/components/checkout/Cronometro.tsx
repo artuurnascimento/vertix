@@ -77,9 +77,12 @@ export default function Cronometro({
       {fracao !== null && (
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-[3px] bg-black/20">
           {/* currentColor: a linha acompanha a cor do texto, seja ela qual for. */}
+          {/* scaleX, não width: a cada segundo a barra encolhe um pouco, e
+              animar width é layout + pintura da faixa inteira a 60 fps
+              durante os 15 minutos; transform fica no compositor. */}
           <span
-            className="vx-cronometro-barra block h-full bg-current opacity-85"
-            style={{ width: `${fracao * 100}%` }}
+            className="vx-cronometro-barra block h-full w-full origin-left bg-current opacity-85"
+            style={{ transform: `scaleX(${fracao})` }}
           />
         </span>
       )}

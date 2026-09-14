@@ -8,6 +8,13 @@ import { queryClient } from './lib/queryClient'
 import { AuthProvider } from './lib/auth'
 import { supabaseConfigMissing } from './lib/supabase'
 
+// Checkout público: o chunk da rota começa a baixar AGORA, em paralelo ao
+// boot do React, em vez de só depois que o App montar e o lazy() pedir —
+// um round-trip a menos antes de "Carregando checkout…" virar a página.
+if (window.location.pathname.startsWith('/c/')) {
+  void import('./pages/public/CheckoutPage').catch(() => {})
+}
+
 const root = createRoot(document.getElementById('root')!)
 
 if (supabaseConfigMissing) {

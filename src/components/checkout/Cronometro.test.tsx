@@ -20,7 +20,7 @@ describe('Cronometro', () => {
     expect(screen.getByLabelText('Tempo restante: 14 minutos, 52 segundos')).toBeInTheDocument()
     // Linha de progresso: 14:52 de 15:00 ≈ 99%.
     const barra = faixa.querySelector('.vx-cronometro-barra') as HTMLElement
-    expect(parseFloat(barra.style.width)).toBeCloseTo((892 / 900) * 100, 5)
+    expect(parseFloat(barra.style.transform.replace(/[^\d.]/g, ''))).toBeCloseTo(892 / 900, 5)
     expect(faixa).not.toHaveAttribute('data-urgente')
   })
 

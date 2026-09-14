@@ -30,6 +30,7 @@ import {
   tokenValido,
 } from '../../components/checkout/prefillCliente'
 import { mensagemDeErro } from '../../components/checkout/errosPagamento'
+import { carregarMpSdk } from '../../components/checkout/mpSdk'
 import { useRastreioCheckout } from '../../components/checkout/rastreio/useRastreio'
 import AvisoCheckout from '../../components/checkout/AvisoCheckout'
 import BannerTopo from '../../components/checkout/BannerTopo'
@@ -175,6 +176,24 @@ export default function CheckoutPage() {
    * disparados nos handlers abaixo. Nunca lança, nunca atrasa nada.
    */
   const rastreio = useRastreioCheckout(slug, Boolean(info))
+
+  /**
+   * O SDK do Mercado Pago (66 KB, três hosts novos) começa a baixar assim
+   * que a oferta chega, na folga do navegador — e não só quando a pessoa
+   * toca em "Cartão". A promessa é memoizada em mpSdk.ts: quem pedir depois
+   * encontra pronta. Falha aqui é silenciosa; o formulário pede de novo.
+   */
+  useEffect(() => {
+    if (!info) return
+    const aquecer = () => void carregarMpSdk().catch(() => {})
+    // Safari não tem requestIdleCallback: cai num timeout curto.
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(aquecer, { timeout: 2000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = setTimeout(aquecer, 800)
+    return () => clearTimeout(id)
+  }, [info])
 
   /**
    * Dados do comprador, para o formulário não pedir de novo o que ele já deu.

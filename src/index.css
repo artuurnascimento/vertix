@@ -791,7 +791,8 @@ body {
   animation: vx-cronometro-toque 4s ease-in-out infinite;
 }
 .vx-cronometro-barra {
-  transition: width 1s linear;
+  transition: transform 1s linear;
+  will-change: transform;
 }
 .vx-cronometro-pulso {
   animation: vx-cronometro-pulso 1s ease-in-out infinite;
