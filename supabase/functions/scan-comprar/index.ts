@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('scan-comprar')
 /**
  * scan-comprar
  *
@@ -128,10 +131,10 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('scan-comprar', async (req) => {
   const scanToken = Deno.env.get('SCAN_INBOUND_TOKEN')
   if (!scanToken) {
-    console.error('[scan-comprar] SCAN_INBOUND_TOKEN não configurado.')
+    log.erro('SCAN_INBOUND_TOKEN não configurado.')
     return jsonResponse({ error: 'endpoint_desativado' }, 503)
   }
   if (!safeEqual(req.headers.get('x-vertix-token') ?? '', scanToken)) {
@@ -200,7 +203,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[scan-comprar] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
 
@@ -236,7 +239,7 @@ Deno.serve(async (req) => {
 
   if (!res.ok) {
     const detalhe = await res.text()
-    console.error('[scan-comprar] scan_abrir_compra falhou:', res.status, detalhe)
+    log.erro('scan_abrir_compra falhou:', res.status, detalhe)
     return jsonResponse({ error: 'falha_ao_registrar_compra' }, 502)
   }
 
@@ -256,4 +259,4 @@ Deno.serve(async (req) => {
     // novo cai no mesmo checkout, com o formulário preenchido igual.
     payment_url: urlDoCheckout(analysisId, compra.payment_token),
   })
-})
+}))

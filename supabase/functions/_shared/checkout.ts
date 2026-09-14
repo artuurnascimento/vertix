@@ -1,3 +1,6 @@
+import { criarLog } from './log.ts'
+
+const log = criarLog('shared:checkout')
 /**
  * Regras compartilhadas do checkout próprio (checkout-pagar, checkout-upsell,
  * cupom-validar).
@@ -158,7 +161,7 @@ export function criarDb(supabaseUrl: string, serviceRoleKey: string): Db {
     // O corpo do PostgREST não contém segredo — traz a mensagem do Postgres,
     // que é o que faz a diferença entre "constraint" e "coluna inexistente".
     const corpo = await res.text().catch(() => '')
-    console.error(`[checkout] ${rotulo} falhou:`, res.status, corpo.slice(0, 500))
+    log.erro(`${rotulo} falhou:`, res.status, corpo.slice(0, 500))
     throw new Error(`db_${rotulo}`)
   }
 

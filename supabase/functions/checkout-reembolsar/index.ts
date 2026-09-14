@@ -86,6 +86,9 @@ import {
   reembolsarNoMp,
   type RefundMp,
 } from '../_shared/reembolso.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('checkout-reembolsar')
 
 /** Prefixo de log e de erro; é o nome da function em toda mensagem. */
 const ROTULO = 'checkout-reembolsar'
@@ -147,8 +150,8 @@ async function registrarDesfecho(
     // casar a linha com o extrato à mão. A reserva continua gravada, então o
     // índice de reconciliação encontra este pedido e a próxima tentativa
     // converge pela chave de idempotência (ver cabeçalho).
-    console.error(
-      '[checkout-reembolsar] REEMBOLSADO SEM REGISTRO — o Mercado Pago ' +
+    log.erro(
+      'REEMBOLSADO SEM REGISTRO — o Mercado Pago ' +
         `devolveu o dinheiro do pedido ${pedidoId} (pagamento ${mpPaymentId}, ` +
         `reembolso ${refund.id ?? 'sem id'}) e a gravação no banco falhou. ` +
         'O pedido continua PAGO no sistema e o acesso NÃO foi revogado. ' +
@@ -171,8 +174,8 @@ async function registrarDesfecho(
   if (!conclusao) {
     // Mesma situação da falha acima; só o formato da resposta do PostgREST
     // difere. O log precisa ser igualmente gritante.
-    console.error(
-      '[checkout-reembolsar] REEMBOLSADO SEM REGISTRO — resposta vazia da ' +
+    log.erro(
+      'REEMBOLSADO SEM REGISTRO — resposta vazia da ' +
         `pedido_reembolso_concluir. Pedido ${pedidoId}, pagamento ` +
         `${mpPaymentId}, reembolso ${refund.id ?? 'sem id'}.`
     )
@@ -185,8 +188,8 @@ async function registrarDesfecho(
   if (conclusao.receivable_id && conclusao.receivable_cancelado === false) {
     // Não é erro: ou outra passagem já cancelou, ou o recebível sumiu. Vale o
     // log porque é a única pista de recebível que ficou como receita.
-    console.error(
-      `[checkout-reembolsar] Recebível ${conclusao.receivable_id} do pedido ` +
+    log.erro(
+      `Recebível ${conclusao.receivable_id} do pedido ` +
         `${pedidoId} não foi cancelado nesta passagem. Conferir no Financeiro.`
     )
   }
@@ -213,7 +216,7 @@ async function registrarDesfecho(
 }
 
 Deno.serve(
-  withCors(async (req) => {
+  withCors(comLog('checkout-reembolsar', async (req) => {
     if (req.method !== 'POST') {
       return jsonResponse({ erro: 'method_not_allowed' }, 405)
     }
@@ -230,7 +233,7 @@ Deno.serve(
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
     if (!supabaseUrl || !serviceRoleKey || !mpAccessToken) {
-      console.error(`[${ROTULO}] Env ausente.`)
+      log.erro(`[${ROTULO}] Env ausente.`)
       return jsonResponse({ erro: 'config_ausente' }, 500)
     }
 
@@ -333,8 +336,8 @@ Deno.serve(
         )
 
       default:
-        console.error(
-          '[checkout-reembolsar] Resultado inesperado da reserva:',
+        log.erro(
+          'Resultado inesperado da reserva:',
           reserva.resultado,
           'pedido:',
           pedidoId
@@ -346,8 +349,8 @@ Deno.serve(
     if (!mpPaymentId) {
       // A RPC só devolve 'reservado' com pagamento, mas confiar nisso aqui
       // significaria montar a URL com "undefined" se aquilo mudasse.
-      console.error(
-        '[checkout-reembolsar] Reserva sem mp_payment_id. Pedido:',
+      log.erro(
+        'Reserva sem mp_payment_id. Pedido:',
         pedidoId
       )
       return jsonResponse({ erro: 'pedido_sem_pagamento' }, 422)
@@ -357,8 +360,8 @@ Deno.serve(
       // Reserva anterior venceu sem desfecho: pode haver um reembolso já feito
       // do outro lado. A chave de idempotência cuida disso, mas o log marca a
       // ocorrência — é o rastro de que algo falhou no meio antes.
-      console.error(
-        `[checkout-reembolsar] Retomando reserva vencida do pedido ${pedidoId} ` +
+      log.erro(
+        `Retomando reserva vencida do pedido ${pedidoId} ` +
           `(pagamento ${mpPaymentId}). Houve tentativa anterior sem desfecho.`
       )
     }
@@ -403,8 +406,8 @@ Deno.serve(
       )
 
       if (consulta?.reembolsado) {
-        console.error(
-          `[checkout-reembolsar] Pagamento ${mpPaymentId} do pedido ${pedidoId} ` +
+        log.erro(
+          `Pagamento ${mpPaymentId} do pedido ${pedidoId} ` +
             'já estava reembolsado no Mercado Pago; reconciliando o estado.'
         )
         return await registrarDesfecho(
@@ -436,8 +439,8 @@ Deno.serve(
       try {
         await db.rpc('pedido_reembolso_liberar', { p_pedido_id: pedidoId })
       } catch {
-        console.error(
-          '[checkout-reembolsar] Falha ao liberar a reserva do pedido',
+        log.erro(
+          'Falha ao liberar a reserva do pedido',
           pedidoId,
           '— ela vence sozinha.'
         )
@@ -458,5 +461,5 @@ Deno.serve(
     // ----------------------------------------------------------------------
 
     return await registrarDesfecho(db, pedidoId, refund, mpPaymentId)
-  })
+  }))
 )

@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('nps-request')
 /**
  * nps-request
  *
@@ -63,12 +66,12 @@ function buildEmailHtml(
   </div>`
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('nps-request', async (req) => {
   // Só o trigger interno do banco pode chamar: exige o segredo compartilhado.
   // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
   const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
   if (!edgeSecret) {
-    console.error('[nps-request] EDGE_SHARED_SECRET não configurado.')
+    log.erro('EDGE_SHARED_SECRET não configurado.')
     return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
   }
   if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
@@ -81,7 +84,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('ADMIN_APP_URL') ?? 'http://localhost:5175'
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[nps-request] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ ok: false, reason: 'env_supabase_ausente' }, 500)
   }
 
@@ -108,7 +111,7 @@ Deno.serve(async (req) => {
     }
   )
   if (!surveyRes.ok) {
-    console.error('[nps-request] Falha ao buscar survey:', surveyRes.status)
+    log.erro('Falha ao buscar survey:', surveyRes.status)
     return jsonResponse({ ok: false, reason: 'falha_ao_buscar' }, 502)
   }
 
@@ -122,11 +125,11 @@ Deno.serve(async (req) => {
   const link = `${appUrl}/nps/${survey.token}`
 
   if (!resendApiKey) {
-    console.info('[nps-request] RESEND_API_KEY ausente — no-op.', link)
+    log.info('RESEND_API_KEY ausente — no-op.', link)
     return jsonResponse({ ok: true, skipped: 'sem_config_email', link })
   }
   if (!email) {
-    console.info('[nps-request] Cliente sem e-mail — no-op.')
+    log.info('Cliente sem e-mail — no-op.')
     return jsonResponse({ ok: true, skipped: 'cliente_sem_email' })
   }
 
@@ -149,9 +152,9 @@ Deno.serve(async (req) => {
   })
 
   if (!emailRes.ok) {
-    console.error('[nps-request] Falha no envio Resend:', emailRes.status)
+    log.erro('Falha no envio Resend:', emailRes.status)
     return jsonResponse({ ok: false, reason: 'falha_resend' }, 502)
   }
 
   return jsonResponse({ ok: true, enviado: true })
-})
+}))

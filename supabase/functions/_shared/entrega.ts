@@ -47,6 +47,9 @@
 
 import type { Db, PedidoItem } from './checkout.ts'
 import { enviarPurchaseMeta } from './meta-capi.ts'
+import { criarLog } from './log.ts'
+
+const log = criarLog('shared:entrega')
 
 /**
  * Teto de espera pelo worker. Curto de propósito: em checkout-pagar esta
@@ -152,7 +155,7 @@ export async function avisarWorkerItemPago(
   const vertixToken = Deno.env.get('VERTIX_SERVICE_TOKEN')
 
   if (!workerUrl || !vertixToken) {
-    console.error(
+    log.erro(
       `[${rotulo}] ENTREGA DO ITEM NÃO AVISADA — pedido ${pedidoId}, produto ${produtoId} ` +
         'está PAGO e o worker do Scan não foi chamado. Env ausente: ' +
         `${!workerUrl ? 'SCAN_WORKER_URL ' : ''}${!vertixToken ? 'VERTIX_SERVICE_TOKEN' : ''}`.trim()
@@ -171,10 +174,10 @@ export async function avisarWorkerItemPago(
       signal: AbortSignal.timeout(WORKER_TIMEOUT_MS),
     })
     if (!res.ok) {
-      console.error(`[${rotulo}] Worker do Scan recusou o item ${produtoId} do pedido ${pedidoId}:`, res.status)
+      log.erro(`[${rotulo}] Worker do Scan recusou o item ${produtoId} do pedido ${pedidoId}:`, res.status)
     }
   } catch (erro) {
-    console.error(`[${rotulo}] Worker do Scan indisponível (item ${produtoId}, pedido ${pedidoId}):`, erro)
+    log.erro(`[${rotulo}] Worker do Scan indisponível (item ${produtoId}, pedido ${pedidoId}):`, erro)
   }
 }
 
@@ -188,7 +191,7 @@ export async function avisarWorkerPedidoPago(
   if (!workerUrl || !vertixToken) {
     // Log deliberadamente gritante — ver cabeçalho. Diz QUAL env falta (nunca
     // o valor dela) e deixa explícito que existe um cliente pago esperando.
-    console.error(
+    log.erro(
       `[${rotulo}] ENTREGA NÃO AVISADA — pedido ${pedidoId} está PAGO e o ` +
         'worker do Scan não foi chamado. Env ausente: ' +
         `${!workerUrl ? 'SCAN_WORKER_URL ' : ''}${!vertixToken ? 'VERTIX_SERVICE_TOKEN' : ''}`.trim()
@@ -210,13 +213,13 @@ export async function avisarWorkerPedidoPago(
       }
     )
     if (!res.ok) {
-      console.error(
+      log.erro(
         `[${rotulo}] Worker do Scan recusou o pedido ${pedidoId}:`,
         res.status
       )
     }
   } catch (erro) {
-    console.error(
+    log.erro(
       `[${rotulo}] Worker do Scan indisponível (pedido ${pedidoId}):`,
       erro
     )
@@ -269,7 +272,7 @@ async function resolverDestino(
     }
     // Recebível apontado mas ilegível: não é motivo para perder a cobrança.
     // Segue para o caminho de criação, e o log diz por quê.
-    console.error(
+    log.erro(
       `[${rotulo}] Recebível ${pedido.receivable_id} do pedido ${pedido.id} ` +
         'não pôde ser lido; criando cliente e projeto novos.'
     )
@@ -292,7 +295,7 @@ async function resolverDestino(
       origem: ORIGEM,
     })
     if (!criado) {
-      console.error(
+      log.erro(
         `[${rotulo}] Recebível não criado: cliente sem linha. Pedido:`,
         pedido.id
       )
@@ -308,7 +311,7 @@ async function resolverDestino(
     origem: ORIGEM,
   })
   if (!projeto) {
-    console.error(
+    log.erro(
       `[${rotulo}] Recebível não criado: projeto sem linha. Pedido:`,
       pedido.id,
       'cliente:',
@@ -399,7 +402,7 @@ export async function criarRecebivelDoPedido(
       pedido.total_centavos
     )
     if (!receivableId) {
-      console.error(
+      log.erro(
         `[${rotulo}] Recebível sem linha na resposta. Pedido:`,
         pedido.id,
         'projeto:',
@@ -410,7 +413,7 @@ export async function criarRecebivelDoPedido(
   } catch (erro) {
     // O db compartilhado já logou status e corpo do PostgREST. Aqui interessa
     // amarrar a falha ao pedido, que é por onde alguém vai procurar.
-    console.error(
+    log.erro(
       `[${rotulo}] Falha ao criar recebível do pedido ${pedido.id}:`,
       erro
     )
@@ -466,7 +469,7 @@ export async function criarRecebivelComplementar(
       valor_centavos
     )
     if (!receivableId) {
-      console.error(
+      log.erro(
         `[${rotulo}] Recebível complementar sem linha na resposta. Pedido:`,
         pedido.id,
         'produto:',
@@ -484,7 +487,7 @@ export async function criarRecebivelComplementar(
       // Alguém amarrou primeiro: o recebível recém-criado é duplicado. Não é
       // apagado daqui — apagar registro de dinheiro por conta própria é pior
       // do que uma linha a mais que alguém confere. O log tem os três ids.
-      console.error(
+      log.erro(
         `[${rotulo}] RECEBÍVEL DUPLICADO — ${receivableId} criado para o ` +
           `produto ${produto_id} do pedido ${pedido.id}, que já tinha vínculo. ` +
           'Conferir no Financeiro.'
@@ -493,7 +496,7 @@ export async function criarRecebivelComplementar(
 
     return receivableId
   } catch (erro) {
-    console.error(
+    log.erro(
       `[${rotulo}] Falha ao criar recebível complementar do pedido ${pedido.id}:`,
       erro
     )
@@ -535,7 +538,7 @@ export async function concluirPedidoPago(
       // volta ficou faltando. O log tem os dois ids para reconciliar à mão —
       // e, sem o ponteiro, uma segunda passagem criaria um recebível
       // duplicado, que é justamente o que este log serve para pegar.
-      console.error(
+      log.erro(
         `[${rotulo}] Recebível ${receivableId} criado mas não gravado no ` +
           `pedido ${pedido.id}.`
       )

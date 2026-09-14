@@ -71,6 +71,9 @@ import {
   type ProdutoRow,
 } from '../_shared/checkout.ts'
 import { avisarWorkerItemPago, criarRecebivelComplementar } from '../_shared/entrega.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('checkout-upsell')
 
 interface RequestBody {
   pedido_id?: string
@@ -112,7 +115,7 @@ function centavosParaReais(centavos: number): number {
 }
 
 Deno.serve(
-  withCors(async (req) => {
+  withCors(comLog('checkout-upsell', async (req) => {
     if (req.method !== 'POST') {
       return jsonResponse({ ok: false, erro: 'method_not_allowed' }, 405)
     }
@@ -156,7 +159,7 @@ Deno.serve(
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
     if (!supabaseUrl || !serviceRoleKey || !mpAccessToken) {
-      console.error('[checkout-upsell] Env ausente.')
+      log.erro('Env ausente.')
       return jsonResponse({ ok: false, erro: 'config_ausente' }, 500)
     }
 
@@ -233,7 +236,7 @@ Deno.serve(
 
     const preco = produto.preco_centavos
     if (preco < VALOR_MINIMO_CENTAVOS || preco > VALOR_MAXIMO_CENTAVOS) {
-      console.error('[checkout-upsell] Preço fora da faixa:', preco, produtoId)
+      log.erro('Preço fora da faixa:', preco, produtoId)
       return jsonResponse({ ok: false, erro: 'valor_invalido' }, 422)
     }
 
@@ -328,8 +331,8 @@ Deno.serve(
       // Rede caiu sem resposta. NÃO desfazemos a reserva: pode ter cobrado.
       // A reserva pendurada é justamente o que impede uma segunda cobrança —
       // ver o ramo 'cobranca_em_andamento' acima.
-      console.error(
-        '[checkout-upsell] Rede falhou ao chamar o MP. Pedido:',
+      log.erro(
+        'Rede falhou ao chamar o MP. Pedido:',
         pedidoId,
         erro instanceof Error ? erro.message : ''
       )
@@ -340,8 +343,8 @@ Deno.serve(
     const mpPaymentId = mpBody.id != null ? String(mpBody.id) : null
 
     if (!aprovado) {
-      console.error(
-        '[checkout-upsell] Upsell não aprovado. Pedido:',
+      log.erro(
+        'Upsell não aprovado. Pedido:',
         pedidoId,
         'http:',
         mpRes.status,
@@ -359,8 +362,8 @@ Deno.serve(
           p_aprovado: false,
         })
       } catch {
-        console.error(
-          '[checkout-upsell] Falha ao desfazer reserva. Pedido:',
+        log.erro(
+          'Falha ao desfazer reserva. Pedido:',
           pedidoId
         )
       }
@@ -386,8 +389,8 @@ Deno.serve(
         p_mp_payment_id: mpPaymentId,
       })
     } catch {
-      console.error(
-        '[checkout-upsell] Cobrado mas não baixado. Pedido:',
+      log.erro(
+        'Cobrado mas não baixado. Pedido:',
         pedidoId,
         'mp_payment_id:',
         mpPaymentId
@@ -448,5 +451,5 @@ Deno.serve(
     }
 
     return jsonResponse({ ok: true, total_centavos: totalFinal })
-  })
+  }))
 )

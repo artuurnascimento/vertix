@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
+import { fetchComLog } from './log'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -19,5 +20,8 @@ if (supabaseConfigMissing) {
 
 export const supabase = createClient<Database>(
   supabaseUrl ?? 'https://placeholder.supabase.co',
-  supabaseAnonKey ?? 'placeholder-anon-key'
+  supabaseAnonKey ?? 'placeholder-anon-key',
+  // fetch com correlação: toda chamada às edge functions leva o id da
+  // requisição, da aba e da sessão do checkout (ver lib/log/index.ts).
+  { global: { fetch: fetchComLog } }
 )

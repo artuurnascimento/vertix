@@ -20,6 +20,27 @@
  * @param {{ url?: string, headers: Record<string, string | string[] | undefined> }} req
  * @param {{ setHeader: (n: string, v: string) => unknown, status: (c: number) => { send: (b: string) => unknown, json: (b: unknown) => unknown } }} res
  */
+/**
+ * Manda uma entrada para a trilha de logs do painel (RPC registrar_log,
+ * anon). Espera no máximo 1,5 s e nunca lança: a resposta de erro ao
+ * navegador não pode ficar presa atrás do log.
+ * @param {string} url
+ * @param {string} chave
+ * @param {Record<string, unknown>} entrada
+ */
+async function registrarLog(url, chave, entrada) {
+  try {
+    await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/registrar_log`, {
+      method: 'POST',
+      headers: { apikey: chave, Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_entradas: [{ origem: 'vercel', fonte: 'api/checkout-info', ...entrada }] }),
+      signal: AbortSignal.timeout(1500),
+    })
+  } catch {
+    // sem log, sem drama
+  }
+}
+
 export default async function handler(req, res) {
   const slug =
     new URL(req.url ?? '/', 'http://x').searchParams.get('slug')?.trim().toLowerCase() ?? ''
@@ -51,13 +72,23 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     if (!resposta.ok) {
       res.setHeader('Cache-Control', 'no-store')
+      await registrarLog(url, chave, {
+        nivel: 'erro', evento: 'rpc_falhou',
+        mensagem: `get_checkout_info respondeu ${resposta.status} para ${slug}`,
+        detalhes: { status: resposta.status, corpo: corpo.slice(0, 500) }, contexto: { slug },
+      })
       res.status(502).send(corpo || '{"error":"rpc"}')
       return
     }
     res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300')
     res.status(200).send(corpo)
-  } catch {
+  } catch (erro) {
     res.setHeader('Cache-Control', 'no-store')
+    await registrarLog(url, chave, {
+      nivel: 'erro', evento: 'rpc_indisponivel',
+      mensagem: `get_checkout_info indisponível para ${slug}: ${erro instanceof Error ? erro.message : String(erro)}`,
+      detalhes: { erro: String(erro) }, contexto: { slug },
+    })
     res.status(502).json({ error: 'rpc_indisponivel' })
   }
 }

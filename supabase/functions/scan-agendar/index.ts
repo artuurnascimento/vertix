@@ -36,6 +36,9 @@ import {
   ocupados,
   type Periodo,
 } from '../_shared/google-calendar.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('scan-agendar')
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const CODE_RE = /^[A-Za-z0-9_-]{12}$/
@@ -78,16 +81,16 @@ async function ocupadosNoPainel(
     { headers }
   )
   if (!res.ok) {
-    console.error('[scan-agendar] Falha ao ler agenda_events:', res.status)
+    log.erro('Falha ao ler agenda_events:', res.status)
     return []
   }
   return (await res.json()) as Periodo[]
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('scan-agendar', async (req) => {
   const scanToken = Deno.env.get('SCAN_INBOUND_TOKEN')
   if (!scanToken) {
-    console.error('[scan-agendar] SCAN_INBOUND_TOKEN não configurado.')
+    log.erro('SCAN_INBOUND_TOKEN não configurado.')
     return jsonResponse({ error: 'endpoint_desativado' }, 503)
   }
   if (!safeEqual(req.headers.get('x-vertix-token') ?? '', scanToken)) {
@@ -97,7 +100,7 @@ Deno.serve(async (req) => {
 
   const google = lerEnvGoogle()
   if (!google) {
-    console.error('[scan-agendar] GOOGLE_* ausentes nos secrets.')
+    log.erro('GOOGLE_* ausentes nos secrets.')
     return jsonResponse({ error: 'agenda_indisponivel' }, 503)
   }
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -132,7 +135,7 @@ Deno.serve(async (req) => {
     try {
       return jsonResponse({ horarios: await livres(), fuso: FUSO, duracao_min: DURACAO_MIN })
     } catch (erro) {
-      console.error('[scan-agendar] Falha ao listar horários:', erro instanceof Error ? erro.message : erro)
+      log.erro('Falha ao listar horários:', erro instanceof Error ? erro.message : erro)
       return jsonResponse({ error: 'google_indisponivel' }, 502)
     }
   }
@@ -167,7 +170,7 @@ Deno.serve(async (req) => {
   try {
     disponiveis = await livres()
   } catch (erro) {
-    console.error('[scan-agendar] Falha ao conferir horário:', erro instanceof Error ? erro.message : erro)
+    log.erro('Falha ao conferir horário:', erro instanceof Error ? erro.message : erro)
     return jsonResponse({ error: 'google_indisponivel' }, 502)
   }
   const inicioIso = new Date(inicio).toISOString()
@@ -201,7 +204,7 @@ Deno.serve(async (req) => {
       requestId: `scan-${leadId}-${Date.parse(inicioIso)}`,
     })
   } catch (erro) {
-    console.error('[scan-agendar] Google recusou o evento:', erro instanceof Error ? erro.message : erro)
+    log.erro('Google recusou o evento:', erro instanceof Error ? erro.message : erro)
     return jsonResponse({ error: 'google_indisponivel' }, 502)
   }
 
@@ -222,7 +225,7 @@ Deno.serve(async (req) => {
     }),
   })
   if (!agendaRes.ok) {
-    console.error(`[scan-agendar] Evento ${evento.id} criado no Google mas não na agenda_events: ${agendaRes.status}`)
+    log.erro(`Evento ${evento.id} criado no Google mas não na agenda_events: ${agendaRes.status}`)
   }
 
   // Lead: reunião marcada (o status que para a sequência de e-mails).
@@ -231,8 +234,8 @@ Deno.serve(async (req) => {
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: 'reuniao', reuniao_em: inicioIso }),
   })
-  if (!leadRes.ok) console.error('[scan-agendar] Falha ao marcar o lead como reuniao:', leadRes.status)
+  if (!leadRes.ok) log.erro('Falha ao marcar o lead como reuniao:', leadRes.status)
 
-  console.log(`[scan-agendar] Call marcada: ${formatarSP(inicioIso)} (${dominio})`)
+  log.info(`Call marcada: ${formatarSP(inicioIso)} (${dominio})`)
   return jsonResponse({ inicio: inicioIso, fim: fimIso, meet_url: evento.meetUrl })
-})
+}))

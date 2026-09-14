@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('payment-webhook')
 /**
  * payment-webhook
  *
@@ -85,12 +88,12 @@ async function entregarCompraDoScan(
     )
     if (!res.ok) {
       // Inclui o caso "migration ainda não aplicada" — não é erro fatal aqui.
-      console.error('[payment-webhook] Falha ao buscar raiox_compras:', res.status)
+      log.erro('Falha ao buscar raiox_compras:', res.status)
       return
     }
     compra = ((await res.json()) as CompraRecord[])[0]
   } catch (erro) {
-    console.error('[payment-webhook] Erro ao buscar raiox_compras:', erro)
+    log.erro('Erro ao buscar raiox_compras:', erro)
     return
   }
 
@@ -121,11 +124,11 @@ async function entregarCompraDoScan(
       }
     )
     if (!res.ok) {
-      console.error('[payment-webhook] Falha ao marcar compra paga:', res.status)
+      log.erro('Falha ao marcar compra paga:', res.status)
       return
     }
   } catch (erro) {
-    console.error('[payment-webhook] Erro ao marcar compra paga:', erro)
+    log.erro('Erro ao marcar compra paga:', erro)
     return
   }
 
@@ -138,8 +141,8 @@ async function entregarCompraDoScan(
   const vertixToken =
     Deno.env.get('VERTIX_SERVICE_TOKEN') ?? Deno.env.get('SCAN_SERVICE_TOKEN')
   if (!workerUrl || !vertixToken) {
-    console.error(
-      '[payment-webhook] SCAN_WORKER_URL/SCAN_SERVICE_TOKEN ausentes — ' +
+    log.erro(
+      'SCAN_WORKER_URL/SCAN_SERVICE_TOKEN ausentes — ' +
         `compra ${compra.id} paga sem aviso ao worker.`
     )
     return
@@ -163,23 +166,23 @@ async function entregarCompraDoScan(
       }
     )
     if (!res.ok) {
-      console.error(
-        `[payment-webhook] Worker do Scan recusou a compra ${compra.id}:`,
+      log.erro(
+        `Worker do Scan recusou a compra ${compra.id}:`,
         res.status
       )
     }
   } catch (erro) {
-    console.error(
-      `[payment-webhook] Worker do Scan indisponível (compra ${compra.id}):`,
+    log.erro(
+      `Worker do Scan indisponível (compra ${compra.id}):`,
       erro
     )
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('payment-webhook', async (req) => {
   const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
   if (!webhookSecret) {
-    console.error('[payment-webhook] WEBHOOK_SECRET não configurado.')
+    log.erro('WEBHOOK_SECRET não configurado.')
     return jsonResponse({ error: 'config_ausente' }, 500)
   }
 
@@ -208,7 +211,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!mpAccessToken || !supabaseUrl || !serviceRoleKey) {
-    console.error('[payment-webhook] Env ausente (MP_ACCESS_TOKEN/Supabase).')
+    log.erro('Env ausente (MP_ACCESS_TOKEN/Supabase).')
     return jsonResponse({ ok: false, reason: 'env_ausente' }, 500)
   }
 
@@ -220,7 +223,7 @@ Deno.serve(async (req) => {
     }
   )
   if (!paymentRes.ok) {
-    console.error('[payment-webhook] Falha ao consultar pagamento no MP:', paymentRes.status)
+    log.erro('Falha ao consultar pagamento no MP:', paymentRes.status)
     return jsonResponse({ ok: false, reason: 'pagamento_nao_confirmado' }, 502)
   }
 
@@ -245,7 +248,7 @@ Deno.serve(async (req) => {
     }
   )
   if (!receivableRes.ok) {
-    console.error('[payment-webhook] Falha ao buscar receivable:', receivableRes.status)
+    log.erro('Falha ao buscar receivable:', receivableRes.status)
     return jsonResponse({ ok: false, reason: 'receivable_nao_carregada' }, 502)
   }
   const receivables = (await receivableRes.json()) as ReceivableRecord[]
@@ -282,7 +285,7 @@ Deno.serve(async (req) => {
     }
   )
   if (!updateRes.ok) {
-    console.error('[payment-webhook] Falha ao atualizar receivable:', updateRes.status)
+    log.erro('Falha ao atualizar receivable:', updateRes.status)
     return jsonResponse({ ok: false, reason: 'falha_ao_atualizar' }, 502)
   }
 
@@ -302,7 +305,7 @@ Deno.serve(async (req) => {
     }),
   })
   if (!activityRes.ok) {
-    console.error('[payment-webhook] Falha ao gravar activity_log:', activityRes.status)
+    log.erro('Falha ao gravar activity_log:', activityRes.status)
   }
 
   // Entrega do Vertix Scan. Roda por último, não lança e não altera a resposta:
@@ -310,4 +313,4 @@ Deno.serve(async (req) => {
   await entregarCompraDoScan(supabaseUrl, serviceRoleKey, receivable.id)
 
   return jsonResponse({ ok: true })
-})
+}))

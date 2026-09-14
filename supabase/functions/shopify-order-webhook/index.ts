@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('shopify-order-webhook')
 /**
  * shopify-order-webhook
  *
@@ -76,11 +79,11 @@ function extractUtms(landingSite: string | null | undefined) {
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('shopify-order-webhook', async (req) => {
   const webhookSecret = Deno.env.get('SHOPIFY_WEBHOOK_SECRET')
   if (!webhookSecret) {
-    console.error(
-      '[shopify-order-webhook] SHOPIFY_WEBHOOK_SECRET não configurado.'
+    log.erro(
+      'SHOPIFY_WEBHOOK_SECRET não configurado.'
     )
     return jsonResponse({ error: 'config_ausente' }, 500)
   }
@@ -88,7 +91,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[shopify-order-webhook] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
 
@@ -139,7 +142,7 @@ Deno.serve(async (req) => {
     }),
   })
   if (!visitRes.ok) {
-    console.error('[shopify-order-webhook] Falha ao registrar sessão.')
+    log.erro('Falha ao registrar sessão.')
     return jsonResponse({ error: 'falha_sessao' }, 502)
   }
 
@@ -157,9 +160,9 @@ Deno.serve(async (req) => {
     }
   )
   if (!convRes.ok) {
-    console.error('[shopify-order-webhook] Falha ao registrar conversão.')
+    log.erro('Falha ao registrar conversão.')
     return jsonResponse({ error: 'falha_conversao' }, 502)
   }
 
   return jsonResponse({ ok: true })
-})
+}))

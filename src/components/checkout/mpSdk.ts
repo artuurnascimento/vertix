@@ -5,6 +5,8 @@
  * de novo. Falha limpa a memória para permitir nova tentativa.
  */
 
+import { log } from '../../lib/log'
+
 const MP_SDK_URL = 'https://sdk.mercadopago.com/js/v2'
 
 export interface BrickController {
@@ -101,6 +103,11 @@ export function carregarMpSdk(): Promise<void> {
       script.onload = () => resolve()
       script.onerror = () => {
         sdkPromise = null
+        // Sem SDK não há cartão: é o erro mais grave que esta página tem, e
+        // até aqui só aparecia como "algo deu errado" para o comprador.
+        log.erro('mercadopago', 'sdk_nao_carregou', 'Script do SDK do Mercado Pago não carregou', {
+          detalhes: { url: MP_SDK_URL, online: typeof navigator !== 'undefined' ? navigator.onLine : null },
+        })
         reject(new Error('sdk_load_failed'))
       }
       document.head.appendChild(script)

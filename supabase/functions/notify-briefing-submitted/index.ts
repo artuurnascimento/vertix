@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('notify-briefing-submitted')
 /**
  * notify-briefing-submitted
  *
@@ -86,12 +89,12 @@ function buildEmailHtml(
   </div>`
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('notify-briefing-submitted', async (req) => {
   // Só o webhook interno do banco pode chamar: exige o segredo compartilhado.
   // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
   const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
   if (!edgeSecret) {
-    console.error('[notify-briefing-submitted] EDGE_SHARED_SECRET não configurado.')
+    log.erro('EDGE_SHARED_SECRET não configurado.')
     return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
   }
   if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
@@ -113,8 +116,8 @@ Deno.serve(async (req) => {
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const adminEmail = Deno.env.get('ADMIN_EMAIL')
   if (!resendApiKey || !adminEmail) {
-    console.info(
-      '[notify-briefing-submitted] RESEND_API_KEY/ADMIN_EMAIL ausentes — no-op.'
+    log.info(
+      'RESEND_API_KEY/ADMIN_EMAIL ausentes — no-op.'
     )
     return jsonResponse({ ok: true, skipped: 'sem_config_email' })
   }
@@ -123,7 +126,7 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const adminAppUrl = Deno.env.get('ADMIN_APP_URL') ?? 'http://localhost:5175'
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[notify-briefing-submitted] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ ok: false, reason: 'env_supabase_ausente' }, 500)
   }
 
@@ -140,7 +143,7 @@ Deno.serve(async (req) => {
     }
   )
   if (!briefingRes.ok) {
-    console.error('[notify-briefing-submitted] Falha ao buscar briefing:', briefingRes.status)
+    log.erro('Falha ao buscar briefing:', briefingRes.status)
     return jsonResponse({ ok: false, reason: 'falha_ao_buscar_briefing' }, 502)
   }
   const briefings = (await briefingRes.json()) as BriefingRecord[]
@@ -161,8 +164,8 @@ Deno.serve(async (req) => {
     }
   )
   if (!projectRes.ok) {
-    console.error(
-      '[notify-briefing-submitted] Falha ao buscar projeto:',
+    log.erro(
+      'Falha ao buscar projeto:',
       projectRes.status
     )
     return jsonResponse({ ok: false, reason: 'projeto_nao_carregado' }, 502)
@@ -196,8 +199,8 @@ Deno.serve(async (req) => {
 
   const emailBody = (await emailRes.json()) as Record<string, unknown>
   if (!emailRes.ok) {
-    console.error(
-      '[notify-briefing-submitted] Erro do Resend:',
+    log.erro(
+      'Erro do Resend:',
       emailRes.status,
       JSON.stringify(emailBody)
     )
@@ -207,6 +210,6 @@ Deno.serve(async (req) => {
     )
   }
 
-  console.info('[notify-briefing-submitted] Email enviado:', emailBody.id)
+  log.info('Email enviado:', emailBody.id)
   return jsonResponse({ ok: true, email_id: emailBody.id })
-})
+}))

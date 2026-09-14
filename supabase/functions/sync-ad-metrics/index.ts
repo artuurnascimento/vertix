@@ -23,6 +23,9 @@
  */
 
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('sync-ad-metrics')
 
 interface RequestBody {
   ad_account_id?: string
@@ -206,7 +209,7 @@ async function syncCampaignsForAccount(
   }
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('sync-ad-metrics', async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -227,7 +230,7 @@ Deno.serve(withCors(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[sync-ad-metrics] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
 
@@ -257,7 +260,7 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!profileRes.ok) {
-    console.error('[sync-ad-metrics] Falha ao checar profile:', profileRes.status)
+    log.erro('Falha ao checar profile:', profileRes.status)
     return jsonResponse({ error: 'Falha ao validar permissão.' }, 502)
   }
   const profiles = (await profileRes.json()) as Array<{ id: string }>
@@ -285,7 +288,7 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!accountsRes.ok) {
-    console.error('[sync-ad-metrics] Falha ao buscar ad_accounts:', accountsRes.status)
+    log.erro('Falha ao buscar ad_accounts:', accountsRes.status)
     return jsonResponse({ error: 'Falha ao buscar contas de anúncio.' }, 502)
   }
   const accounts = (await accountsRes.json()) as AdAccountRecord[]
@@ -346,8 +349,8 @@ Deno.serve(withCors(async (req) => {
 
         if (!upsertRes.ok) {
           const upsertErrBody = await upsertRes.text()
-          console.error(
-            '[sync-ad-metrics] Falha no upsert de métricas:',
+          log.erro(
+            'Falha no upsert de métricas:',
             upsertRes.status,
             upsertErrBody
           )
@@ -373,8 +376,8 @@ Deno.serve(withCors(async (req) => {
         }
       )
       if (!successUpdateRes.ok) {
-        console.error(
-          '[sync-ad-metrics] Falha ao atualizar last_sync_at:',
+        log.erro(
+          'Falha ao atualizar last_sync_at:',
           successUpdateRes.status
         )
       }
@@ -392,8 +395,8 @@ Deno.serve(withCors(async (req) => {
       } catch (campErr) {
         const msg =
           campErr instanceof Error ? campErr.message : 'falha desconhecida'
-        console.error(
-          `[sync-ad-metrics] Campanhas da conta ${account.id}:`,
+        log.erro(
+          `Campanhas da conta ${account.id}:`,
           msg
         )
         await fetch(`${supabaseUrl}/rest/v1/ad_accounts?id=eq.${account.id}`, {
@@ -414,8 +417,8 @@ Deno.serve(withCors(async (req) => {
       const mensagemAmigavel =
         err instanceof Error ? err.message : 'Falha desconhecida ao sincronizar.'
 
-      console.error(
-        `[sync-ad-metrics] Falha na conta ${account.id}:`,
+      log.erro(
+        `Falha na conta ${account.id}:`,
         mensagemAmigavel
       )
 
@@ -433,8 +436,8 @@ Deno.serve(withCors(async (req) => {
         }
       )
       if (!errorUpdateRes.ok) {
-        console.error(
-          '[sync-ad-metrics] Falha ao gravar last_sync_error:',
+        log.erro(
+          'Falha ao gravar last_sync_error:',
           errorUpdateRes.status
         )
       }
@@ -455,8 +458,8 @@ Deno.serve(withCors(async (req) => {
         }),
       })
       if (!notifyRes.ok) {
-        console.error(
-          '[sync-ad-metrics] Falha ao criar notificação:',
+        log.erro(
+          'Falha ao criar notificação:',
           notifyRes.status
         )
       }
@@ -465,4 +468,4 @@ Deno.serve(withCors(async (req) => {
   }
 
   return jsonResponse({ sincronizadas, falhas } satisfies SyncSummary)
-}))
+})))

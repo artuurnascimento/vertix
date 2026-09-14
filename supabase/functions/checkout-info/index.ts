@@ -48,6 +48,9 @@ import {
   type PedidoItem,
 } from '../_shared/checkout.ts'
 import { concluirPedidoPago } from '../_shared/entrega.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('checkout-info')
 
 interface RequestBody {
   pedido_id?: string
@@ -126,7 +129,7 @@ function respostaPedido(
 }
 
 Deno.serve(
-  withCors(async (req) => {
+  withCors(comLog('checkout-info', async (req) => {
     if (req.method !== 'POST') {
       return jsonResponse({ erro: 'method_not_allowed' }, 405)
     }
@@ -147,7 +150,7 @@ Deno.serve(
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('[checkout-info] Env do Supabase ausente.')
+      log.erro('Env do Supabase ausente.')
       return jsonResponse({ erro: 'config_ausente' }, 500)
     }
 
@@ -199,8 +202,8 @@ Deno.serve(
         { headers: { Authorization: `Bearer ${mpAccessToken}` } }
       )
       if (!mpRes.ok) {
-        console.error(
-          '[checkout-info] MP recusou a consulta:',
+        log.erro(
+          'MP recusou a consulta:',
           mpRes.status,
           'pedido:',
           pedido.id
@@ -247,8 +250,8 @@ Deno.serve(
       )
       mudou = atualizadas.length > 0
     } catch {
-      console.error(
-        '[checkout-info] Falha ao atualizar pedido:',
+      log.erro(
+        'Falha ao atualizar pedido:',
         pedido.id,
         'status pretendido:',
         novoStatus
@@ -265,14 +268,14 @@ Deno.serve(
           // O cupom esgotou entre a geração do Pix e o pagamento. O dinheiro
           // entrou: honramos o desconto e registramos, em vez de recusar uma
           // venda já paga por causa de uma corrida de contador.
-          console.error(
-            '[checkout-info] Cupom esgotou antes da confirmação. Pedido:',
+          log.erro(
+            'Cupom esgotou antes da confirmação. Pedido:',
             pedido.id
           )
         }
       } catch {
-        console.error(
-          '[checkout-info] Falha ao registrar uso do cupom. Pedido:',
+        log.erro(
+          'Falha ao registrar uso do cupom. Pedido:',
           pedido.id
         )
       }
@@ -304,5 +307,5 @@ Deno.serve(
     return jsonResponse(
       respostaPedido(pedido, novoStatus, mudou ? planoCode : null)
     )
-  })
+  }))
 )

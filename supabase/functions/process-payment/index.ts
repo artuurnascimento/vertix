@@ -15,6 +15,9 @@
  */
 
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('process-payment')
 
 interface PayerIdentification {
   type?: string
@@ -58,7 +61,7 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('process-payment', async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -85,7 +88,7 @@ Deno.serve(withCors(async (req) => {
   const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
   const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
   if (!supabaseUrl || !serviceRoleKey || !mpAccessToken) {
-    console.error('[process-payment] Env ausente.')
+    log.erro('Env ausente.')
     return jsonResponse({ error: 'config_ausente' }, 500)
   }
 
@@ -101,7 +104,7 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!receivableRes.ok) {
-    console.error('[process-payment] Falha ao buscar parcela:', receivableRes.status)
+    log.erro('Falha ao buscar parcela:', receivableRes.status)
     return jsonResponse({ error: 'falha_ao_buscar_cobranca' }, 502)
   }
   const receivables = (await receivableRes.json()) as ReceivableRecord[]
@@ -167,7 +170,7 @@ Deno.serve(withCors(async (req) => {
   const mpBody = (await mpRes.json()) as Record<string, unknown>
   if (!mpRes.ok) {
     // Loga o corpo do erro (não contém o access token nem número de cartão).
-    console.error('[process-payment] Erro do MP:', mpRes.status, JSON.stringify(mpBody))
+    log.erro('Erro do MP:', mpRes.status, JSON.stringify(mpBody))
     return jsonResponse({ error: 'gateway_recusou', detail: mpBody.message ?? null }, 502)
   }
 
@@ -188,4 +191,4 @@ Deno.serve(withCors(async (req) => {
       },
     }),
   })
-}))
+})))

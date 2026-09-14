@@ -27,6 +27,7 @@ const Briefings = lazy(() => carregarPagina(() => import('./pages/Briefings')))
 const Financeiro = lazy(() => carregarPagina(() => import('./pages/Financeiro')))
 const Relatorios = lazy(() => carregarPagina(() => import('./pages/Relatorios')))
 const Automacoes = lazy(() => carregarPagina(() => import('./pages/Automacoes')))
+const Logs = lazy(() => carregarPagina(() => import('./pages/Logs')))
 const Contratos = lazy(() => carregarPagina(() => import('./pages/Contratos')))
 const Suporte = lazy(() => carregarPagina(() => import('./pages/Suporte')))
 const Configuracoes = lazy(() => carregarPagina(() => import('./pages/Configuracoes')))
@@ -135,6 +136,7 @@ export default function App() {
           <Route path="financeiro" element={<Financeiro />} />
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="automacoes" element={<Automacoes />} />
+          <Route path="logs" element={<Logs />} />
           <Route path="contratos" element={<Contratos />} />
           <Route path="suporte" element={<Suporte />} />
           <Route path="configuracoes" element={<Configuracoes />} />

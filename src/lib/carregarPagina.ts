@@ -21,6 +21,8 @@
  * (`raiox-vertix/web/src/lib/carregarPagina.ts`).
  */
 
+import { descarregar, log, serializarErro } from './log'
+
 /** Marca que esta aba já se recarregou por causa de chunk faltando. */
 const CHAVE = 'vx-chunk-recarregado'
 
@@ -44,9 +46,16 @@ function anotarRecarga(): void {
 
 export function carregarPagina<T>(importar: () => Promise<T>): Promise<T> {
   return importar().catch((erro: unknown) => {
-    if (typeof window === 'undefined' || jaRecarregou()) throw erro
+    if (typeof window === 'undefined') throw erro
+    const segundaVez = jaRecarregou()
+    // Fica na trilha: quantas abas caíram em chunk velho depois de um deploy
+    // (aviso) e quantas não se recuperaram nem recarregando (erro).
+    log[segundaVez ? 'erro' : 'aviso']('roteador', segundaVez ? 'chunk_falhou_de_novo' : 'chunk_sumiu',
+      erro instanceof Error ? erro.message : String(erro), { detalhes: serializarErro(erro) })
+    if (segundaVez) throw erro
 
     anotarRecarga()
+    descarregar(true)
     window.location.reload()
 
     // Promessa que nunca resolve, de propósito: a página está indo embora, e o

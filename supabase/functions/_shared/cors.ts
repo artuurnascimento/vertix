@@ -39,8 +39,11 @@ export function corsHeaders(req: Request): Record<string, string> {
   const headers: Record<string, string> = {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type',
+      'authorization, x-client-info, apikey, content-type, x-vx-requisicao, x-vx-nav, x-vx-sessao',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    // O id de correlação do log (ver _shared/log.ts): o navegador precisa
+    // conseguir LER o cabeçalho para guardar junto do erro dele.
+    'Access-Control-Expose-Headers': 'x-vx-requisicao',
     'Access-Control-Max-Age': '86400',
   }
 

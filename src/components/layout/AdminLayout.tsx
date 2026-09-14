@@ -26,6 +26,7 @@ import {
   Radar,
   Receipt,
   ScanSearch,
+  ScrollText,
   Settings,
   ShoppingCart,
   Store,
@@ -140,6 +141,12 @@ const NAV_GROUPS = [
         to: '/admin/automacoes',
         label: 'Automações',
         icon: Workflow,
+        end: false,
+      },
+      {
+        to: '/admin/logs',
+        label: 'Logs',
+        icon: ScrollText,
         end: false,
       },
       {

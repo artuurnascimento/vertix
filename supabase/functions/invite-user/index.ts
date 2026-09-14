@@ -12,6 +12,9 @@
  */
 
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('invite-user')
 
 interface RequestBody {
   email?: string
@@ -40,7 +43,7 @@ function generateTempPassword(): string {
   return `Vx${base.slice(0, 14)}!9`
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('invite-user', async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -75,7 +78,7 @@ Deno.serve(withCors(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[invite-user] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
 
@@ -105,7 +108,7 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!callerProfileRes.ok) {
-    console.error('[invite-user] Falha ao checar profile do chamador:', callerProfileRes.status)
+    log.erro('Falha ao checar profile do chamador:', callerProfileRes.status)
     return jsonResponse({ error: 'Falha ao validar permissão.' }, 502)
   }
   const callerProfiles = (await callerProfileRes.json()) as Array<{ id: string; role: string }>
@@ -142,13 +145,13 @@ Deno.serve(withCors(async (req) => {
     ) {
       return jsonResponse({ error: 'Este email já está cadastrado.' }, 409)
     }
-    console.error('[invite-user] Falha ao criar usuário:', createUserRes.status)
+    log.erro('Falha ao criar usuário:', createUserRes.status)
     return jsonResponse({ error: 'Falha ao criar usuário.' }, 502)
   }
 
   const newUserId = (createUserBody as { id?: string }).id
   if (!newUserId) {
-    console.error('[invite-user] Resposta do Auth Admin sem id de usuário.')
+    log.erro('Resposta do Auth Admin sem id de usuário.')
     return jsonResponse({ error: 'Resposta inválida ao criar usuário.' }, 502)
   }
 
@@ -169,7 +172,7 @@ Deno.serve(withCors(async (req) => {
   })
 
   if (!insertProfileRes.ok) {
-    console.error('[invite-user] Falha ao inserir profile:', insertProfileRes.status)
+    log.erro('Falha ao inserir profile:', insertProfileRes.status)
     // Rollback: remove o usuário Auth criado para não deixar órfão sem profile.
     await fetch(`${supabaseUrl}/auth/v1/admin/users/${newUserId}`, {
       method: 'DELETE',
@@ -189,4 +192,4 @@ Deno.serve(withCors(async (req) => {
     role,
     senha_temporaria: tempPassword,
   })
-}))
+})))

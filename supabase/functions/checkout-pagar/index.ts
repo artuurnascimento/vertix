@@ -92,6 +92,9 @@ import {
   type ProdutoRow,
 } from '../_shared/checkout.ts'
 import { concluirPedidoPago } from '../_shared/entrega.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('checkout-pagar')
 
 interface PayerIdentification {
   type?: string
@@ -163,7 +166,7 @@ async function leadDoTokenDeCompra(db: Db, token: string): Promise<string | null
     )
     return compras[0]?.lead_id ?? null
   } catch (erro) {
-    console.error('[checkout-pagar] Falha ao resolver o lead da compra:', erro)
+    log.erro('Falha ao resolver o lead da compra:', erro)
     return null
   }
 }
@@ -246,7 +249,7 @@ async function garantirCustomer(
     (c) => String(c.code) === '101'
   )
   if (!jaExiste) {
-    console.error('[checkout-pagar] Falha ao criar customer:', criarRes.status)
+    log.erro('Falha ao criar customer:', criarRes.status)
     return null
   }
 
@@ -255,7 +258,7 @@ async function garantirCustomer(
     { headers: { Authorization: `Bearer ${mpToken}` } }
   )
   if (!buscaRes.ok) {
-    console.error('[checkout-pagar] Falha ao buscar customer:', buscaRes.status)
+    log.erro('Falha ao buscar customer:', buscaRes.status)
     return null
   }
   const busca = (await buscaRes.json()) as { results?: Array<{ id?: string }> }
@@ -286,7 +289,7 @@ async function salvarCartao(
   )
   if (!res.ok) {
     // Só o status: o corpo do erro pode ecoar o token enviado.
-    console.error('[checkout-pagar] Falha ao salvar cartão:', res.status)
+    log.erro('Falha ao salvar cartão:', res.status)
     return null
   }
   const card = (await res.json()) as {
@@ -298,7 +301,7 @@ async function salvarCartao(
 }
 
 Deno.serve(
-  withCors(async (req) => {
+  withCors(comLog('checkout-pagar', async (req) => {
     if (req.method !== 'POST') {
       return jsonResponse({ erro: 'method_not_allowed' }, 405)
     }
@@ -352,7 +355,7 @@ Deno.serve(
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
     if (!supabaseUrl || !serviceRoleKey || !mpAccessToken) {
-      console.error('[checkout-pagar] Env ausente.')
+      log.erro('Env ausente.')
       return jsonResponse({ erro: 'config_ausente' }, 500)
     }
 
@@ -438,7 +441,7 @@ Deno.serve(
     const total = totais.total_centavos
 
     if (total < VALOR_MINIMO_CENTAVOS || total > VALOR_MAXIMO_CENTAVOS) {
-      console.error('[checkout-pagar] Total fora da faixa:', total, 'slug:', slug)
+      log.erro('Total fora da faixa:', total, 'slug:', slug)
       return jsonResponse({ erro: 'valor_invalido' }, 422)
     }
 
@@ -555,8 +558,8 @@ Deno.serve(
 
     if (!mpRes.ok) {
       // O corpo do erro do MP não contém o access token nem número de cartão.
-      console.error(
-        '[checkout-pagar] Erro do MP:',
+      log.erro(
+        'Erro do MP:',
         mpRes.status,
         'pedido:',
         pedido.id,
@@ -598,14 +601,14 @@ Deno.serve(
             // pagamento JÁ passou: honramos o desconto e registramos o caso —
             // desfazer a cobrança por causa de uma corrida de cupom seria
             // muito pior para o cliente do que um uso a mais no relatório.
-            console.error(
-              '[checkout-pagar] Cupom esgotou entre validar e cobrar. Pedido:',
+            log.erro(
+              'Cupom esgotou entre validar e cobrar. Pedido:',
               pedido.id
             )
           }
         } catch {
-          console.error(
-            '[checkout-pagar] Falha ao registrar uso do cupom. Pedido:',
+          log.erro(
+            'Falha ao registrar uso do cupom. Pedido:',
             pedido.id
           )
         }
@@ -625,8 +628,8 @@ Deno.serve(
             )
           }
         } catch {
-          console.error(
-            '[checkout-pagar] Falha ao salvar cartão. Pedido:',
+          log.erro(
+            'Falha ao salvar cartão. Pedido:',
             pedido.id
           )
         }
@@ -657,8 +660,8 @@ Deno.serve(
     } catch {
       // O dinheiro entrou; só a linha ficou desatualizada. O log tem o id do
       // pagamento no MP, que é o que permite reconciliar à mão.
-      console.error(
-        '[checkout-pagar] Pagamento OK mas pedido não atualizou. Pedido:',
+      log.erro(
+        'Pagamento OK mas pedido não atualizou. Pedido:',
         pedido.id,
         'mp_payment_id:',
         mpPaymentId
@@ -728,5 +731,5 @@ Deno.serve(
         },
       }),
     })
-  })
+  }))
 )

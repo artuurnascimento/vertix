@@ -1255,6 +1255,63 @@ export type Database = {
           },
         ]
       }
+      logs_sistema: {
+        Row: {
+          contexto: Json
+          criado_em: string
+          detalhes: Json
+          evento: string
+          fonte: string
+          id: number
+          impressao: string
+          mensagem: string
+          nivel: string
+          ocorrencias: number
+          origem: string
+          requisicao_id: string | null
+          sessao_id: string | null
+          ultima_em: string
+          usuario_id: string | null
+          versao: string | null
+        }
+        Insert: {
+          contexto?: Json
+          criado_em?: string
+          detalhes?: Json
+          evento: string
+          fonte: string
+          id?: never
+          impressao: string
+          mensagem: string
+          nivel: string
+          ocorrencias?: number
+          origem: string
+          requisicao_id?: string | null
+          sessao_id?: string | null
+          ultima_em?: string
+          usuario_id?: string | null
+          versao?: string | null
+        }
+        Update: {
+          contexto?: Json
+          criado_em?: string
+          detalhes?: Json
+          evento?: string
+          fonte?: string
+          id?: never
+          impressao?: string
+          mensagem?: string
+          nivel?: string
+          ocorrencias?: number
+          origem?: string
+          requisicao_id?: string | null
+          sessao_id?: string | null
+          ultima_em?: string
+          usuario_id?: string | null
+          versao?: string | null
+        }
+        Relationships: []
+      }
       loja_apps: {
         Row: {
           id: string
@@ -2989,6 +3046,16 @@ export type Database = {
         Args: { p_storage_path: string }
         Returns: boolean
       }
+      log_interno: {
+        Args: {
+          p_detalhes?: Json
+          p_evento: string
+          p_fonte: string
+          p_mensagem: string
+          p_nivel: string
+        }
+        Returns: undefined
+      }
       pedido_reembolso_concluir: {
         Args: {
           p_mp_refund_id?: string
@@ -3054,6 +3121,8 @@ export type Database = {
         }
         Returns: Json
       }
+      registrar_log: { Args: { p_entradas: Json }; Returns: undefined }
+      registrar_log_servico: { Args: { p_entradas: Json }; Returns: undefined }
       request_client_ip: { Args: never; Returns: unknown }
       request_user_agent: { Args: never; Returns: string }
       respond_proposal: {
@@ -3062,6 +3131,19 @@ export type Database = {
       }
       revert_proposal_acceptance: {
         Args: { p_proposal_id: string }
+        Returns: Json
+      }
+      scan_abrir_compra: {
+        Args: {
+          p_analysis_id: string
+          p_dominio: string
+          p_email: string
+          p_lead_id: string
+          p_link_prefixo: string
+          p_nome: string
+          p_valor_centavos: number
+          p_whatsapp: string
+        }
         Returns: Json
       }
       scan_compra_reembolso_concluir: {

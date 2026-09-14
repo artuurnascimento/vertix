@@ -77,6 +77,9 @@ import {
   reembolsarNoMp,
   type RefundMp,
 } from '../_shared/reembolso.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('scan-reembolsar')
 
 /** Prefixo de log e de erro; é o nome da function em toda mensagem. */
 const ROTULO = 'scan-reembolsar'
@@ -123,7 +126,7 @@ async function liberarReserva(db: Db, compraId: string): Promise<void> {
   try {
     await db.rpc('scan_compra_reembolso_liberar', { p_compra_id: compraId })
   } catch {
-    console.error(
+    log.erro(
       `[${ROTULO}] Falha ao liberar a reserva da compra`,
       compraId,
       '— ela vence sozinha.'
@@ -154,7 +157,7 @@ async function registrarDesfecho(
     // casar a linha com o extrato à mão. A reserva continua gravada, então o
     // índice de reconciliação encontra esta compra e a próxima tentativa
     // converge pela chave de idempotência (ver cabeçalho).
-    console.error(
+    log.erro(
       `[${ROTULO}] REEMBOLSADO SEM REGISTRO — o Mercado Pago devolveu o ` +
         `dinheiro da compra ${compraId} (pagamento ${mpPaymentId}, reembolso ` +
         `${refund.id ?? 'sem id'}) e a gravação no banco falhou. A compra ` +
@@ -178,7 +181,7 @@ async function registrarDesfecho(
   if (!conclusao) {
     // Mesma situação da falha acima; só o formato da resposta do PostgREST
     // difere. O log precisa ser igualmente gritante.
-    console.error(
+    log.erro(
       `[${ROTULO}] REEMBOLSADO SEM REGISTRO — resposta vazia da ` +
         `scan_compra_reembolso_concluir. Compra ${compraId}, pagamento ` +
         `${mpPaymentId}, reembolso ${refund.id ?? 'sem id'}.`
@@ -192,7 +195,7 @@ async function registrarDesfecho(
   if (conclusao.receivable_id && conclusao.receivable_cancelado === false) {
     // Não é erro: ou outra passagem já cancelou, ou o recebível sumiu. Vale o
     // log porque é a única pista de recebível que ficou como receita.
-    console.error(
+    log.erro(
       `[${ROTULO}] Recebível ${conclusao.receivable_id} da compra ${compraId} ` +
         'não foi cancelado nesta passagem. Conferir no Financeiro.'
     )
@@ -220,7 +223,7 @@ async function registrarDesfecho(
 }
 
 Deno.serve(
-  withCors(async (req) => {
+  withCors(comLog('scan-reembolsar', async (req) => {
     if (req.method !== 'POST') {
       return jsonResponse({ erro: 'method_not_allowed' }, 405)
     }
@@ -233,7 +236,7 @@ Deno.serve(
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const mpAccessToken = Deno.env.get('MP_ACCESS_TOKEN')
     if (!supabaseUrl || !serviceRoleKey || !mpAccessToken) {
-      console.error(`[${ROTULO}] Env ausente.`)
+      log.erro(`[${ROTULO}] Env ausente.`)
       return jsonResponse({ erro: 'config_ausente' }, 500)
     }
 
@@ -338,7 +341,7 @@ Deno.serve(
         )
 
       default:
-        console.error(
+        log.erro(
           `[${ROTULO}] Resultado inesperado da reserva:`,
           reserva.resultado,
           'compra:',
@@ -352,7 +355,7 @@ Deno.serve(
     if (!receivableId || typeof valorCentavos !== 'number') {
       // A RPC só devolve 'reservado' com os dois, mas confiar nisso aqui
       // significaria buscar por "undefined" se aquilo mudasse.
-      console.error(
+      log.erro(
         `[${ROTULO}] Reserva incompleta (recebível ou valor ausente). Compra:`,
         compraId
       )
@@ -364,7 +367,7 @@ Deno.serve(
       // Reserva anterior venceu sem desfecho: pode haver um reembolso já feito
       // do outro lado. A chave de idempotência cuida disso, mas o log marca a
       // ocorrência — é o rastro de que algo falhou no meio antes.
-      console.error(
+      log.erro(
         `[${ROTULO}] Retomando reserva vencida da compra ${compraId}. ` +
           'Houve tentativa anterior sem desfecho.'
       )
@@ -464,7 +467,7 @@ Deno.serve(
         // Falhar em gravar não impede estornar — o id que a busca achou é o
         // mesmo, gravado ou não. Vale o log porque a próxima tentativa vai
         // pagar o custo da busca de novo.
-        console.error(
+        log.erro(
           `[${ROTULO}] Não deu para gravar o pagamento ${busca.pagamento.id} ` +
             `no recebível ${receivableId}. Seguindo com o estorno.`
         )
@@ -475,7 +478,7 @@ Deno.serve(
       // manda: veio da confirmação do MP, e o da busca é inferência.
       mpPaymentId = gravado?.gateway_payment_id ?? busca.pagamento.id
 
-      console.error(
+      log.erro(
         `[${ROTULO}] Compra ${compraId}: pagamento ${mpPaymentId} resolvido ` +
           `pelo external_reference ${receivableId} (${gravado?.resultado ?? 'sem gravação'}).`
       )
@@ -523,7 +526,7 @@ Deno.serve(
       )
 
       if (consulta?.reembolsado) {
-        console.error(
+        log.erro(
           `[${ROTULO}] Pagamento ${mpPaymentId} da compra ${compraId} já ` +
             'estava reembolsado no Mercado Pago; reconciliando o estado.'
         )
@@ -570,5 +573,5 @@ Deno.serve(
     // ----------------------------------------------------------------------
 
     return await registrarDesfecho(db, compraId, refund, mpPaymentId)
-  })
+  }))
 )

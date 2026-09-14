@@ -14,6 +14,9 @@
  */
 
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('fetch-campaign-breakdown')
 
 interface RequestBody {
   campaign_id?: string
@@ -73,7 +76,7 @@ function parseConversoes(actions: InsightAction[] | undefined): number {
   return 0
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('fetch-campaign-breakdown', async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -100,7 +103,7 @@ Deno.serve(withCors(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[fetch-campaign-breakdown] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
 
@@ -221,4 +224,4 @@ Deno.serve(withCors(async (req) => {
   }
 
   return jsonResponse({ itens })
-}))
+})))

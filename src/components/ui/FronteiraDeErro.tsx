@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { descarregar, log, serializarErro } from '../../lib/log'
 
 interface Props {
   children: ReactNode
@@ -32,9 +33,12 @@ export default class FronteiraDeErro extends Component<Props, Estado> {
   }
 
   componentDidCatch(erro: Error, info: ErrorInfo): void {
-    // O console é o que sobra para depurar: engolir a exceção em silêncio
-    // esconderia a causa da próxima vez.
-    console.error('[vertix] erro de render', erro, info.componentStack)
+    // Fatal: a pessoa está vendo a tela de "não carregou". Vai com a árvore
+    // de componentes (qual tela, dentro de quê) e sai da fila na hora.
+    log.fatal('render', 'render_quebrou', erro.message, {
+      detalhes: { ...serializarErro(erro), componentes: (info.componentStack ?? '').slice(0, 1500) },
+    })
+    descarregar(true)
   }
 
   render(): ReactNode {

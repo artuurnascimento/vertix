@@ -8,6 +8,7 @@ import {
   FileText,
   LifeBuoy,
   PartyPopper,
+  ShieldAlert,
   UserPlus,
   Wallet,
 } from 'lucide-react'
@@ -50,6 +51,12 @@ const NOTIFICATION_TYPE: Record<string, NotificationTypeMeta> = {
   ticket: {
     icon: LifeBuoy,
     iconClass: 'text-red-400',
+    boxClass: 'bg-red-500/15',
+  },
+  // Erro fatal na trilha de logs (trigger em logs_sistema): leva à página Logs.
+  sistema: {
+    icon: ShieldAlert,
+    iconClass: 'text-red-300',
     boxClass: 'bg-red-500/15',
   },
 }

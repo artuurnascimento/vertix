@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('payment-reminders')
 /**
  * payment-reminders
  *
@@ -122,12 +125,12 @@ function buildEmailHtml(
   </div>`
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('payment-reminders', async (req) => {
   // Só o cron interno do banco pode chamar: exige o segredo compartilhado.
   // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
   const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
   if (!edgeSecret) {
-    console.error('[payment-reminders] EDGE_SHARED_SECRET não configurado.')
+    log.erro('EDGE_SHARED_SECRET não configurado.')
     return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
   }
   if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
@@ -136,14 +139,14 @@ Deno.serve(async (req) => {
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   if (!resendApiKey) {
-    console.info('[payment-reminders] RESEND_API_KEY ausente — no-op.')
+    log.info('RESEND_API_KEY ausente — no-op.')
     return jsonResponse({ ok: true, skipped: 'sem_config_email', enviados: 0 })
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[payment-reminders] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ ok: false, reason: 'env_supabase_ausente' }, 500)
   }
 
@@ -178,7 +181,7 @@ Deno.serve(async (req) => {
     }
   )
   if (!receivablesRes.ok) {
-    console.error('[payment-reminders] Falha ao buscar receivables:', receivablesRes.status)
+    log.erro('Falha ao buscar receivables:', receivablesRes.status)
     return jsonResponse({ ok: false, reason: 'falha_ao_buscar' }, 502)
   }
 
@@ -223,8 +226,8 @@ Deno.serve(async (req) => {
 
     if (!emailRes.ok) {
       const errorBody = await emailRes.json().catch(() => ({}))
-      console.error(
-        '[payment-reminders] Erro do Resend para receivable',
+      log.erro(
+        'Erro do Resend para receivable',
         r.id,
         emailRes.status,
         JSON.stringify(errorBody)
@@ -248,7 +251,7 @@ Deno.serve(async (req) => {
       }),
     })
     if (!marcaRes.ok) {
-      console.error('[payment-reminders] Falha ao marcar lembrete do receivable', r.id, marcaRes.status)
+      log.erro('Falha ao marcar lembrete do receivable', r.id, marcaRes.status)
     }
 
     enviados += 1
@@ -260,4 +263,4 @@ Deno.serve(async (req) => {
     ignorados,
     total_candidatas: receivables.length,
   })
-})
+}))

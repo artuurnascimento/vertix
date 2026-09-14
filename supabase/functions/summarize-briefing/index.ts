@@ -11,6 +11,9 @@
  */
 
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('summarize-briefing')
 
 interface Pergunta {
   id: string
@@ -142,7 +145,7 @@ async function resumoIA(
   })
 
   if (!res.ok) {
-    console.error('[summarize-briefing] Anthropic falhou:', res.status)
+    log.erro('Anthropic falhou:', res.status)
     return null
   }
 
@@ -201,7 +204,7 @@ async function resumoGroq(
   })
 
   if (!res.ok) {
-    console.error('[summarize-briefing] Groq falhou:', res.status)
+    log.erro('Groq falhou:', res.status)
     return null
   }
 
@@ -227,7 +230,7 @@ async function resumoGroq(
   }
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('summarize-briefing', async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const groqKey = Deno.env.get('GROQ_API_KEY')
@@ -270,7 +273,7 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!profileRes.ok) {
-    console.error('[summarize-briefing] Falha ao checar profile:', profileRes.status)
+    log.erro('Falha ao checar profile:', profileRes.status)
     return jsonResponse({ ok: false, error: 'falha_ao_validar_permissao' }, 502)
   }
   const profiles = (await profileRes.json()) as Array<{ id: string }>
@@ -352,4 +355,4 @@ Deno.serve(withCors(async (req) => {
   }
 
   return jsonResponse({ ok: true, resumo, resumo_meta: meta, fonte: meta.fonte })
-}))
+})))

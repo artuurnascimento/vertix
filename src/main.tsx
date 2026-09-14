@@ -7,6 +7,11 @@ import App from './App.tsx'
 import { queryClient } from './lib/queryClient'
 import { AuthProvider } from './lib/auth'
 import { supabaseConfigMissing } from './lib/supabase'
+import { instalarLogGlobal } from './lib/log/instalar'
+
+// Antes de qualquer coisa: erro não tratado, recurso que não carregou, CSP,
+// console.error — tudo passa a cair na trilha de logs do painel.
+instalarLogGlobal()
 
 // Checkout público: o chunk da rota começa a baixar AGORA, em paralelo ao
 // boot do React, em vez de só depois que o App montar e o lazy() pedir —

@@ -14,6 +14,9 @@
  */
 
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('create-payment-link')
 
 interface RequestBody {
   receivable_id?: string
@@ -38,7 +41,7 @@ function resolveBaseUrl(_req: Request): string | null {
   return PAGAR_PUBLIC_BASE
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('create-payment-link', async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -64,7 +67,7 @@ Deno.serve(withCors(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[create-payment-link] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
 
@@ -94,7 +97,7 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!profileRes.ok) {
-    console.error('[create-payment-link] Falha ao checar profile:', profileRes.status)
+    log.erro('Falha ao checar profile:', profileRes.status)
     return jsonResponse({ error: 'Falha ao validar permissão.' }, 502)
   }
   const profiles = (await profileRes.json()) as Array<{ id: string }>
@@ -119,8 +122,8 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!receivableRes.ok) {
-    console.error(
-      '[create-payment-link] Falha ao buscar receivable:',
+    log.erro(
+      'Falha ao buscar receivable:',
       receivableRes.status
     )
     return jsonResponse({ error: 'Falha ao buscar parcela.' }, 502)
@@ -147,12 +150,12 @@ Deno.serve(withCors(async (req) => {
     }
   )
   if (!updateRes.ok) {
-    console.error(
-      '[create-payment-link] Falha ao atualizar receivable:',
+    log.erro(
+      'Falha ao atualizar receivable:',
       updateRes.status
     )
     return jsonResponse({ error: 'Falha ao salvar link de pagamento.' }, 502)
   }
 
   return jsonResponse({ ok: true, payment_link: paymentLink })
-}))
+})))

@@ -1,3 +1,6 @@
+import { criarLog } from './log.ts'
+
+const log = criarLog('shared:meta-capi')
 /**
  * Meta Conversions API — o `Purchase` sai DAQUI, do servidor, na confirmação
  * do pagamento.
@@ -109,12 +112,12 @@ export async function enviarPurchaseMeta(
     )
     if (!res.ok) {
       // Só o status: o corpo do erro pode ecoar parâmetros da chamada.
-      console.error(`[${rotulo}] Meta CAPI recusou o Purchase ${dados.eventId}: ${res.status}`)
+      log.erro(`[${rotulo}] Meta CAPI recusou o Purchase ${dados.eventId}: ${res.status}`)
       return false
     }
     return true
   } catch (erro) {
-    console.error(`[${rotulo}] Meta CAPI indisponível para ${dados.eventId}:`, erro)
+    log.erro(`[${rotulo}] Meta CAPI indisponível para ${dados.eventId}:`, erro)
     return false
   }
 }

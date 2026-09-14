@@ -1,3 +1,6 @@
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('notify-client')
 /**
  * notify-client
  *
@@ -121,7 +124,7 @@ function safeUrl(raw: string | null): string | null {
 function ctaButton(href: string, label: string): string {
   const safe = safeUrl(href)
   if (!safe) {
-    console.warn('[notify-client] URL de CTA rejeitada.')
+    log.aviso('URL de CTA rejeitada.')
     return ''
   }
   return `
@@ -204,7 +207,7 @@ async function fetchClient(
     }
   )
   if (!res.ok) {
-    console.error('[notify-client] Falha ao buscar cliente:', res.status)
+    log.erro('Falha ao buscar cliente:', res.status)
     return null
   }
   const clients = (await res.json()) as ClientInfo[]
@@ -227,7 +230,7 @@ async function fetchProject(
     }
   )
   if (!res.ok) {
-    console.error('[notify-client] Falha ao buscar projeto:', res.status)
+    log.erro('Falha ao buscar projeto:', res.status)
     return null
   }
   const projects = (await res.json()) as Array<{
@@ -255,7 +258,7 @@ async function fetchProposal(
     }
   )
   if (!res.ok) {
-    console.error('[notify-client] Falha ao buscar proposta:', res.status)
+    log.erro('Falha ao buscar proposta:', res.status)
     return null
   }
   const proposals = (await res.json()) as ProposalRecord[]
@@ -278,7 +281,7 @@ async function fetchReceivable(
     }
   )
   if (!res.ok) {
-    console.error('[notify-client] Falha ao buscar parcela:', res.status)
+    log.erro('Falha ao buscar parcela:', res.status)
     return null
   }
   const receivables = (await res.json()) as ReceivableRecord[]
@@ -308,23 +311,23 @@ async function sendEmail(
 
   const emailBody = (await emailRes.json()) as Record<string, unknown>
   if (!emailRes.ok) {
-    console.error(
-      '[notify-client] Erro do Resend:',
+    log.erro(
+      'Erro do Resend:',
       emailRes.status,
       JSON.stringify(emailBody)
     )
     return false
   }
-  console.info('[notify-client] Email enviado:', emailBody.id)
+  log.info('Email enviado:', emailBody.id)
   return true
 }
 
-Deno.serve(async (req) => {
+Deno.serve(comLog('notify-client', async (req) => {
   // Só triggers internos do banco podem chamar: exige o segredo compartilhado.
   // A anon key sozinha não basta — ela é pública (vai no bundle do frontend).
   const edgeSecret = Deno.env.get('EDGE_SHARED_SECRET')
   if (!edgeSecret) {
-    console.error('[notify-client] EDGE_SHARED_SECRET não configurado.')
+    log.erro('EDGE_SHARED_SECRET não configurado.')
     return jsonResponse({ ok: false, reason: 'config_ausente' }, 500)
   }
   if (!safeEqual(req.headers.get('x-edge-secret') ?? '', edgeSecret)) {
@@ -346,7 +349,7 @@ Deno.serve(async (req) => {
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   if (!resendApiKey) {
-    console.info(`[notify-client] RESEND_API_KEY ausente — no-op. evento=${event}`)
+    log.info(`RESEND_API_KEY ausente — no-op. evento=${event}`)
     return jsonResponse({ ok: true, skipped: 'sem_config_email', event })
   }
 
@@ -354,7 +357,7 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const adminAppUrl = Deno.env.get('ADMIN_APP_URL') ?? 'http://localhost:5175'
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[notify-client] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ ok: false, reason: 'env_supabase_ausente' }, 500)
   }
 
@@ -375,7 +378,7 @@ Deno.serve(async (req) => {
     }
     const client = await fetchClient(supabaseUrl, serviceRoleKey, project.client_id)
     if (!client?.email) {
-      console.info(`[notify-client] Cliente sem email — evento=${event}`)
+      log.info(`Cliente sem email — evento=${event}`)
       return jsonResponse({ ok: true, skipped: 'cliente_sem_email', event })
     }
 
@@ -398,7 +401,7 @@ Deno.serve(async (req) => {
     }
     const client = await fetchClient(supabaseUrl, serviceRoleKey, project.client_id)
     if (!client?.email) {
-      console.info(`[notify-client] Cliente sem email — evento=${event}`)
+      log.info(`Cliente sem email — evento=${event}`)
       return jsonResponse({ ok: true, skipped: 'cliente_sem_email', event })
     }
 
@@ -424,7 +427,7 @@ Deno.serve(async (req) => {
     }
     const client = await fetchClient(supabaseUrl, serviceRoleKey, receivable.client_id)
     if (!client?.email) {
-      console.info(`[notify-client] Cliente sem email — evento=${event}`)
+      log.info(`Cliente sem email — evento=${event}`)
       return jsonResponse({ ok: true, skipped: 'cliente_sem_email', event })
     }
 
@@ -440,6 +443,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ ok: sent, event })
   }
 
-  console.info(`[notify-client] Evento desconhecido: ${event}`)
+  log.info(`Evento desconhecido: ${event}`)
   return jsonResponse({ ok: true, skipped: 'evento_desconhecido', event })
-})
+}))

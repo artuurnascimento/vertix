@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { definirUsuario } from './log'
 import type { Tables } from './database.types'
 
 export type Profile = Tables<'profiles'>
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const applySession = async (session: Session | null): Promise<void> => {
       if (!session?.user) {
+        definirUsuario(null, null)
         if (active) {
           setUser(null)
           setProfile(null)
@@ -53,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return
       }
+      // O log passa a saber quem é (id no contexto, token para auth.uid()).
+      definirUsuario(session.user.id, session.access_token)
       const nextProfile = await fetchProfile(session.user.id)
       if (!active) return
       if (!nextProfile) {
@@ -110,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async (): Promise<void> => {
     await supabase.auth.signOut()
+    definirUsuario(null, null)
     setUser(null)
     setProfile(null)
   }, [])

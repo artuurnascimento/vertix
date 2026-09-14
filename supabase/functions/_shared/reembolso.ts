@@ -1,3 +1,6 @@
+import { criarLog } from './log.ts'
+
+const log = criarLog('shared:reembolso')
 /**
  * Mecânica de reembolso no Mercado Pago, compartilhada pelas duas funções que
  * devolvem dinheiro pelo painel: `checkout-reembolsar` (tabela `pedidos`) e
@@ -102,11 +105,11 @@ export async function pagamentoJaReembolsado(
       signal: AbortSignal.timeout(MP_TIMEOUT_MS),
     })
   } catch (erro) {
-    console.error(`[${rotulo}] Consulta do pagamento falhou:`, erro)
+    log.erro(`[${rotulo}] Consulta do pagamento falhou:`, erro)
     return null
   }
   if (!res.ok) {
-    console.error(`[${rotulo}] Consulta do pagamento recusada:`, res.status)
+    log.erro(`[${rotulo}] Consulta do pagamento recusada:`, res.status)
     return null
   }
 
@@ -182,7 +185,7 @@ export async function reembolsarNoMp(
     })
   } catch (erro) {
     // Rede ou timeout: NÃO se sabe se o reembolso aconteceu.
-    console.error(`[${rotulo}] MP indisponível. Pagamento:`, paymentId, erro)
+    log.erro(`[${rotulo}] MP indisponível. Pagamento:`, paymentId, erro)
     throw new Error('mp_indisponivel')
   }
 
@@ -190,7 +193,7 @@ export async function reembolsarNoMp(
 
   if (!res.ok) {
     // O corpo do erro do MP não carrega access token nem dado de cartão.
-    console.error(
+    log.erro(
       `[${rotulo}] MP recusou o reembolso:`,
       res.status,
       'pagamento:',
@@ -281,11 +284,11 @@ export async function buscarPagamentoPorReferencia(
       signal: AbortSignal.timeout(MP_TIMEOUT_MS),
     })
   } catch (erro) {
-    console.error(`[${rotulo}] Busca de pagamento falhou:`, erro)
+    log.erro(`[${rotulo}] Busca de pagamento falhou:`, erro)
     return { resultado: 'indisponivel' }
   }
   if (!res.ok) {
-    console.error(`[${rotulo}] Busca de pagamento recusada:`, res.status)
+    log.erro(`[${rotulo}] Busca de pagamento recusada:`, res.status)
     return { resultado: 'indisponivel' }
   }
 
@@ -294,7 +297,7 @@ export async function buscarPagamentoPorReferencia(
     unknown
   > | null
   if (!corpo || !Array.isArray(corpo.results)) {
-    console.error(`[${rotulo}] Busca de pagamento devolveu corpo inesperado.`)
+    log.erro(`[${rotulo}] Busca de pagamento devolveu corpo inesperado.`)
     return { resultado: 'indisponivel' }
   }
 
@@ -310,7 +313,7 @@ export async function buscarPagamentoPorReferencia(
 
   if (candidatos.length === 0) return { resultado: 'nao_encontrado' }
   if (candidatos.length > 1) {
-    console.error(
+    log.erro(
       `[${rotulo}] AMBIGUIDADE — a referência ${externalReference} tem ` +
         `${candidatos.length} pagamentos que cobraram o valor da venda ` +
         `(${candidatos.map((c) => `${c.id}:${c.status}`).join(', ')}). ` +
@@ -375,7 +378,7 @@ export async function autenticarPainel(
     }
   )
   if (!perfilRes.ok) {
-    console.error(`[${rotulo}] Falha ao checar profile:`, perfilRes.status)
+    log.erro(`[${rotulo}] Falha ao checar profile:`, perfilRes.status)
     return { ok: false, erro: 'falha_ao_validar_permissao', status: 502 }
   }
   const perfis = (await perfilRes.json()) as Array<{ id: string }>

@@ -12,6 +12,9 @@
  * mora aqui, não no cliente.
  */
 import { withCors } from '../_shared/cors.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('reprocessar-entrega')
 
 interface RequestBody {
   tipo?: unknown
@@ -28,7 +31,7 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
-Deno.serve(withCors(async (req) => {
+Deno.serve(withCors(comLog('reprocessar-entrega', async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405)
   }
@@ -56,11 +59,11 @@ Deno.serve(withCors(async (req) => {
   const workerUrl = Deno.env.get('SCAN_WORKER_URL')
   const vertixToken = Deno.env.get('VERTIX_SERVICE_TOKEN')
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[reprocessar-entrega] Env do Supabase ausente.')
+    log.erro('Env do Supabase ausente.')
     return jsonResponse({ error: 'env_supabase_ausente' }, 500)
   }
   if (!workerUrl || !vertixToken) {
-    console.error('[reprocessar-entrega] SCAN_WORKER_URL / VERTIX_SERVICE_TOKEN ausentes.')
+    log.erro('SCAN_WORKER_URL / VERTIX_SERVICE_TOKEN ausentes.')
     return jsonResponse({ error: 'worker_nao_configurado' }, 500)
   }
 
@@ -76,7 +79,7 @@ Deno.serve(withCors(async (req) => {
     headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
   })
   if (!profileRes.ok) {
-    console.error('[reprocessar-entrega] Falha ao checar profile:', profileRes.status)
+    log.erro('Falha ao checar profile:', profileRes.status)
     return jsonResponse({ error: 'Falha ao validar permissão.' }, 502)
   }
   const perfis = (await profileRes.json()) as Array<{ id: string }>
@@ -100,7 +103,7 @@ Deno.serve(withCors(async (req) => {
       error?: { code?: string; message?: string }
     }
     if (!res.ok) {
-      console.warn(`[reprocessar-entrega] Worker recusou ${tipo} ${id}: ${res.status}`, resposta.error?.code)
+      log.aviso(`Worker recusou ${tipo} ${id}: ${res.status}`, resposta.error?.code)
       return jsonResponse(
         { error: resposta.error?.message ?? `Worker respondeu ${res.status}.`, codigo: resposta.error?.code ?? null },
         res.status === 404 || res.status === 409 ? res.status : 502
@@ -108,7 +111,7 @@ Deno.serve(withCors(async (req) => {
     }
     return jsonResponse({ ok: true, estado: resposta.estado ?? 'processando' })
   } catch (error) {
-    console.error('[reprocessar-entrega] Worker inacessível:', error instanceof Error ? error.message : error)
+    log.erro('Worker inacessível:', error instanceof Error ? error.message : error)
     return jsonResponse({ error: 'O worker do Scan não respondeu. Tente de novo em instantes.' }, 504)
   }
-}))
+})))

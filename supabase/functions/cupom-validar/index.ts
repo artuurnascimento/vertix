@@ -37,6 +37,9 @@ import {
   SLUG_RE,
   type Db,
 } from '../_shared/checkout.ts'
+import { comLog, criarLog } from '../_shared/log.ts'
+
+const log = criarLog('cupom-validar')
 
 interface RequestBody {
   slug?: string
@@ -61,7 +64,7 @@ interface RequestBody {
 }
 
 Deno.serve(
-  withCors(async (req) => {
+  withCors(comLog('cupom-validar', async (req) => {
     if (req.method !== 'POST') {
       return jsonResponse({ erro: 'method_not_allowed' }, 405)
     }
@@ -83,7 +86,7 @@ Deno.serve(
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('[cupom-validar] Env do Supabase ausente.')
+      log.erro('Env do Supabase ausente.')
       return jsonResponse({ erro: 'config_ausente' }, 500)
     }
 
@@ -154,5 +157,5 @@ Deno.serve(
       desconto_cupom_centavos: totais.desconto_cupom_centavos,
       desconto_metodo_centavos: totais.desconto_metodo_centavos,
     })
-  })
+  }))
 )
