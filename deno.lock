@@ -34,6 +34,7 @@
         "npm:@vitest/coverage-v8@^4.1.10",
         "npm:autoprefixer@^10.5.2",
         "npm:clsx@^2.1.1",
+        "npm:dotted-map@^2.2.3",
         "npm:framer-motion@^12.42.2",
         "npm:jsdom@^29.1.1",
         "npm:lucide-react@^1.24.0",
