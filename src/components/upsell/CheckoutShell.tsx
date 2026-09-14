@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import VertixCheckoutLogo from '../checkout/VertixCheckoutLogo'
 import RodapeCheckout from '../checkout/RodapeCheckout'
 
@@ -35,9 +34,11 @@ export function CheckoutShell({ children }: { children: ReactNode }) {
 }
 
 /**
- * Entrada suave dos blocos. `useReducedMotion` respeita a preferência do
- * sistema: quem pediu menos movimento recebe o conteúdo já posicionado, sem
- * deslocamento — importante numa tela que aparece logo depois de um pagamento.
+ * Entrada suave dos blocos (.vx-surge, no index.css). A folha respeita
+ * prefers-reduced-motion: quem pediu menos movimento recebe o conteúdo já
+ * posicionado, sem deslocamento — importante numa tela que aparece logo
+ * depois de um pagamento. `delay` em segundos, para os blocos entrarem em
+ * sequência.
  */
 export function Entrada({
   children,
@@ -48,20 +49,13 @@ export function Entrada({
   delay?: number
   className?: string
 }) {
-  const semMovimento = useReducedMotion()
   return (
-    <motion.div
-      initial={semMovimento ? { opacity: 0 } : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: semMovimento ? 0.15 : 0.35,
-        delay: semMovimento ? 0 : delay,
-        ease: [0.25, 0.1, 0.25, 1],
-      }}
-      className={className}
+    <div
+      className={className ? `vx-surge ${className}` : 'vx-surge'}
+      style={delay > 0 ? { animationDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 

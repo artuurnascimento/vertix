@@ -1,5 +1,4 @@
 import { useId, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown, ShoppingCart } from 'lucide-react'
 import LogoMark from '../ui/LogoMark'
 import Revelar from './Revelar'
@@ -59,7 +58,6 @@ export default function ResumoPedido({
   total,
   padraoAberto,
 }: Props) {
-  const semMovimento = useReducedMotion()
   const detalhesId = useId()
 
   // Semente, não amarra: `padraoAberto` decide só o primeiro quadro. Depois da
@@ -180,7 +178,6 @@ export default function ResumoPedido({
 
           {temBump && (
             <Linha
-              semMovimento={semMovimento}
               rotulo={bump.titulo}
               etiqueta="adicional"
               valor={`+ ${formatarCentavos(bump.precoCentavos)}`}
@@ -192,7 +189,6 @@ export default function ResumoPedido({
               método depois, sobre o que sobrou. É a mesma ordem do servidor. */}
           {total.descontoCentavos > 0 && (
             <Linha
-              semMovimento={semMovimento}
               rotulo="Cupom"
               etiqueta={cupomCodigo ?? undefined}
               valor={`− ${formatarCentavos(total.descontoCentavos)}`}
@@ -202,7 +198,6 @@ export default function ResumoPedido({
 
           {total.descontoMetodoCentavos > 0 && (
             <Linha
-              semMovimento={semMovimento}
               rotulo={metodo === 'pix' ? 'Desconto no Pix' : 'Desconto'}
               etiqueta={
                 descontoPixPercentual === null
@@ -230,21 +225,14 @@ function Linha({
   etiqueta,
   valor,
   classeValor,
-  semMovimento,
 }: {
   rotulo: string
   etiqueta?: string
   valor: string
   classeValor: string
-  semMovimento: boolean | null
 }) {
   return (
-    <motion.div
-      initial={semMovimento ? false : { opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.07] pt-3 text-sm"
-    >
+    <div className="vx-surge-linha mt-3 flex items-center justify-between gap-3 border-t border-white/[0.07] pt-3 text-sm">
       {/* O rótulo trunca; a etiqueta não. Com as duas dentro do mesmo
           `truncate`, é a etiqueta que some — e é ela que explica a linha
           ("adicional", código do cupom, percentual do Pix). */}
@@ -257,6 +245,6 @@ function Linha({
         )}
       </span>
       <span className={`shrink-0 tabular-nums ${classeValor}`}>{valor}</span>
-    </motion.div>
+    </div>
   )
 }

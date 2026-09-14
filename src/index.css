@@ -794,6 +794,37 @@ body {
   transition: transform 1s linear;
   will-change: transform;
 }
+
+/* Surgimento dos blocos do checkout e do pós-compra (.vx-entrada já é o do
+   bio, com o atraso do splash — por isso outro nome): fade curto com leve subida,
+   em CSS puro. Era o único uso do framer-motion (100 KB gz) nessas páginas —
+   o celular baixava a biblioteca inteira por três fades. `backwards` segura o
+   estado inicial durante o delay e, no fim, devolve o elemento ao estilo
+   natural (sem transform residual — position: fixed dentro dele continua
+   ancorado na tela). Quem pediu menos movimento recebe o conteúdo no lugar. */
+@keyframes vx-surge {
+  from {
+    opacity: 0;
+    transform: translateY(var(--vx-surge-y, 10px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.vx-surge {
+  animation: vx-surge 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) backwards;
+}
+.vx-surge-linha {
+  --vx-surge-y: -4px;
+  animation: vx-surge 0.2s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vx-surge,
+  .vx-surge-linha {
+    animation: none;
+  }
+}
 .vx-cronometro-pulso {
   animation: vx-cronometro-pulso 1s ease-in-out infinite;
 }

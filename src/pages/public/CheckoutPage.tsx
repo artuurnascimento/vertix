@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { motion, useReducedMotion } from 'framer-motion'
 import { CircleSlash, Hourglass, Loader2 } from 'lucide-react'
 
 import {
@@ -140,7 +139,6 @@ export default function CheckoutPage() {
   // análise. Link sem `t` (compra direta, link antigo) abre vazio, como antes.
   const tokenPrefill = parametrosDaUrl.get('t')?.trim() || null
   const navegar = useNavigate()
-  const semMovimento = useReducedMotion()
 
   const [bumpMarcado, setBumpMarcado] = useState(false)
   const [cupom, setCupom] = useState<CupomAplicado | null>(null)
@@ -580,13 +578,10 @@ export default function CheckoutPage() {
         />
       }
     >
-      <motion.div
-        initial={semMovimento ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      <div
         // Respiro no pé só quando há um Pix esperando: é a única barra fixa
         // que sobrou, e ela cobriria o fim da página em qualquer largura.
-        className={pix ? 'pb-28' : undefined}
+        className={pix ? 'vx-surge pb-28' : 'vx-surge'}
       >
         {info.banner && (
           <div className="mb-7 sm:mb-9">
@@ -696,7 +691,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/*
         Aqui havia uma barra fixa no rodapé, no celular, com o total e um botão

@@ -5,7 +5,6 @@ import SplashScreen from './components/ui/SplashScreen'
 import FronteiraDeErro from './components/ui/FronteiraDeErro'
 import { isPublicLinkHost } from './lib/publicUrls'
 import { carregarPagina } from './lib/carregarPagina'
-import AdminLayout from './components/layout/AdminLayout'
 import HostToken from './pages/public/HostToken'
 import HostRoot, { BioRoute } from './pages/public/HostRoot'
 
@@ -13,6 +12,10 @@ import HostRoot, { BioRoute } from './pages/public/HostRoot'
  * Telas carregadas sob demanda: sem isso, quem abre uma pagina publica
  * (link de bio, proposta, pagamento) baixa o painel inteiro junto.
  */
+// A moldura do painel também: ela traz o framer-motion e o CSS do admin, que
+// o checkout e as outras páginas públicas não usam. O <Suspense> lá embaixo
+// já cobre; o primeiro /admin paga uma ida a mais, escondida pelo Splash.
+const AdminLayout = lazy(() => carregarPagina(() => import('./components/layout/AdminLayout')))
 const Dashboard = lazy(() => carregarPagina(() => import('./pages/Dashboard')))
 const Clientes = lazy(() => carregarPagina(() => import('./pages/Clientes')))
 const ClientDetail = lazy(() => carregarPagina(() => import('./pages/ClientDetail')))

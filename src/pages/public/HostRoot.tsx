@@ -1,9 +1,11 @@
 import { Suspense, lazy } from 'react'
-import Login from '../Login'
 import { ehHostBio } from '../../lib/publicUrls'
+import { carregarPagina } from '../../lib/carregarPagina'
 
-// Sob demanda: quem abre o painel não baixa o código do bio, e vice-versa.
+// Sob demanda: quem abre o painel não baixa o código do bio, e vice-versa —
+// e quem abre um checkout não baixa o login (que traz o framer-motion junto).
 const BioPage = lazy(() => import('./BioPage'))
+const Login = lazy(() => carregarPagina(() => import('../Login')))
 
 /**
  * Rota raiz "/" — o domínio decide o que aparece, irmão de HostToken:
@@ -29,5 +31,9 @@ export function BioRoute() {
 
 export default function HostRoot() {
   if (ehHostBio(window.location.hostname)) return <BioRoute />
-  return <Login />
+  return (
+    <Suspense fallback={<Aguardando />}>
+      <Login />
+    </Suspense>
+  )
 }
