@@ -142,6 +142,14 @@ export function logDe(fonte: string) {
 // ---------------------------------------------------------------------------
 
 const EDGE = '/functions/v1/'
+/**
+ * Cabeçalhos de correlação nas chamadas às edge functions. DESLIGADO até as
+ * 23 functions com o cors.ts novo (que autoriza x-vx-*) estarem publicadas:
+ * com o cors antigo no ar, o preflight recusa o cabeçalho e o navegador
+ * bloqueia a chamada inteira — inclusive checkout-pagar. Ligar depois do
+ * `supabase functions deploy`.
+ */
+const CABECALHOS_DE_CORRELACAO = false
 
 function urlDe(entrada: RequestInfo | URL): string {
   if (typeof entrada === 'string') return entrada
@@ -163,7 +171,7 @@ export const fetchComLog: typeof fetch = async (entrada, init) => {
   let requisicaoId: string | null = null
   let opcoes = init
 
-  if (fn) {
+  if (fn && CABECALHOS_DE_CORRELACAO) {
     requisicaoId = novoIdDeRequisicao()
     const headers = new Headers(init?.headers ?? (entrada instanceof Request ? entrada.headers : undefined))
     headers.set('x-vx-requisicao', requisicaoId)
