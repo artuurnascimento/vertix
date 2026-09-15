@@ -1,0 +1,433 @@
+/* Página "Estamos em construção" — estilos e animações (ilustração + UI). */
+
+:root {
+  --ec-acento: #6c5bf2;
+  --ec-acento-claro: #9b8cff;
+  --ec-linha: #22221b;
+  --ec-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- Fundo ---------- */
+
+.ec-fundo {
+  background:
+    radial-gradient(60% 55% at 6% 100%, rgba(108, 91, 242, 0.24), transparent 70%),
+    radial-gradient(45% 40% at 100% 0%, rgba(108, 91, 242, 0.1), transparent 70%),
+    radial-gradient(38% 42% at 66% 52%, rgba(108, 91, 242, 0.09), transparent 70%);
+}
+
+.ec-grao {
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Cabeçalho / rodapé ---------- */
+
+.ec-status-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ec-acento);
+  box-shadow: 0 0 12px var(--ec-acento);
+}
+
+.ec-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(108, 91, 242, 0.7);
+  animation: ec-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.ec-link-icone {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--ec-linha);
+  color: #8a8a82;
+  transition:
+    color 0.25s,
+    border-color 0.25s,
+    transform 0.3s var(--ec-ease),
+    box-shadow 0.3s;
+}
+
+.ec-link-icone:hover,
+.ec-link-icone:focus-visible {
+  color: #f4f4f0;
+  border-color: rgba(108, 91, 242, 0.7);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -10px rgba(108, 91, 242, 0.8);
+  outline: none;
+}
+
+/* ---------- Texto ---------- */
+
+.ec-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid rgba(108, 91, 242, 0.65);
+  border-radius: 999px;
+  background: rgba(108, 91, 242, 0.08);
+  color: #b9aeff;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 28px rgba(108, 91, 242, 0.28),
+    inset 0 0 14px rgba(108, 91, 242, 0.14);
+}
+
+.ec-titulo {
+  font-weight: 800;
+  font-size: clamp(2.5rem, 1rem + 4.9vw, 5rem);
+  line-height: 0.94;
+  letter-spacing: -0.025em;
+}
+
+.ec-titulo-claro {
+  background: linear-gradient(180deg, #a8a8a0 0%, #f4f4f0 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ec-titulo-acento {
+  color: #7f6fff;
+  text-shadow: 0 0 44px rgba(108, 91, 242, 0.5);
+}
+
+/* ---------- Barra de progresso ---------- */
+
+.ec-barra {
+  height: 6px;
+  border-radius: 999px;
+  background: #1b1b22;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.ec-barra-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5546e0, #8b7cff);
+  transform-origin: left center;
+  box-shadow: 0 0 18px rgba(108, 91, 242, 0.75);
+  overflow: hidden;
+}
+
+.ec-barra-brilho {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: ec-brilho 2.6s ease-in-out 2.6s infinite;
+}
+
+/* ---------- Botões ---------- */
+
+.ec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 3rem;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    transform 0.3s var(--ec-ease),
+    box-shadow 0.3s,
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+
+.ec-btn:focus-visible {
+  outline: 2px solid #b9aeff;
+  outline-offset: 3px;
+}
+
+.ec-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.ec-btn-primario {
+  background: var(--ec-acento);
+  color: #fff;
+  box-shadow: 0 10px 30px -8px rgba(108, 91, 242, 0.85);
+}
+
+.ec-btn-primario:hover {
+  background: #7c6bff;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px -8px rgba(108, 91, 242, 0.95);
+}
+
+.ec-btn-fantasma {
+  border: 1px solid var(--ec-linha);
+  background: rgba(255, 255, 255, 0.02);
+  color: #8a8a82;
+}
+
+.ec-btn-fantasma:hover {
+  border-color: rgba(108, 91, 242, 0.6);
+  color: #f4f4f0;
+  transform: translateY(-2px);
+}
+
+/* ---------- Destaques ---------- */
+
+.ec-destaque {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  color: #c9c9c2;
+}
+
+.ec-destaque-icone {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.65rem;
+  color: #8b7cff;
+  background: rgba(108, 91, 242, 0.1);
+  border: 1px solid rgba(108, 91, 242, 0.25);
+  transition:
+    box-shadow 0.3s,
+    transform 0.3s var(--ec-ease),
+    background-color 0.3s;
+}
+
+.ec-destaque:hover .ec-destaque-icone {
+  transform: translateY(-2px) rotate(-4deg);
+  background: rgba(108, 91, 242, 0.2);
+  box-shadow: 0 0 22px rgba(108, 91, 242, 0.45);
+}
+
+/* ---------- Ilustração ---------- */
+
+.ec-glow {
+  animation: ec-glow 4.5s ease-in-out infinite;
+}
+
+.ec-float {
+  animation: ec-float 5s ease-in-out infinite;
+}
+
+.ec-float-2 {
+  animation: ec-float 6s ease-in-out -2.2s infinite;
+}
+
+.ec-sombra {
+  animation: ec-sombra 5s ease-in-out infinite;
+}
+
+.ec-sombra-2 {
+  animation: ec-sombra 6s ease-in-out -2.2s infinite;
+}
+
+/* Carrinho anda pela lança no sentido -x do mundo → (-cos30, -sin30) na tela, 80 unidades. */
+.ec-trolley {
+  animation: ec-trolley 7s ease-in-out infinite alternate;
+}
+
+.ec-bloco {
+  animation: ec-bloco 4s ease-in-out infinite alternate;
+}
+
+.ec-cabo {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: ec-cabo 4s ease-in-out infinite alternate;
+}
+
+.ec-dash {
+  animation: ec-dash 2.4s linear infinite;
+}
+
+.ec-particula {
+  opacity: 0;
+  animation: ec-particula 6s ease-in-out infinite;
+}
+
+.ec-pisca {
+  animation: ec-pisca 1.4s steps(1) infinite;
+}
+
+.ec-luz {
+  animation: ec-luz 2s ease-in-out infinite;
+}
+
+.ec-shimmer {
+  animation: ec-shimmer 3.4s ease-in-out 1s infinite;
+}
+
+/* ---------- Keyframes ---------- */
+
+@keyframes ec-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@keyframes ec-brilho {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%,
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+@keyframes ec-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ec-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes ec-sombra {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@keyframes ec-trolley {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-69.3px, -40px);
+  }
+}
+
+@keyframes ec-bloco {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(28px);
+  }
+}
+
+@keyframes ec-cabo {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(var(--ec-cabo-fim, 2));
+  }
+}
+
+@keyframes ec-dash {
+  to {
+    stroke-dashoffset: -48;
+  }
+}
+
+@keyframes ec-particula {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-70px);
+    opacity: 0;
+  }
+}
+
+@keyframes ec-pisca {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes ec-luz {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ec-shimmer {
+  0% {
+    transform: translateX(0);
+  }
+  55%,
+  100% {
+    transform: translateX(330px);
+  }
+}
+
+/* ---------- Movimento reduzido ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .ec-status-dot::after,
+  .ec-barra-brilho,
+  .ec-glow,
+  .ec-float,
+  .ec-float-2,
+  .ec-sombra,
+  .ec-sombra-2,
+  .ec-trolley,
+  .ec-bloco,
+  .ec-cabo,
+  .ec-dash,
+  .ec-particula,
+  .ec-pisca,
+  .ec-luz,
+  .ec-shimmer {
+    animation: none;
+  }
+
+  .ec-particula {
+    opacity: 0.5;
+  }
+}
